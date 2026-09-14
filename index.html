@@ -93,19 +93,23 @@ async function decodeFit(file){
   };
   const arr=v=>Array.isArray(v)?v:(v?[v]:[]);
 
-  const sessions=arr(msgs.session);
-  const laps=arr(msgs.lap);
-  const records=arr(msgs.record);
+  const sessions=arr(msgs.sessionMesgs||msgs.session);
+  const laps=arr(msgs.lapMesgs||msgs.lap);
+  const records=arr(msgs.recordMesgs||msgs.record);
   const s=sessions[0]||{};
+
+  if(!sessions.length && !laps.length && !records.length){
+    const keys=Object.keys(msgs).filter(Boolean).join(', ');
+    throw new Error("FITは読めましたが、活動データのメッセージを取得できませんでした。SDKのデコード結果："+(keys||"空"));
+  }
 
   // Garmin FIT distance is normally meters after scale/offset.
   // Some SDK representations can expose kilometers, so normalize defensively.
   const normalizeDistanceKm=v=>{
     const n=Number(v);
     if(!Number.isFinite(n)||n<=0)return 0;
-    if(n>1000)return n/1000; // meters
-    if(n>100)return n/1000;  // meters, short activity
-    return n;                 // already km
+    if(n>=100)return n/1000; // Garmin FIT distance is normally meters
+    return n;                // already km / very short value
   };
 
   let dist=normalizeDistanceKm(num(s,'totalDistance','total_distance','distance'));
