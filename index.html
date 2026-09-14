@@ -3,213 +3,171 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>RunLog Pro | 富山マラソン攻略</title>
+<meta name="theme-color" content="#0b1220">
+<title>RunLog Pro</title>
 <style>
-:root{--bg:#f5f7fb;--card:#fff;--text:#172033;--muted:#6b7280;--line:#e5e7eb;--accent:#2563eb;--green:#16a34a;--orange:#ea580c;--red:#dc2626}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Noto Sans JP",sans-serif}
-header{background:linear-gradient(135deg,#172554,#2563eb);color:white;padding:22px 18px 28px}header h1{margin:0 0 6px;font-size:25px}header p{margin:0;opacity:.86}
-.wrap{max-width:1050px;margin:auto;padding:14px}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;box-shadow:0 3px 14px #00000008}.metric{font-size:27px;font-weight:800}.label{font-size:12px;color:var(--muted);margin-bottom:5px}.section{margin:18px 0 10px;font-size:18px;font-weight:800}
-.progress{height:10px;background:#e5e7eb;border-radius:10px;overflow:hidden}.progress>i{display:block;height:100%;background:var(--accent);width:62%}
-.two{display:grid;grid-template-columns:1.2fr .8fr;gap:12px}.bar{height:180px;display:flex;align-items:end;gap:10px;padding:10px}.bar span{flex:1;background:#60a5fa;border-radius:7px 7px 2px 2px;min-height:8px}.bar small{display:block;text-align:center;color:var(--muted);margin-top:5px}
-table{width:100%;border-collapse:collapse;font-size:14px}th,td{padding:10px 6px;border-bottom:1px solid var(--line);text-align:left}th{color:var(--muted);font-size:12px}
-.tag{display:inline-block;padding:4px 8px;border-radius:999px;background:#eff6ff;color:#1d4ed8;font-size:12px}.alert{background:#fff7ed;border-color:#fed7aa}.good{background:#f0fdf4;border-color:#bbf7d0}.route{display:flex;gap:7px;overflow:auto;padding-bottom:5px}.route div{min-width:115px;padding:12px;border-radius:12px;background:#f8fafc;border:1px solid var(--line)}.route b{display:block;font-size:14px}.route small{color:var(--muted)}
-button{border:0;border-radius:10px;padding:10px 14px;background:var(--accent);color:#fff;font-weight:700;cursor:pointer}.secondary{background:#eef2ff;color:#3730a3}input,select{width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;background:white}.form{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
-@media(max-width:760px){.grid,.two,.form{grid-template-columns:1fr 1fr}.two{grid-template-columns:1fr}.metric{font-size:22px}.card{padding:13px}}
-@media(max-width:470px){.grid,.form{grid-template-columns:1fr 1fr}header{padding-top:18px}.wrap{padding:10px}table{font-size:13px}}
+:root{--bg:#f4f7fb;--card:#fff;--text:#172033;--muted:#6b7280;--line:#e5e7eb;--accent:#2563eb;--accent2:#0f766e;--danger:#dc2626;--shadow:0 8px 24px rgba(15,23,42,.08)}
+*{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;line-height:1.5} button,input,select,textarea{font:inherit} button{cursor:pointer;border:0}.wrap{max-width:1100px;margin:auto;padding:16px}.hero{background:linear-gradient(135deg,#0b1220,#173b76);color:#fff;border-radius:22px;padding:22px;box-shadow:var(--shadow);margin-bottom:14px}.hero h1{margin:0 0 3px;font-size:28px}.hero p{margin:0;color:#dbeafe}.racebox{display:flex;gap:14px;align-items:center;justify-content:space-between;margin-top:18px;flex-wrap:wrap}.count{font-size:38px;font-weight:800;line-height:1}.tabs{display:flex;gap:8px;overflow:auto;margin:12px 0}.tab{background:#fff;border:1px solid var(--line);padding:10px 14px;border-radius:999px;white-space:nowrap}.tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}.page{display:none}.page.active{display:block}.grid{display:grid;gap:12px}.grid2{grid-template-columns:repeat(2,minmax(0,1fr))}.grid3{grid-template-columns:repeat(3,minmax(0,1fr))}.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;box-shadow:0 3px 14px rgba(15,23,42,.04);margin-bottom:12px}.card h2,.card h3{margin:0 0 10px}.metric{font-size:28px;font-weight:800}.muted{color:var(--muted);font-size:13px}.bar{height:10px;background:#e5e7eb;border-radius:999px;overflow:hidden}.bar>span{display:block;height:100%;background:var(--accent);border-radius:999px}.btn{padding:11px 14px;border-radius:12px;background:var(--accent);color:#fff;font-weight:700}.btn.secondary{background:#eef2ff;color:#1e40af}.btn.green{background:#0f766e}.btn.danger{background:#fee2e2;color:#991b1b}.btn.ghost{background:#f3f4f6;color:#374151}.row{display:flex;gap:9px;align-items:center;flex-wrap:wrap}.field{display:flex;flex-direction:column;gap:5px}.field label{font-size:13px;font-weight:700;color:#374151}.field input,.field select,.field textarea{width:100%;border:1px solid #d1d5db;border-radius:10px;padding:10px;background:#fff}.field textarea{min-height:90px;resize:vertical}.formgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.full{grid-column:1/-1}.strategy{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.stage{padding:13px;border-radius:14px;background:#f8fafc;border:1px solid var(--line)}.stage strong{display:block;margin-bottom:4px}.importbox{border:2px dashed #cbd5e1;border-radius:16px;padding:16px;background:#f8fafc}.status{margin-top:10px;padding:10px 12px;border-radius:10px;background:#eff6ff;color:#1e40af;font-size:13px}.status.ok{background:#ecfdf5;color:#065f46}.status.err{background:#fef2f2;color:#991b1b}.tablewrap{overflow:auto}table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:9px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}th{color:#6b7280}.empty{padding:20px;text-align:center;color:var(--muted)}.chart{height:180px;display:flex;align-items:end;gap:7px;padding:8px 0}.col{flex:1;min-width:18px;display:flex;flex-direction:column;justify-content:end;height:100%;align-items:center;gap:4px}.barcol{width:100%;max-width:34px;background:#2563eb;border-radius:6px 6px 2px 2px;min-height:2px}.axis{font-size:10px;color:#6b7280}.pill{display:inline-block;padding:4px 8px;border-radius:999px;background:#eef2ff;color:#3730a3;font-size:12px}.small{font-size:12px}.right{margin-left:auto}.footer{padding:18px 0 40px;color:#6b7280;font-size:12px;text-align:center}
+@media(max-width:720px){.grid2,.grid3,.strategy,.formgrid{grid-template-columns:1fr}.hero h1{font-size:24px}.count{font-size:34px}.wrap{padding:10px}.card{padding:14px}}
 </style>
 </head>
 <body>
-<header>
 <div class="wrap">
-<h1>🏃 RunLog Pro</h1>
-<p>富山マラソン攻略ダッシュボード</p>
-</div>
-</header>
-<main class="wrap">
-<div class="grid">
-<div class="card"><div class="label">富山マラソンまで</div><div class="metric" id="days">--日</div><div class="label">2026/11/1 9:00 スタート</div></div>
-<div class="card"><div class="label">9月走行距離</div><div class="metric" id="monthly">0.0 km</div><div class="label">目標 150 km</div></div>
-<div class="card"><div class="label">目標達成率</div><div class="metric" id="rate">0%</div><div class="progress"><i id="prog"></i></div></div>
-<div class="card"><div class="label">レース目標</div><div class="metric">4:00:00</div><div class="label">基準ペース 5:41/km</div></div>
+  <section class="hero">
+    <h1>RunLog Pro</h1>
+    <p>富山マラソン攻略ダッシュボード</p>
+    <div class="racebox">
+      <div><div class="muted" style="color:#bfdbfe">富山マラソン 2026</div><div id="countdown" class="count">--日</div></div>
+      <div><div class="muted" style="color:#bfdbfe">目標タイム</div><div style="font-size:25px;font-weight:800">4:00:00</div><div>目標ペース 5:41/km</div></div>
+    </div>
+  </section>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="dashboard">ダッシュボード</button>
+    <button class="tab" data-tab="entry">手動入力</button>
+    <button class="tab" data-tab="import">Garmin取込</button>
+    <button class="tab" data-tab="history">履歴</button>
+    <button class="tab" data-tab="backup">バックアップ</button>
+  </div>
+
+  <main>
+    <section id="dashboard" class="page active">
+      <div class="grid grid3">
+        <div class="card"><div class="muted">今月の走行距離</div><div class="metric" id="monthKm">0.0 km</div><div class="bar"><span id="monthBar" style="width:0%"></span></div><div class="muted" id="monthGoalText">目標 150 km</div></div>
+        <div class="card"><div class="muted">今月の走行回数</div><div class="metric" id="monthRuns">0</div><div class="muted">RunLog Pro登録分</div></div>
+        <div class="card"><div class="muted">直近ラン</div><div class="metric" id="lastPace">--</div><div class="muted" id="lastRunInfo">まだ記録がありません</div></div>
+      </div>
+
+      <div class="card"><h2>月間走行距離</h2><div id="monthChart" class="chart"></div><div class="muted">各月の登録ラン距離。150 kmを練習量の目安にします。</div></div>
+
+      <div class="grid grid2">
+        <div class="card"><h2>直近の状態</h2><div id="analysis">ランを登録すると、ペース・心拍・距離から簡易分析を表示します。</div></div>
+        <div class="card"><h2>富山マラソン攻略メモ</h2><div class="strategy">
+          <div class="stage"><strong>0–10 km</strong><span class="small">5:45〜5:50/km。入りを抑える。</span></div>
+          <div class="stage"><strong>10–20 km</strong><span class="small">5:40前後。楽に一定。</span></div>
+          <div class="stage"><strong>新湊大橋</strong><span class="small">上りで無理をしない。下りで整える。</span></div>
+          <div class="stage"><strong>20–30 km</strong><span class="small">フォームと補給を優先。</span></div>
+          <div class="stage"><strong>30–35 km</strong><span class="small">余力を確認。5:40台を維持。</span></div>
+          <div class="stage"><strong>35–Finish</strong><span class="small">余力があれば徐々に上げる。</span></div>
+        </div></div>
+      </div>
+    </section>
+
+    <section id="entry" class="page">
+      <div class="card"><h2>ランを手動登録</h2><div class="formgrid">
+        <div class="field"><label>日付</label><input id="eDate" type="date"></div>
+        <div class="field"><label>距離 km *</label><input id="eDist" type="number" step="0.01" inputmode="decimal" placeholder="10.2"></div>
+        <div class="field"><label>時間</label><input id="eTime" type="text" placeholder="00:55:30"></div>
+        <div class="field"><label>ペース min/km</label><input id="ePace" type="number" step="0.01" inputmode="decimal" placeholder="5.44"></div>
+        <div class="field"><label>平均心拍 bpm</label><input id="eHr" type="number" inputmode="numeric" placeholder="145"></div>
+        <div class="field"><label>平均ケイデンス spm</label><input id="eCad" type="number" inputmode="numeric" placeholder="178"></div>
+        <div class="field"><label>獲得標高 m</label><input id="eGain" type="number" inputmode="numeric" placeholder="120"></div>
+        <div class="field"><label>気温 ℃</label><input id="eTemp" type="number" step="0.1" inputmode="decimal" placeholder="22"></div>
+        <div class="field"><label>練習内容</label><select id="eType"><option>Easy</option><option>Long</option><option>Threshold</option><option>Interval</option><option>Race</option><option>Recovery</option><option>Other</option></select></div>
+        <div class="field"><label>体調</label><select id="eFeel"><option>良好</option><option>普通</option><option>やや疲労</option><option>疲労</option></select></div>
+        <div class="field full"><label>メモ</label><textarea id="eNote" placeholder="脚の状態、補給、コース、感覚など"></textarea></div>
+      </div><div class="row" style="margin-top:12px"><button class="btn" id="saveEntry">登録する</button><button class="btn ghost" id="clearEntry">入力をクリア</button></div><div id="entryStatus"></div></div>
+    </section>
+
+    <section id="import" class="page">
+      <div class="card"><h2>Garmin Connect データ取込</h2><p class="muted">Garmin Connectから書き出した FIT / TCX / GPX をiPhone上で読み込みます。FITは距離だけでなく、時間・平均心拍・ケイデンス・標高などを自動取得します。</p>
+        <div class="importbox"><input id="fileInput" type="file" accept=".fit,.FIT,.tcx,.TCX,.gpx,.GPX"><div class="row" style="margin-top:10px"><button class="btn green" id="importBtn">データを自動解析して登録</button></div><div id="importStatus" class="status">ファイルを選択してください。</div></div>
+      </div>
+      <div class="card"><h3>今回の改善ポイント</h3><ul><li>FITを手入力する必要なし</li><li>GarminのバイナリFITをブラウザ内でデコード</li><li>距離・時間・ペース・心拍・ケイデンス・獲得標高を可能な範囲で自動登録</li><li>Garmin APIは使用しないため、Garmin Developer Programの承認は不要</li></ul><p class="muted">FIT解析にはGarmin公式FIT JavaScript SDKをブラウザから読み込みます。SDKはブラウザ対応のECMAScript moduleとして提供されています。</p></div>
+    </section>
+
+    <section id="history" class="page">
+      <div class="card"><div class="row"><h2 style="margin:0">ラン履歴</h2><span class="right pill" id="historyCount">0件</span></div><div id="historyTable" class="tablewrap"></div></div>
+    </section>
+
+    <section id="backup" class="page">
+      <div class="card"><h2>バックアップ</h2><p class="muted">RunLog Proの記録はこのiPhoneのブラウザ内に保存されます。機種変更・Safariのデータ消去に備えてJSONを保存してください。</p><div class="row"><button class="btn" id="exportJson">JSONバックアップを書き出す</button><label class="btn secondary" style="display:inline-block">JSONを復元<input id="importJson" type="file" accept="application/json,.json" hidden></label><button class="btn danger" id="clearAll">全データ削除</button></div><div id="backupStatus"></div></div>
+      <div class="card"><h3>データ保存について</h3><p class="small">この版ではGarminアカウントへログインしたり、Garminへデータを送信したりしません。選択したファイルをこのブラウザ内で解析し、必要な記録だけをRunLog Proに保存します。</p></div>
+    </section>
+  </main>
+  <div class="footer">RunLog Pro · Toyama Marathon 2026</div>
 </div>
 
-<div class="section">🎯 富山マラソン攻略</div>
-<div class="card good">
-<p><b>今週のテーマ：</b>「前半を抑えて、後半まで一定リズム」</p>
-<div class="route">
-<div><b>0–10km</b><small>5:45–5:50/km<br>余裕を残す</small></div>
-<div><b>10–20km</b><small>5:41–5:45/km<br>一定ペース</small></div>
-<div><b>新湊大橋</b><small>ペースより努力度<br>無理に上げない</small></div>
-<div><b>20–30km</b><small>補給確認<br>フォーム維持</small></div>
-<div><b>30–35km</b><small>心拍・脚を確認<br>焦らない</small></div>
-<div><b>35km–Goal</b><small>余力があれば<br>徐々に上げる</small></div>
-</div>
-<p style="color:var(--muted);font-size:13px">※これは練習用の目安です。実際のレース戦略は当日の天候・体調・公式案内を優先してください。</p>
-</div>
-
-<div class="two">
-<div>
-<div class="section">📊 月間走行距離</div>
-<div class="card">
-<div class="bar" id="chart"></div>
-<p style="font-size:13px;color:var(--muted)">直近6か月。実走データを登録すると自動更新。</p>
-</div>
-</div>
-<div>
-<div class="section">❤️ 心拍×ペース</div>
-<div class="card">
-<p><b>Easy基準</b><br><span class="tag">目安 HR 140–150</span> <span class="tag">楽に会話できる</span></p>
-<p><b>見るポイント</b></p>
-<ul style="padding-left:20px;color:#4b5563;font-size:14px">
-<li>同じHRでペースが速くなったか</li>
-<li>後半にHRが急上昇していないか</li>
-<li>暑さ・疲労・坂の影響を分ける</li>
-</ul>
-<div class="alert card"><b>今日の提案</b><br>Easyなら「ペースを追わず心拍を守る」。</div>
-</div>
-</div>
-
-<div class="section">📝 ラン記録を追加</div>
-<div class="card">
-<div class="form">
-<div><label>日付</label><input id="date" type="date"></div>
-<div><label>距離 km</label><input id="dist" type="number" step="0.1"></div>
-<div><label>ペース min/km</label><input id="pace" placeholder="5:45"></div>
-<div><label>平均心拍 bpm</label><input id="hr" type="number"></div>
-</div>
-<div class="form" style="margin-top:10px">
-<div><label>種類</label><select id="type"><option>Easy</option><option>Long</option><option>Marathon Pace</option><option>Threshold</option><option>Interval</option><option>Recovery</option><option>Race</option></select></div>
-<div><label>気温 ℃</label><input id="temp" type="number"></div>
-<div><label>疲労感 1–10</label><input id="fatigue" type="number" min="1" max="10"></div>
-<div><label>メモ</label><input id="memo" placeholder="脚の状態・補給など"></div>
-</div>
-<div class="actions"><button onclick="addRun()">記録する</button><button class="secondary" onclick="exportData()">JSONバックアップ</button><button class="secondary" onclick="clearRuns()">全記録削除</button></div>
-</div>
-
-
-<div class="section">⌚ Garminデータ取り込み（API不要）</div>
-<div class="card">
-<p style="margin-top:0"><b>FIT / GPX / TCX</b> ファイルを選ぶと、RunLog Proがラン情報を読み取って記録します。</p>
-<input id="garminFile" type="file" accept=".fit,.gpx,.tcx,application/octet-stream,application/xml,text/xml">
-<div class="actions"><button onclick="importGarmin()">Garminデータを取り込む</button></div>
-<p id="importStatus" style="font-size:13px;color:#6b7280"></p>
-</div>
-
-<div class="section">🤖 今日の自動分析</div>
-<div class="card" id="coach">
-<b>分析待ち</b>
-<p style="color:#6b7280;font-size:13px">Garminデータを取り込むか、ランを記録するとここに表示します。</p>
-</div>
-<div class="section">📅 最近のラン</div>
-<div class="card">
-<table><thead><tr><th>日付</th><th>距離</th><th>ペース</th><th>HR</th><th>種類</th><th>メモ</th></tr></thead><tbody id="runs"></tbody></table>
-</div>
-
-<div class="section">🔥 富山マラソンまでの重点チェック</div>
-<div class="grid">
-<div class="card"><b>Long Run</b><p style="font-size:13px;color:var(--muted)">20–30km級を無理なく。後半の心拍とペースを見る。</p></div>
-<div class="card"><b>Mペース</b><p style="font-size:13px;color:var(--muted)">目標ペース付近でフォームと呼吸を確認。</p></div>
-<div class="card"><b>補給</b><p style="font-size:13px;color:var(--muted)">Long Runで本番の補給を試す。</p></div>
-<div class="card"><b>疲労管理</b><p style="font-size:13px;color:var(--muted)">疲労感が高い日は距離より回復を優先。</p></div>
-</div>
-</main>
 <script>
-const KEY="runlogpro_2026_v2";
-let runs=JSON.parse(localStorage.getItem(KEY)||"[]");
-document.getElementById("date").value=new Date().toISOString().slice(0,10);
-function save(){localStorage.setItem(KEY,JSON.stringify(runs));render()}
-function addRun(){
- const r={date:date.value,dist:+dist.value,pace:pace.value,hr:+hr.value,type:type.value,temp:+temp.value,fatigue:+fatigue.value,memo:memo.value,source:"manual"};
- if(!r.date||!r.dist){alert("日付と距離を入力してください");return}
- runs.unshift(r);save();dist.value="";pace.value="";hr.value="";temp.value="";fatigue.value="";memo.value="";
-}
-function parsePace(seconds){
- if(!isFinite(seconds)||seconds<=0)return "";
- let m=Math.floor(seconds/60), sec=Math.round(seconds%60);
- if(sec===60){m++;sec=0}
- return m+":"+String(sec).padStart(2,"0");
-}
-function xmlText(doc, tag){
- const e=doc.getElementsByTagName(tag)[0];
- return e ? parseFloat(e.textContent) : NaN;
-}
-async function importGarmin(){
- const f=document.getElementById("garminFile").files[0], st=document.getElementById("importStatus");
- if(!f){st.textContent="ファイルを選択してください。";return}
- try{
-   const ext=f.name.toLowerCase().split(".").pop();
-   let r={date:new Date().toISOString().slice(0,10),dist:0,pace:"",hr:0,type:"Easy",temp:0,fatigue:0,memo:"Garminからインポート",source:"garmin"};
-   if(ext==="gpx"){
-     const text=await f.text(), doc=new DOMParser().parseFromString(text,"application/xml");
-     const pts=[...doc.getElementsByTagName("trkpt")];
-     if(pts.length>1){
-       const times=pts.map(x=>new Date((x.getElementsByTagName("time")[0]||{}).textContent||"").getTime()).filter(isFinite);
-       const first=pts[0], last=pts[pts.length-1];
-       r.date=(times[0]?new Date(times[0]):new Date()).toISOString().slice(0,10);
-       let d=0;
-       const R=6371;
-       const rad=x=>x*Math.PI/180;
-       for(let i=1;i<pts.length;i++){
-         const a=pts[i-1],b=pts[i],la1=rad(+a.getAttribute("lat")),la2=rad(+b.getAttribute("lat")),dlon=rad(+b.getAttribute("lon")-+a.getAttribute("lon"));
-         const dlat=la2-la1; const q=Math.sin(dlat/2)**2+Math.cos(la1)*Math.cos(la2)*Math.sin(dlon/2)**2;
-         d+=2*R*Math.asin(Math.min(1,Math.sqrt(q)));
-       }
-       r.dist=d;
-       if(times.length>1) r.pace=parsePace((times[times.length-1]-times[0])/1000/r.dist);
-     }
-   } else if(ext==="tcx"){
-     const text=await f.text(), doc=new DOMParser().parseFromString(text,"application/xml");
-     const meters=xmlText(doc,"DistanceMeters"), seconds=xmlText(doc,"TotalTimeSeconds");
-     r.dist=isFinite(meters)?meters/1000:0; r.pace=isFinite(seconds)&&r.dist?parsePace(seconds/r.dist):"";
-     const t=doc.getElementsByTagName("Time")[0]; if(t)r.date=new Date(t.textContent).toISOString().slice(0,10);
-     const hr=xmlText(doc,"AverageHeartRateBpm"); r.hr=isFinite(hr)?hr:0;
-   } else {
-     // FIT is binary; browser-only version stores the file as an attachment-like record.
-     // A full FIT decoder can be added later without changing the user workflow.
-     r.memo="Garmin FITを受信（FIT詳細解析は次段階）";
-   }
-   if(!r.dist && ext!=="fit"){throw new Error("距離を読み取れませんでした")}
-   if(ext==="fit" && !r.dist) {
-     // Preserve the file name so the import is not lost; ask for minimal values only for this version.
-     const d=prompt("FITの距離(km)を入力してください（例 10.2）","");
-     if(!d)return; r.dist=parseFloat(d)||0;
-     const p=prompt("平均ペース(min/km)を入力してください（例 5:38）",""); r.pace=p||"";
-     const h=prompt("平均心拍(bpm)を入力してください（任意）",""); r.hr=parseFloat(h)||0;
-   }
-   runs.unshift(r); save();
-   st.textContent=`取り込み完了：${r.date} / ${r.dist.toFixed(1)} km / ${r.pace||"ペース未取得"}。`;
- }catch(e){st.textContent="取り込みに失敗しました："+e.message}
-}
-function coachAnalysis(){
- const box=document.getElementById("coach");
- if(!runs.length){box.innerHTML="<b>分析待ち</b><p style='color:#6b7280;font-size:13px'>まずランを記録してください。</p>";return}
- const recent=runs.slice(0,8), latest=recent[0];
- const total7=recent.filter(r=>(Date.now()-new Date(r.date).getTime())<=7*86400000).reduce((a,r)=>a+r.dist,0);
- const hrRuns=recent.filter(r=>r.hr>0&&r.pace);
- let msg="練習データを蓄積中。";
- if(latest.type==="Long" || latest.dist>=20) msg="Long Runを実施。後半のペース低下と心拍上昇を次回確認しましょう。";
- else if(latest.type==="Marathon Pace") msg="Mペース練習を実施。目標ペース付近で心拍が安定しているか確認しましょう。";
- else if(latest.type==="Easy" || latest.type==="Recovery") msg="Easy/Recoveryはペースより余裕度と心拍を優先。疲労が高ければ距離を短くするのが安全です。";
- let compare="";
- if(hrRuns.length>=2){
-   const a=hrRuns[0], b=hrRuns[1];
-   compare=`直近2回：心拍 ${a.hr}→${b.hr} bpm。ペースと合わせて推移を確認しましょう。`;
- }
- box.innerHTML=`<b>最新：${latest.date} / ${latest.dist.toFixed(1)}km</b><p>${msg}</p><p style="color:#4b5563;font-size:13px">${compare}</p><p><b>直近7日間：</b>${total7.toFixed(1)}km　／　<b>富山マラソンまで：</b>${Math.max(0,Math.ceil((race-new Date())/86400000))}日</p>`;
-}
+const STORE='runlogpro_2026_v3';
+const RACE=new Date('2026-11-01T09:00:00+09:00');
+let runs=JSON.parse(localStorage.getItem(STORE)||'[]');
+const $=id=>document.getElementById(id);
+function save(){localStorage.setItem(STORE,JSON.stringify(runs)); render();}
+function pad(n){return String(n).padStart(2,'0')}
+function todayStr(){const d=new Date();return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`}
+function parseTime(s){if(!s)return null; const a=String(s).trim().split(':').map(Number); if(a.some(Number.isNaN))return null; if(a.length===3)return a[0]*3600+a[1]*60+a[2]; if(a.length===2)return a[0]*60+a[1]; if(a.length===1)return a[0]; return null}
+function fmtTime(sec){if(sec==null||!isFinite(sec))return '--';sec=Math.round(sec);return `${pad(Math.floor(sec/3600))}:${pad(Math.floor(sec%3600/60))}:${pad(sec%60)}`}
+function paceFrom(dist,sec){return dist>0&&sec>0?sec/dist:null}
+function fmtPace(minPerKm){if(minPerKm==null||!isFinite(minPerKm))return '--';const sec=Math.round(minPerKm*60);return `${Math.floor(sec/60)}:${pad(sec%60)}/km`}
+function num(v){return v==null||v===''||!isFinite(Number(v))?null:Number(v)}
+function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+function localDate(d){if(!d)return todayStr(); if(d instanceof Date)return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; return String(d).slice(0,10)}
+function monthKey(date){return String(date).slice(0,7)}
+function updateCountdown(){const diff=RACE-new Date();$('countdown').textContent=diff>0?`${Math.ceil(diff/86400000)}日`:'大会当日';}
 function render(){
- const month=new Date().toISOString().slice(0,7);
- const km=runs.filter(r=>r.date.startsWith(month)).reduce((a,r)=>a+r.dist,0);
- monthly.textContent=km.toFixed(1)+" km"; rate.textContent=Math.min(100,km/150*100).toFixed(0)+"%";prog.style.width=Math.min(100,km/150*100)+"%";
- runsEl=document.getElementById("runs");runsEl.innerHTML=runs.slice(0,15).map(r=>`<tr><td>${r.date}</td><td>${r.dist.toFixed(1)}km</td><td>${r.pace||"-"}</td><td>${r.hr||"-"}</td><td><span class="tag">${r.type}</span></td><td>${r.memo||""}</td></tr>`).join("")||"<tr><td colspan=6 style='color:#6b7280'>まだ記録がありません。</td></tr>";
- const months=[]; for(let i=5;i>=0;i--){let d=new Date();d.setMonth(d.getMonth()-i);let k=d.toISOString().slice(0,7);months.push([k,runs.filter(r=>r.date.startsWith(k)).reduce((a,r)=>a+r.dist,0)])}
- const max=Math.max(30,...months.map(x=>x[1]));document.getElementById("chart").innerHTML=months.map(x=>`<div style="flex:1;text-align:center"><span style="display:block;height:${Math.max(8,x[1]/max*140)}px;background:#60a5fa;border-radius:7px 7px 2px 2px"></span><small>${x[0].slice(5)}月<br>${x[1].toFixed(0)}km</small></div>`).join("");
- coachAnalysis();
+ const now=new Date(), mk=`${now.getFullYear()}-${pad(now.getMonth()+1)}`;
+ const month=runs.filter(r=>monthKey(r.date)===mk); const km=month.reduce((s,r)=>s+(r.distance||0),0);
+ $('monthKm').textContent=`${km.toFixed(1)} km`; $('monthRuns').textContent=month.length; $('monthBar').style.width=Math.min(100,km/150*100)+'%'; $('monthGoalText').textContent=`目標 150 km · ${Math.round(km/150*100)}%`;
+ const sorted=[...runs].sort((a,b)=>String(b.date).localeCompare(String(a.date)));
+ if(sorted[0]){$('lastPace').textContent=fmtPace(sorted[0].pace);$('lastRunInfo').textContent=`${sorted[0].date} · ${sorted[0].distance.toFixed(2)} km · ${sorted[0].type||'Run'}`}else{$('lastPace').textContent='--';$('lastRunInfo').textContent='まだ記録がありません'}
+ const months=[];for(let i=11;i>=0;i--){const d=new Date(now.getFullYear(),now.getMonth()-i,1);const key=`${d.getFullYear()}-${pad(d.getMonth()+1)}`;months.push({key,label:`${d.getMonth()+1}月`,km:runs.filter(r=>monthKey(r.date)===key).reduce((s,r)=>s+(r.distance||0),0)})}
+ const max=Math.max(150,...months.map(x=>x.km),1);$('monthChart').innerHTML=months.map(x=>`<div class="col"><div class="small">${x.km?x.km.toFixed(0):''}</div><div class="barcol" style="height:${Math.max(2,x.km/max*125)}px"></div><div class="axis">${x.label}</div></div>`).join('');
+ if(sorted[0]){const r=sorted[0];let t=`${r.type||'Run'}、${r.distance.toFixed(2)} km。`;if(r.hr)t+=`平均心拍 ${r.hr} bpm。`;if(r.pace)t+=`ペース ${fmtPace(r.pace)}。`;t+=r.feel?`体調は「${esc(r.feel)}」。`:'';$('analysis').innerHTML=t+(r.note?`<br><span class="muted">メモ：${esc(r.note)}</span>`:'')}else $('analysis').textContent='ランを登録すると、ペース・心拍・距離から簡易分析を表示します。';
+ $('historyCount').textContent=`${sorted.length}件`;
+ $('historyTable').innerHTML=sorted.length?`<table><thead><tr><th>日付</th><th>距離</th><th>ペース</th><th>心拍</th><th>種別</th><th>操作</th></tr></thead><tbody>${sorted.map(r=>`<tr><td>${esc(r.date)}</td><td>${Number(r.distance).toFixed(2)} km</td><td>${fmtPace(r.pace)}</td><td>${r.hr??'--'}</td><td>${esc(r.type||'--')}</td><td><button class="btn danger small" onclick="removeRun('${r.id}')">削除</button></td></tr>`).join('')}</tbody></table>`:'<div class="empty">まだラン記録がありません。</div>';
 }
-function exportData(){const blob=new Blob([JSON.stringify(runs,null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="runlogpro-backup.json";a.click()}
-function clearRuns(){if(confirm("すべてのラン記録を削除しますか？")){runs=[];save()}}
-const race=new Date("2026-11-01T09:00:00+09:00");document.getElementById("days").textContent=Math.max(0,Math.ceil((race-new Date())/86400000))+"日";
-render();
-coachAnalysis();
+window.removeRun=id=>{if(confirm('この記録を削除しますか？')){runs=runs.filter(r=>r.id!==id);save()}};
+function addRun(r){r.id=r.id||`${Date.now()}_${Math.random().toString(36).slice(2)}`;runs.push(r);save()}
+$('saveEntry').onclick=()=>{const dist=num($('eDist').value);if(!dist||dist<=0){$('entryStatus').innerHTML='<div class="status err">距離を入力してください。</div>';return}let sec=parseTime($('eTime').value);let pace=num($('ePace').value);if(sec==null&&pace!=null)sec=pace*60*dist;if(pace==null&&sec!=null)pace=paceFrom(dist,sec);addRun({date:$('eDate').value||todayStr(),distance:dist,time:sec,pace,hr:num($('eHr').value),cadence:num($('eCad').value),gain:num($('eGain').value),temp:num($('eTemp').value),type:$('eType').value,feel:$('eFeel').value,note:$('eNote').value,source:'manual'});$('entryStatus').innerHTML='<div class="status ok">登録しました。</div>'};
+$('clearEntry').onclick=()=>{['eDist','eTime','ePace','eHr','eCad','eGain','eTemp','eNote'].forEach(id=>$(id).value='');$('eDate').value=todayStr()};
+$('eDate').value=todayStr();
+
+document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));b.classList.add('active');$(b.dataset.tab).classList.add('active');render()});
+
+function firstMsg(messages,key){const arr=messages[key];return Array.isArray(arr)&&arr.length?arr[arr.length-1]:null}
+function pick(o,keys){for(const k of keys){if(o&&o[k]!=null&&!Number.isNaN(Number(o[k])))return Number(o[k])}return null}
+function toSeconds(v){if(v==null)return null;if(v instanceof Date)return null;const n=Number(v);if(!isFinite(n))return null;return n>100000? n/1000:n}
+function fitSummary(messages){
+ const s=firstMsg(messages,'sessionMesgs')||firstMsg(messages,'lapMesgs')||{};
+ const records=messages.recordMesgs||[];
+ let dist=pick(s,['totalDistance']); if(dist==null&&records.length){const vals=records.map(x=>pick(x,['distance'])).filter(v=>v!=null);if(vals.length)dist=Math.max(...vals)} if(dist!=null&&dist>1000)dist/=1000; // session distance is meters; records are meters
+ let time=pick(s,['totalTimerTime','totalElapsedTime']);
+ if(time==null&&records.length){const first=records[0]?.timestamp,last=records[records.length-1]?.timestamp;if(first instanceof Date&&last instanceof Date)time=(last-first)/1000}
+ let pace=pick(s,['avgSpeed']); if(pace!=null){if(pace>0)pace=60/pace/1.609344; /* if km/h */}
+ if(pace==null)pace=paceFrom(dist,time);
+ // Garmin FIT SDK avgSpeed is m/s after scale/offset, so correct that here when plausible.
+ const sp=pick(s,['avgSpeed']); if(sp!=null&&sp>0&&sp<20)pace=1/sp*1000/60;
+ const hr=pick(s,['avgHeartRate']); const cad=pick(s,['avgCadence']); const gain=pick(s,['totalAscent']); const maxHr=pick(s,['maxHeartRate']);
+ let start=s.startTime instanceof Date?s.startTime:null;
+ if(!start&&records[0]?.timestamp instanceof Date)start=records[0].timestamp;
+ return {date:localDate(start),distance:dist||0,time,pace,hr,cadence:cad,gain,temp:null,type:'Garmin',feel:'',note:`FIT自動取込${maxHr?` · 最大心拍 ${Math.round(maxHr)} bpm`:''}`,source:'Garmin FIT'}
+}
+async function importFIT(file){
+ const status=$('importStatus');status.className='status';status.textContent='FITを解析中…';
+ try{
+   const mod=await import('https://cdn.jsdelivr.net/npm/@garmin/fitsdk@21.214.0/src/index.js');
+   const bytes=new Uint8Array(await file.arrayBuffer());
+   const stream=mod.Stream.fromArrayBuffer(bytes.buffer);
+   const decoder=new mod.Decoder(stream);
+   if(!decoder.isFIT())throw new Error('FITファイルとして認識できませんでした。');
+   const integrity=decoder.checkIntegrity();
+   if(!integrity)console.warn('FIT integrity check failed; attempting decode anyway.');
+   const result=decoder.read({applyScaleAndOffset:true,expandSubFields:true,expandComponents:true,convertTypesToStrings:true,convertDateTimesToDates:true,includeUnknownData:false,mergeHeartRates:true});
+   if(result.errors?.length)console.warn(result.errors);
+   const r=fitSummary(result.messages||{});
+   if(!r.distance)throw new Error('FITから走行距離を取得できませんでした。');
+   addRun(r);
+   status.className='status ok';status.innerHTML=`自動登録しました：<b>${r.distance.toFixed(2)} km</b> · ${fmtPace(r.pace)}${r.hr?` · HR ${Math.round(r.hr)}`:''}${r.cadence?` · Cad ${Math.round(r.cadence)}`:''}`;
+ }catch(e){console.error(e);status.className='status err';status.textContent=`FIT解析に失敗しました：${e.message||e}`}
+}
+function parseGPX(text){const xml=new DOMParser().parseFromString(text,'application/xml');const pts=[...xml.querySelectorAll('trkpt')];if(!pts.length)throw new Error('GPXのトラックが見つかりません。');let dist=0,start=null,end=null,ele0=null,ele1=null;const R=6371000;function hav(a,b){const p=Math.PI/180,dlat=(b.lat-a.lat)*p,dlon=(b.lon-a.lon)*p;const q=Math.sin(dlat/2)**2+Math.cos(a.lat*p)*Math.cos(b.lat*p)*Math.sin(dlon/2)**2;return 2*R*Math.asin(Math.sqrt(q))}let prev=null;for(const p of pts){const lat=Number(p.getAttribute('lat')),lon=Number(p.getAttribute('lon'));const t=p.querySelector('time')?.textContent;if(t){const d=new Date(t);if(!start)start=d;end=d}const ele=Number(p.querySelector('ele')?.textContent);if(!Number.isNaN(ele)){if(ele0==null)ele0=ele;ele1=ele}const cur={lat,lon};if(prev)dist+=hav(prev,cur);prev=cur}const sec=start&&end?(end-start)/1000:null;return {date:localDate(start),distance:dist/1000,time:sec,pace:paceFrom(dist/1000,sec),type:'Garmin GPX',source:'GPX',gain:ele0!=null&&ele1!=null?Math.max(0,ele1-ele0):null,hr:null,cadence:null,temp:null,feel:'',note:'GPX自動取込'}}
+function parseTCX(text){const xml=new DOMParser().parseFromString(text,'application/xml');const laps=[...xml.getElementsByTagName('Lap')];let dist=0,time=0,hrSum=0,hrN=0,cadSum=0,cadN=0,start=null;for(const l of laps){const d=Number(l.querySelector('DistanceMeters')?.textContent);const t=Number(l.querySelector('TotalTimeSeconds')?.textContent);if(isFinite(d))dist+=d;if(isFinite(t))time+=t;const av=Number(l.querySelector('AverageHeartRateBpm Value')?.textContent);if(isFinite(av)){hrSum+=av;hrN++}const c=Number(l.querySelector('Cadence')?.textContent);if(isFinite(c)){cadSum+=c;cadN++}const st=l.querySelector('StartTime')?.textContent;if(st&&!start)start=new Date(st)}if(!dist)throw new Error('TCXから距離を取得できませんでした。');return {date:localDate(start),distance:dist/1000,time,pace:paceFrom(dist/1000,time),hr:hrN?hrSum/hrN:null,cadence:cadN?cadSum/cadN:null,gain:null,temp:null,type:'Garmin TCX',source:'TCX',feel:'',note:'TCX自動取込'}}
+$('importBtn').onclick=async()=>{const f=$('fileInput').files[0];if(!f){$('importStatus').className='status err';$('importStatus').textContent='先にFIT / TCX / GPXファイルを選択してください。';return}const ext=f.name.toLowerCase().split('.').pop();if(ext==='fit')return importFIT(f);try{const text=await f.text();const r=ext==='tcx'?parseTCX(text):parseGPX(text);addRun(r);$('importStatus').className='status ok';$('importStatus').textContent=`自動登録しました：${r.distance.toFixed(2)} km · ${fmtPace(r.pace)}`;}catch(e){$('importStatus').className='status err';$('importStatus').textContent=`解析に失敗しました：${e.message||e}`}};
+
+$('exportJson').onclick=()=>{const blob=new Blob([JSON.stringify({version:3,exportedAt:new Date().toISOString(),runs},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`runlogpro_backup_${todayStr()}.json`;a.click();URL.revokeObjectURL(a.href);$('backupStatus').innerHTML='<div class="status ok">JSONを書き出しました。</div>'};
+$('importJson').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const data=JSON.parse(await f.text());if(!Array.isArray(data.runs))throw new Error('runsが見つかりません');runs=data.runs;save();$('backupStatus').innerHTML='<div class="status ok">JSONを復元しました。</div>'}catch(err){$('backupStatus').innerHTML=`<div class="status err">復元できません：${esc(err.message)}</div>`}};
+$('clearAll').onclick=()=>{if(confirm('RunLog Proの全ラン記録を削除します。バックアップ済みですか？')){runs=[];save();$('backupStatus').innerHTML='<div class="status ok">全データを削除しました。</div>'}};
+updateCountdown();setInterval(updateCountdown,60000);render();
 </script>
 </body></html>
