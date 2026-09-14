@@ -53,37 +53,124 @@ function parsePace(seconds){if(!isFinite(seconds)||seconds<=0)return "";let m=Ma
 function xmlText(doc,tag){const e=doc.getElementsByTagName(tag)[0];return e?parseFloat(e.textContent):NaN}
 function dateFromAny(v){if(!v)return new Date();if(v instanceof Date)return v;return new Date(v)}
 async function decodeFit(file){
- const status=$('importStatus');
- status.textContent="FITを解析中…（初回のみGarmin公式SDKを読み込みます）";
- const {Decoder,Stream,Utils}=await import('https://cdn.jsdelivr.net/npm/@garmin/fitsdk@21.214.0/+esm');
- const buf=await file.arrayBuffer();
- const bytes=new Uint8Array(buf);
- const stream=Stream.fromArrayBuffer(buf);
- if(!Decoder.isFIT(stream)) throw new Error("FITファイルとして認識できませんでした");
- const decoder=new Decoder(stream);
- const result=decoder.read({applyScaleAndOffset:true,expandSubFields:true,expandComponents:true,convertTypesToStrings:true,convertDateTimesToDates:true,includeUnknownData:false,mergeHeartRates:true});
- const msgs=result.messages||{};
- const sessions=msgs.session||[];
- const s=Array.isArray(sessions)?sessions[0]:sessions;
- const laps=Array.isArray(msgs.lap)?msgs.lap:[];
- const records=Array.isArray(msgs.record)?msgs.record:[];
- let dist=Number(s?.totalDistance)||0;
- if(!dist&&records.length){const ds=records.map(x=>Number(x.distance)).filter(Number.isFinite);if(ds.length)dist=Math.max(...ds)}
- dist=dist>100?dist/1000:dist;
- let seconds=Number(s?.totalTimerTime)||Number(s?.totalElapsedTime)||0;
- if(seconds>100000)seconds/=1000;
- if(!seconds&&records.length){const ts=records.map(x=>dateFromAny(x.timestamp).getTime()).filter(Number.isFinite);if(ts.length>1)seconds=(Math.max(...ts)-Math.min(...ts))/1000}
- const avgSpeed=Number(s?.enhancedAvgSpeed)||Number(s?.avgSpeed)||0;
- if(!seconds&&avgSpeed>0&&dist>0)seconds=dist*1000/avgSpeed;
- const avgHr=Number(s?.avgHeartRate)||Number(s?.avgHr)||0;
- const avgCad=Number(s?.avgCadence)||0;
- const ascent=Number(s?.totalAscent)||0;
- let d=s?.startTime||s?.timestamp||s?.startTimestamp;
- if(!d&&records.length)d=records.find(x=>x.timestamp)?.timestamp;
- const dt=dateFromAny(d);
- const r={date:isNaN(dt.getTime())?new Date().toISOString().slice(0,10):dt.toISOString().slice(0,10),dist:+dist.toFixed(3),pace:parsePace(seconds/dist),hr:Math.round(avgHr)||0,type:"Easy",temp:0,fatigue:0,memo:`Garmin FIT自動解析 / 上昇${Math.round(ascent)||0}m / ${Math.round(avgCad)||0}spm`,source:"garmin-fit"};
- if(!r.dist)throw new Error("FITから距離を取得できませんでした");
- return {r,errors:result.errors||[]};
+  const status=$('importStatus');
+  status.textContent="FITを解析中…（Garmin公式SDKを読み込みます）";
+
+  const mod=await import('https://cdn.jsdelivr.net/npm/@garmin/fitsdk@21.214.0/+esm');
+  const Decoder=mod.Decoder||mod.default?.Decoder;
+  const Stream=mod.Stream||mod.default?.Stream;
+  if(!Decoder||!Stream) throw new Error("FIT SDKの読み込みに失敗しました");
+
+  const buf=await file.arrayBuffer();
+  const stream=Stream.fromArrayBuffer(buf);
+  if(!Decoder.isFIT(stream)) throw new Error("FITファイルとして認識できませんでした");
+
+  const decoder=new Decoder(stream);
+  const result=decoder.read({
+    applyScaleAndOffset:true,
+    expandSubFields:true,
+    expandComponents:true,
+    convertTypesToStrings:true,
+    convertDateTimesToDates:true,
+    includeUnknownData:true,
+    mergeHeartRates:true
+  });
+
+  const msgs=result.messages||{};
+  const pick=(obj,...names)=>{
+    for(const n of names){
+      if(obj && obj[n]!==undefined && obj[n]!==null && obj[n]!=='' && Number.isFinite(Number(obj[n]))===false){
+        return obj[n];
+      }
+      if(obj && obj[n]!==undefined && obj[n]!==null && obj[n]!=='') return obj[n];
+    }
+    return undefined;
+  };
+  const num=(obj,...names)=>{
+    const v=pick(obj,...names);
+    const n=Number(v);
+    return Number.isFinite(n)?n:0;
+  };
+  const arr=v=>Array.isArray(v)?v:(v?[v]:[]);
+
+  const sessions=arr(msgs.session);
+  const laps=arr(msgs.lap);
+  const records=arr(msgs.record);
+  const s=sessions[0]||{};
+
+  // Garmin FIT distance is normally meters after scale/offset.
+  // Some SDK representations can expose kilometers, so normalize defensively.
+  const normalizeDistanceKm=v=>{
+    const n=Number(v);
+    if(!Number.isFinite(n)||n<=0)return 0;
+    if(n>1000)return n/1000; // meters
+    if(n>100)return n/1000;  // meters, short activity
+    return n;                 // already km
+  };
+
+  let dist=normalizeDistanceKm(num(s,'totalDistance','total_distance','distance'));
+
+  if(!dist && laps.length){
+    const lapSum=laps.reduce((a,l)=>a+normalizeDistanceKm(num(l,'totalDistance','total_distance','distance')),0);
+    if(lapSum>0)dist=lapSum;
+  }
+
+  if(!dist && records.length){
+    const ds=records.map(x=>normalizeDistanceKm(num(x,'distance','totalDistance','total_distance'))).filter(v=>v>0);
+    if(ds.length)dist=Math.max(...ds);
+  }
+
+  // Time in seconds. SDK normally returns seconds for totalTimerTime.
+  let seconds=num(s,'totalTimerTime','total_timer_time','totalElapsedTime','total_elapsed_time');
+  if(seconds>100000)seconds/=1000;
+
+  if(!seconds && laps.length){
+    seconds=laps.reduce((a,l)=>{
+      let t=num(l,'totalTimerTime','total_timer_time','totalElapsedTime','total_elapsed_time');
+      if(t>100000)t/=1000;
+      return a+t;
+    },0);
+  }
+
+  if(!seconds && records.length){
+    const ts=records.map(x=>{
+      const v=x.timestamp;
+      return v instanceof Date?v.getTime():new Date(v||0).getTime();
+    }).filter(Number.isFinite);
+    if(ts.length>1)seconds=(Math.max(...ts)-Math.min(...ts))/1000;
+  }
+
+  const avgSpeed=num(s,'enhancedAvgSpeed','enhanced_avg_speed','avgSpeed','avg_speed');
+  if(!seconds && avgSpeed>0 && dist>0){
+    // FIT speed is m/s.
+    seconds=(dist*1000)/avgSpeed;
+  }
+
+  const avgHr=Math.round(num(s,'avgHeartRate','avg_heart_rate','avgHr'));
+  const avgCad=Math.round(num(s,'avgCadence','avg_cadence'));
+  const ascent=Math.round(num(s,'totalAscent','total_ascent'));
+
+  let d=s.startTime||s.start_time||s.timestamp||s.startTimestamp||s.start_timestamp;
+  if(!d&&records.length)d=records.find(x=>x.timestamp)?.timestamp;
+  const dt=d instanceof Date?d:new Date(d||Date.now());
+
+  if(!dist) {
+    throw new Error("FITから距離を取得できませんでした（Garmin FITのsession/lap/recordに距離が見つかりません）");
+  }
+
+  const r={
+    date:isNaN(dt.getTime())?new Date().toISOString().slice(0,10):dt.toISOString().slice(0,10),
+    dist:+dist.toFixed(3),
+    pace:seconds>0?parsePace(seconds/dist):"",
+    hr:avgHr||0,
+    type:"Easy",
+    temp:0,
+    fatigue:0,
+    memo:`Garmin FIT自動解析 / 上昇${ascent||0}m / ${avgCad||0}spm`,
+    source:"garmin-fit"
+  };
+
+  return {r,errors:result.errors||[]};
 }
 async function importGarmin(){const f=$('garminFile').files[0],st=$('importStatus');if(!f){st.textContent="ファイルを選択してください。";return}try{const ext=f.name.toLowerCase().split('.').pop();let r={date:new Date().toISOString().slice(0,10),dist:0,pace:"",hr:0,type:"Easy",temp:0,fatigue:0,memo:"Garminからインポート",source:"garmin"};if(ext==='fit'){const x=await decodeFit(f);r=x.r;r.memo+=` / ${f.name}`;runs.unshift(r);save();st.className='status success';st.textContent=`FIT取り込み完了：${r.date} / ${r.dist.toFixed(1)} km / ${r.pace||'ペース未取得'} / HR ${r.hr||'-'}`;return}
 if(ext==='gpx'){const text=await f.text(),doc=new DOMParser().parseFromString(text,'application/xml'),pts=[...doc.getElementsByTagName('trkpt')];if(pts.length>1){const times=pts.map(x=>new Date((x.getElementsByTagName('time')[0]||{}).textContent||'').getTime()).filter(isFinite);r.date=(times[0]?new Date(times[0]):new Date()).toISOString().slice(0,10);let d=0,R=6371,rad=x=>x*Math.PI/180;for(let i=1;i<pts.length;i++){const a=pts[i-1],b=pts[i],la1=rad(+a.getAttribute('lat')),la2=rad(+b.getAttribute('lat')),dlon=rad(+b.getAttribute('lon')-+a.getAttribute('lon')),dlat=la2-la1,q=Math.sin(dlat/2)**2+Math.cos(la1)*Math.cos(la2)*Math.sin(dlon/2)**2;d+=2*R*Math.asin(Math.min(1,Math.sqrt(q)))}r.dist=d;if(times.length>1)r.pace=parsePace((times[times.length-1]-times[0])/1000/r.dist)}}
