@@ -37,7 +37,7 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:4px}
 <main>
 <section class="card hero">
   <div><div class="small muted">次のレース</div><div id="raceName" class="big">富山マラソン2026</div><div id="countdown" style="font-weight:800;margin-top:5px"></div><div id="raceGoal" class="small muted"></div></div>
-  <div><div class="small muted">今日のおすすめ</div><div id="todayMenu" style="font-size:19px;font-weight:800;margin-top:5px">読み込み中…</div><div id="todayReason" class="small muted"></div></div>
+  <div><div class="small muted">今日のおすすめ</div><div id="todayMenu" style="font-size:19px;font-weight:800;margin-top:5px">読み込み中…</div><div id="todayPace" class="small" style="margin-top:5px;font-weight:700"></div><div id="todayReason" class="small muted"></div></div>
 </section>
 
 <section class="card"><h2>📊 今日の基本情報</h2>
@@ -50,7 +50,7 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:4px}
 <div style="margin-top:12px"><div class="small muted">今週の目標 <span id="weekGoalText"></span></div><div class="bar"><i id="weekBar" style="width:0%"></i></div></div>
 </section>
 
-<section class="card"><h2>🗓️ 今週のおすすめメニュー</h2><div id="weeklyMenu" class="menu"></div><div id="weekTheme" class="note" style="margin-top:10px"></div></section>
+<section class="card"><h2>🗓️ 今週のおすすめメニュー</h2><div id="weeklyMenu" class="menu"></div><div id="weekTheme" class="note" style="margin-top:10px"></div><div id="paceGuide" class="note" style="margin-top:8px"></div></section>
 
 <section class="card"><h2>🏁 レース設定</h2>
 <div class="formgrid">
@@ -140,33 +140,49 @@ function fatigueScore(){
   if(last&&(now-new Date(last.date))/86400000<0.8&&Number(last.dist||0)>12)score+=1;
   return score>=4?"高め":score>=2?"中": "低め";
 }
+function paceGuides(){
+  const mp=settings.goalMin*60/42.195, f=s=>fmtPace(s);
+  return {
+    mp:`${f(mp-5)}〜${f(mp+5)}`,
+    easy:`${f(mp+45)}〜${f(mp+90)}`,
+    long:`${f(mp+30)}〜${f(mp+75)}`,
+    threshold:`${f(mp-30)}〜${f(mp-15)}`,
+    interval:`${f(mp-75)}〜${f(mp-45)}`
+  };
+}
 function recommend(){
-  let now=new Date(), ws=startOfWeek(now), arr=runs.filter(r=>new Date(r.date)>=ws);
-  let km=arr.reduce((s,r)=>s+Number(r.dist||0),0);
-  let recent14=runs.filter(r=>(now-new Date(r.date))/86400000<=14);
-  let longAgo=runs.find(r=>Number(r.dist)>=15);
-  let hard=recent14.filter(r=>["Threshold","Interval","Race","Marathon Pace"].includes(r.type)).length;
-  if(fatigueScore()==="高め")return {title:"休養 / 20〜30分ゆるジョグ",reason:"直近の負荷が高め。回復を優先"};
-  if(!longAgo || (now-new Date(longAgo.date))/86400000>9)return {title:"Long 12〜18 km",reason:"ロング走の間隔が空いています"};
-  if(hard===0)return {title:"Marathon Pace 8〜10 km",reason:"今週は質の練習を1回"};
-  return {title:"Easy 5〜8 km",reason:"次の質練習に向けてつなぐ日"};
+  const g=paceGuides(), now=new Date(), recent14=runs.filter(r=>(now-new Date(r.date))/86400000<=14);
+  const hard=recent14.filter(r=>["Threshold","Interval","Race","Marathon Pace"].includes(r.type)).length;
+  const lastLong=runs.find(r=>Number(r.dist||0)>=15);
+  const longDays=lastLong?(now-new Date(lastLong.date))/86400000:999;
+  if(fatigueScore()==="高め") return {title:"休足 / 回復",pace:"完全休養、または30分以内のごくゆるジョグ",reason:"直近の負荷が高めなので回復を優先"};
+  if(now.getDay()===1) return {title:"休足",pace:"完全休養",reason:"月曜は固定の休足日にしています"};
+  if(now.getDay()===0 || longDays>9) return {title:"Long 14〜18 km",pace:`参考 ${g.long}`,reason:"週末のロング走。会話できる強度で"};
+  if(now.getDay()===3 && hard===0) return {title:"ポイント練習",pace:`Mペース ${g.mp} / 閾値 ${g.threshold}`,reason:"平日のポイント練習日。今週はMペース中心"};
+  return {title:"Easy 5〜8 km",pace:`参考 ${g.easy}`,reason:"疲労をためず、次のポイント練習・ロングにつなぐ"};
 }
 function buildWeek(){
-  let start=startOfWeek(new Date()), rec=recommend();
-  let names=["月","火","水","木","金","土","日"], plan=[];
-  for(let i=0;i<7;i++){
+  const start=startOfWeek(new Date()), now=new Date(), g=paceGuides();
+  const names=["月","火","水","木","金","土","日"];
+  const plans=[
+    ["休足","完全休養"],
+    ["Easy 5〜8 km",g.easy],
+    ["ポイント：Mペース 2〜3 km × 2〜3本",g.mp],
+    ["休養 / 補強","完全休養または軽い補強"],
+    ["Easy 5〜8 km",g.easy],
+    ["休養 / 30分ゆるジョグ",g.easy],
+    ["Long 14〜18 km",g.long]
+  ];
+  $("weeklyMenu").innerHTML=plans.map((p,i)=>{
     let d=new Date(start);d.setDate(start.getDate()+i);
-    let title="Easy 5〜8 km";
-    if(i===6)title="Long 14〜18 km";
-    if(i===2)title="Marathon Pace 6〜10 km";
-    if(i===4)title="休養";
-    if(sameDay(d,new Date()))title=rec.title;
-    plan.push({d,title});
-  }
-  $("weeklyMenu").innerHTML=plan.map((p,i)=>`<div class="day ${sameDay(p.d,new Date())?"today":""}"><b>${names[i]}</b><div class="small muted">${p.d.getMonth()+1}/${p.d.getDate()}</div><div style="margin-top:7px;font-size:13px">${esc(p.title)}</div></div>`).join("");
-  let phase=Math.ceil((new Date(settings.raceDate)-new Date())/604800000);
-  let theme=phase>8?"土台づくり：Easy中心＋週1回の質＋週末Long":phase>4?"マラソン特化：MペースとLongを安定":"仕上げ：無理に距離を増やさず疲労を残さない";
+    return `<div class="day ${sameDay(d,now)?"today":""}"><b>${names[i]}</b><div class="small muted">${d.getMonth()+1}/${d.getDate()}</div><div style="margin-top:7px;font-size:13px;font-weight:700">${esc(p[0])}</div><div class="small" style="margin-top:5px">${esc(p[1])}</div></div>`;
+  }).join("");
+  const weeks=Math.ceil((new Date(settings.raceDate+"T09:00:00")-now)/604800000);
+  const theme=weeks>8?"土台づくり：週4回・Easy中心＋平日1回ポイント＋週末Long":
+    weeks>4?"マラソン特化：週4回を安定。MペースとLongを軸に":
+    "仕上げ：距離を無理に増やさず、ポイント練習の量を抑えて疲労を残さない";
   $("weekTheme").textContent=`今週のテーマ：${theme}`;
+  $("paceGuide").textContent=`参考ペース（目標 ${Math.floor(settings.goalMin/60)}時間${settings.goalMin%60}分基準）：Easy ${g.easy} / Long ${g.long} / Mペース ${g.mp} / 閾値 ${g.threshold}`;
 }
 function render(){
   $("raceName").textContent=settings.raceName;
@@ -178,7 +194,7 @@ function render(){
   $("weekBar").style.width=Math.min(100,w.km/Math.max(1,settings.monthGoal/4)*100)+"%";
   $("fatigue").textContent=fatigueScore();
   let last=runs[0];$("lastRun").textContent=last?`${Number(last.dist).toFixed(1)} km`:"—";
-  let rec=recommend();$("todayMenu").textContent=rec.title;$("todayReason").textContent=rec.reason;
+  let rec=recommend();$("todayMenu").textContent=rec.title;$("todayPace").textContent=rec.pace;$("todayReason").textContent=rec.reason;
   let last10=runs.slice(0,10);$("runCount").textContent=runs.length;
   let p=avg(last10.map(r=>Number(r.paceSec||0)).filter(Boolean));$("avgPace").textContent=fmtPace(p);
   $("avgHr").textContent=(avg(last10.map(r=>Number(r.hr||0)).filter(Boolean))||0).toFixed(0)+" bpm";
