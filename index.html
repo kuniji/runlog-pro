@@ -195,11 +195,12 @@ async function decodeFit(file){
     dist:+dist.toFixed(3),
     pace:seconds>0?parsePace(seconds/dist):"",
     hr:avgHr||0,
-    type:"Easy",
+    type:autoType(dist,seconds>0?seconds/dist:0,avgHr,records),
     temp:0,
     fatigue:0,
     memo:`Garmin FIT自動解析 / 上昇${ascent||0}m / ${avgCad||0}spm`,
-    source:"garmin-fit"
+    source:"garmin-fit",
+    samples:sampleRecords(records)
   };
 
   return {r,errors:result.errors||[]};
