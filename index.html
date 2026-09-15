@@ -64,8 +64,8 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:4px}
 
 <section class="card"><h2>📥 Garmin FIT取り込み</h2>
 <div class="actions">
-<label style="display:inline-block"><button type="button">FITファイルを選択</button><input id="fitInput" type="file" accept=".fit,application/octet-stream"></label>
-<button id="sampleBtn" class="secondary">サンプルを追加</button>
+<button id="fitBtn" type="button">FITファイルを選択</button><input id="fitInput" type="file" accept=".fit,application/octet-stream" style="display:none">
+
 </div>
 <div id="importStatus" class="small muted" style="margin-top:9px"></div>
 <div class="note" style="margin-top:10px">FITはGarmin Connectから書き出した活動ファイルをそのまま選択してください。詳細画面では心拍・ピッチなどの記録点を表示します。</div>
@@ -233,9 +233,9 @@ async function importFit(file){
     $("importStatus").textContent=`取り込み成功：${dist.toFixed(1)} km / ${fmtPace(paceSec)} / HR ${Math.round(avg(hrs)||0)} / ピッチ ${Math.round(avg(cads)||0)} / 詳細 ${r.samples.length}点`;
   }catch(e){console.error(e);$("importStatus").textContent="取り込みエラー："+e.message}
 }
+$("fitBtn").onclick=()=>$("fitInput").click();
 $("fitInput").onchange=e=>{let f=e.target.files?.[0];if(f)importFit(f)};
 $("saveRace").onclick=()=>{settings={raceName:$("raceNameInput").value||"富山マラソン2026",raceDate:$("raceDateInput").value||"2026-11-01",goalMin:Number($("goalMin").value)||240,monthGoal:Number($("monthGoal").value)||150};localStorage.setItem(SETKEY,JSON.stringify(settings));render();alert("設定を保存しました")};
-$("sampleBtn").onclick=()=>{let d=new Date();d.setDate(d.getDate()-1);runs.unshift({date:d.toISOString(),dist:8.2,paceSec:345,hr:142,cad:176,type:"Easy",memo:"サンプル記録",samples:Array.from({length:40},(_,i)=>({hr:138+i%8,cadence:174+i%5,speed:2.9,distance:i*205}))});save();render()};
 $("exportBtn").onclick=()=>{let blob=new Blob([JSON.stringify({settings,runs},null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="runlogpro-backup.json";a.click();URL.revokeObjectURL(a.href)};
 $("jsonInput").onchange=async e=>{let f=e.target.files?.[0];if(!f)return;try{let o=JSON.parse(await f.text());if(Array.isArray(o.runs)){runs=o.runs;settings=Object.assign(settings,o.settings||{});localStorage.setItem(SETKEY,JSON.stringify(settings));save();render();alert("復元しました")}}catch(err){alert("JSONを読み込めません："+err.message)}};
 $("clearBtn").onclick=()=>{if(confirm("全記録を削除します。バックアップ済みですか？")){runs=[];save();render()}};
