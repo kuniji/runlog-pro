@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="apple-touch-icon" href="icon-192.svg">
 
-<title>My Running Log AI Coach V8</title>
+<title>My Running Log AI Coach V17.1</title>
 <style>
 :root{
   --bg:#07090c; --panel:#11151a; --panel2:#171c22; --line:#26303a;
@@ -26,6 +26,7 @@ header{position:sticky;top:0;z-index:5;background:rgba(7,9,12,.92);backdrop-filt
 .head{display:flex;justify-content:space-between;align-items:center;gap:12px}
 .logo{font-size:22px;font-weight:900;letter-spacing:.04em}.logo span{color:var(--cyan)}
 .head small{color:var(--muted)}
+.versionTag{display:inline-block;margin-left:6px;padding:2px 6px;border:1px solid #28515d;border-radius:999px;color:var(--cyan);font-size:10px;font-weight:800;vertical-align:middle}
 nav{display:flex;gap:6px;overflow:auto;margin-top:12px}
 nav button{border:1px solid var(--line);background:#0d1116;color:#aeb7c0;padding:8px 12px;border-radius:999px;white-space:nowrap}
 nav button.active{color:#001014;background:var(--cyan);border-color:var(--cyan);font-weight:800}
@@ -157,7 +158,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:9px 6px;b
 <body>
 <div class="app">
 <header>
-  <div class="head"><div><div class="logo">🏃 <span>MY RUNNING LOG</span></div><small>走った記録を、次の練習につなげる</small></div><div class="v11Status"><span id="onlineStatus">● オンライン</span><button id="installBtn" class="btn secondary installBtn" hidden>ホーム画面に追加</button></div><div id="today"></div></div>
+  <div class="head"><div><div class="logo">🏃 <span>MY RUNNING LOG</span><span class="versionTag">V17.1</span></div><small>走った記録を、次の練習につなげる</small></div><div class="v11Status"><span id="onlineStatus">● オンライン</span><button id="installBtn" class="btn secondary installBtn" hidden>ホーム画面に追加</button></div><div id="today"></div></div>
   <nav>
     <button class="tab active" data-tab="dash">ダッシュボード</button>
     <button class="tab" data-tab="records">記録</button>
@@ -1040,12 +1041,23 @@ const FIT_GLOBAL = {
   0:'file_id',18:'session',19:'lap',20:'record',21:'event',26:'workout',27:'workout_step',34:'activity'
 };
 const FIT_TYPES = {
-  0:{bytes:1,signed:false,kind:'enum'},1:{bytes:1,signed:false,kind:'sint'},2:{bytes:1,signed:true,kind:'sint'},
- 3:{bytes:1,signed:false,kind:'uint'},4:{bytes:2,signed:false,kind:'uint'},5:{bytes:2,signed:true,kind:'sint'},
- 6:{bytes:4,signed:false,kind:'uint'},7:{bytes:4,signed:true,kind:'sint'},8:{bytes:4,signed:false,kind:'float'},
- 9:{bytes:8,signed:false,kind:'double'},10:{bytes:4,signed:false,kind:'string'},11:{bytes:2,signed:false,kind:'uint'},
- 12:{bytes:1,signed:true,kind:'sint'},13:{bytes:2,signed:false,kind:'uint'},14:{bytes:4,signed:false,kind:'uint'},
- 15:{bytes:8,signed:false,kind:'uint'},16:{bytes:8,signed:true,kind:'sint'}
+  0:{bytes:1,signed:false,kind:'enum'},
+  1:{bytes:1,signed:true,kind:'sint8'},
+  2:{bytes:1,signed:false,kind:'uint8'},
+  3:{bytes:2,signed:true,kind:'sint16'},
+  4:{bytes:2,signed:false,kind:'uint16'},
+  5:{bytes:4,signed:true,kind:'sint32'},
+  6:{bytes:4,signed:false,kind:'uint32'},
+  7:{bytes:1,signed:false,kind:'string'},
+  8:{bytes:4,signed:false,kind:'float'},
+  9:{bytes:8,signed:false,kind:'double'},
+  10:{bytes:1,signed:false,kind:'uint8z'},
+  11:{bytes:2,signed:false,kind:'uint16z'},
+  12:{bytes:4,signed:false,kind:'uint32z'},
+  13:{bytes:1,signed:false,kind:'byte'},
+  14:{bytes:8,signed:true,kind:'sint64'},
+  15:{bytes:8,signed:false,kind:'uint64'},
+  16:{bytes:8,signed:false,kind:'uint64z'}
 };
 function rdU8(v,o){return v.getUint8(o)}
 function rdNum(v,o,n,signed,le){
@@ -1060,7 +1072,7 @@ function fitOffset(v,field){return field&&field.offset?(Number(v)-field.offset):
 function fitFieldValue(view,off,base,bytes,le){
   if(base===8)return view.getFloat32(off,le);
   if(base===9)return view.getFloat64(off,le);
-  if(base===10){
+  if(base===7){
     let a=[]; for(let i=0;i<bytes;i++){let c=view.getUint8(off+i);if(!c)break;a.push(c)}
     return new TextDecoder().decode(new Uint8Array(a));
   }
@@ -1077,7 +1089,7 @@ function fitParse(buf){
   let pos=dataStart, defs={}, messages=[], lastTimestamp=0, lastTsByLocal={};
   while(pos<dataEnd){
     const hb=view.getUint8(pos++);
-    let compressed=!!(hb&0x80), local=(hb>>5)&0x03;
+    let compressed=!!(hb&0x80), local=compressed?((hb>>5)&0x03):(hb&0x0f);
     if(compressed){
       local=(hb>>5)&0x03;
       const timeOffset=hb&0x1f;
@@ -1089,9 +1101,12 @@ function fitParse(buf){
       const reserved=view.getUint8(pos++), arch=view.getUint8(pos++), global=view.getUint16(pos,true); 
       const nf=view.getUint8(pos++); const fields=[];
       for(let i=0;i<nf;i++){const num=view.getUint8(pos++), size=view.getUint8(pos++), type=view.getUint8(pos++);fields.push({num,size,type})}
-      let nd=0;
-      if((reserved&0x20)===0){ /* developer fields may follow only after standard fields; handle below */ }
-      defs[local]={global,fields,arch:arch===0};
+      const devFields=[];
+      if(reserved&0x20){
+        const nd=view.getUint8(pos++);
+        for(let i=0;i<nd;i++){const num=view.getUint8(pos++), size=view.getUint8(pos++), di=view.getUint8(pos++);devFields.push({num,size,di})}
+      }
+      defs[local]={global,fields,devFields,arch:arch===0};
       continue;
     }
     let def=defs[local]; if(!def) break;
@@ -1100,6 +1115,7 @@ function fitParse(buf){
       const raw=fitFieldValue(view,pos,fitBaseType(f.type),f.size,def.arch); pos+=f.size;
       values[f.num]=raw;
     }
+    for(const f of (def.devFields||[])){ pos+=f.size; }
     if(def.global===20 && values[253]!=null){
       let ts=Number(values[253]); lastTimestamp=ts; lastTsByLocal[local]=ts;
     } else if(compressed){ values[253]=lastTimestamp; }
@@ -1154,9 +1170,19 @@ function fitLapSummary(a){
 async function importFIT(e){
   const file=e.target.files[0]; if(!file)return;
   fitStatus.textContent='FITを解析しています…';
+  fitPreview.innerHTML='';
   try{
-    const buf=await file.arrayBuffer(), msgs=fitParse(buf), a=fitAggregate(msgs);
-    if(!a.dist && !a.laps.length) throw new Error('ランニングデータを見つけられませんでした');
+    const buf=await file.arrayBuffer();
+    const headerSize=new DataView(buf).getUint8(0);
+    const sig=String.fromCharCode(...new Uint8Array(buf,8,4));
+    const msgs=fitParse(buf), a=fitAggregate(msgs);
+    const counts={}; msgs.forEach(m=>counts[m.global]=(counts[m.global]||0)+1);
+    const diagnostics=`<div class="report" style="margin-top:10px"><div class="reportTitle" style="font-size:18px">🔎 Garmin FIT診断</div><div class="metrics" style="margin-top:8px"><div class="metric"><span>アプリ版</span><b>V17.1</b></div><div class="metric"><span>FIT署名</span><b>${sig==='.FIT'?'OK':'NG'}</b></div><div class="metric"><span>ヘッダー</span><b>${headerSize} bytes</b></div><div class="metric"><span>解析メッセージ</span><b>${msgs.length}件</b></div><div class="metric"><span>Session</span><b>${a.sess?'あり':'なし'}${counts[18]?` (${counts[18]}件)`:''}</b></div><div class="metric"><span>Lap</span><b>${a.laps.length}件</b></div><div class="metric"><span>Record</span><b>${a.rec.length}件</b></div><div class="metric"><span>取得距離</span><b>${a.dist?a.dist.toFixed(2)+' km':'未取得'}</b></div></div></div>`;
+    fitPreview.innerHTML=diagnostics;
+    if(!a.dist && !a.laps.length){
+      fitStatus.textContent='FITは読み込めましたが、ランニングデータを取得できませんでした。診断結果を確認してください。';
+      return;
+    }
     const type=fitClassify(a), laps=fitLapSummary(a);
     const date=a.date?new Date(a.date):new Date(file.lastModified);
     const dateStr=localDateStr(date);
@@ -1165,20 +1191,12 @@ async function importFIT(e){
     const workout = type==='Interval' && laps.length ? `Garmin FIT自動取込。ラップ${laps.length}本。${laps.slice(0,8).map(x=>x.pace).join(' / ')}` : `Garmin FIT自動取込（${type}）`;
     const memo=`FITファイル：${file.name}。${a.laps.length?'ラップ情報を自動解析。':''}`;
     const candidate={id:Date.now(),date:dateStr,dist:+a.dist.toFixed(2),time:+timeMin.toFixed(2),pace,avgHr:Math.round(a.avgHr||0),maxHr:Math.round(a.maxHr||0),temp:'',elev:Math.round(a.ascent||0),type,workout,memo};
-    fitPreview.innerHTML=`<div class="report"><div class="reportTop"><div><div class="reportTitle">FIT解析結果</div><div class="note">${file.name.replace(/</g,'&lt;')}</div></div><div class="dateBox"><b>${dateStr}</b><br>${type}</div></div>
-      <div class="metrics" style="margin-top:10px">
-        <div class="metric"><span>距離</span><b>${candidate.dist.toFixed(2)} km</b></div>
-        <div class="metric"><span>時間</span><b>${secToPace(candidate.time*60)}</b></div>
-        <div class="metric"><span>平均ペース</span><b>${candidate.pace}/km</b></div>
-        <div class="metric"><span>平均/最大心拍</span><b>${candidate.avgHr||'--'} / ${candidate.maxHr||'--'} bpm</b></div>
-        <div class="metric"><span>判定</span><b>${type}</b></div>
-      </div>
+    fitPreview.innerHTML+=`<div class="report" style="margin-top:10px"><div class="reportTop"><div><div class="reportTitle">FIT解析結果</div><div class="note">${file.name.replace(/</g,'&lt;')}</div></div><div class="dateBox"><b>${dateStr}</b><br>${type}</div></div>
+      <div class="metrics" style="margin-top:10px"><div class="metric"><span>距離</span><b>${candidate.dist.toFixed(2)} km</b></div><div class="metric"><span>時間</span><b>${secToPace(candidate.time*60)}</b></div><div class="metric"><span>平均ペース</span><b>${candidate.pace}/km</b></div><div class="metric"><span>平均/最大心拍</span><b>${candidate.avgHr||'--'} / ${candidate.maxHr||'--'} bpm</b></div><div class="metric"><span>判定</span><b>${type}</b></div></div>
       ${laps.length?`<h3 style="margin:12px 0 6px">ラップ解析</h3><div class="laps">${laps.map(x=>`<div class="lap">L${x.i}<b>${x.pace}</b><span class="note">${x.d?x.d.toFixed(2)+'km':''}</span></div>`).join('')}</div>`:''}
-      <div class="actions"><button class="btn" onclick='saveFITCandidate(${JSON.stringify(candidate).replace(/</g,"\\u003c")})'>このFITを記録に保存</button><button class="btn secondary" onclick='previewFITReport(${JSON.stringify(candidate).replace(/</g,"\\u003c")})'>レポートを見る</button></div>
-    </div>`;
-    fitStatus.textContent='解析完了。内容を確認して保存できます。';
-  }catch(err){fitStatus.textContent='解析できませんでした：'+err.message;fitPreview.innerHTML='<div class="empty">FITの形式やデータ構造を確認してください。</div>'}
-  e.target.value='';
+      <div class="actions"><button class="btn" onclick='saveFITCandidate(${JSON.stringify(candidate).replace(/</g,"\\u003c")})'>このFITを記録に保存</button><button class="btn secondary" onclick='previewFITReport(${JSON.stringify(candidate).replace(/</g,"\\u003c")})'>レポートを見る</button></div></div>`;
+    fitStatus.textContent='解析完了。診断と解析結果を確認して保存できます。';
+  }catch(err){fitStatus.textContent='解析できませんでした：'+err.message;fitPreview.innerHTML='<div class="report"><div class="reportTitle">🔎 Garmin FIT診断</div><div class="note">V17.1 / 読み込み中にエラーが発生しました。</div><div class="metric"><span>エラー</span><b>'+String(err.message).replace(/</g,'&lt;')+'</b></div></div>'}
 }
 function saveFITCandidate(r){
   records.unshift(r);save();evaluatePlansForRecord(r);rebuildFuturePlan(true);showAutoReport(r.id);render();
