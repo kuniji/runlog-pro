@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="apple-touch-icon" href="icon-192.svg">
 
-<title>My Running Log AI Coach V18</title>
+<title>My Running Log AI Coach V18.1</title>
 <style>
 :root{
   --bg:#07090c; --panel:#11151a; --panel2:#171c22; --line:#26303a;
@@ -158,7 +158,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:9px 6px;b
 <body>
 <div class="app">
 <header>
-  <div class="head"><div><div class="logo">🏃 <span>MY RUNNING LOG</span><span class="versionTag">V18</span></div><small>走った記録を、次の練習につなげる</small></div><div class="v11Status"><span id="onlineStatus">● オンライン</span><button id="installBtn" class="btn secondary installBtn" hidden>ホーム画面に追加</button></div><div id="today"></div></div>
+  <div class="head"><div><div class="logo">🏃 <span>MY RUNNING LOG</span><span class="versionTag">V18.1</span></div><small>走った記録を、次の練習につなげる</small></div><div class="v11Status"><span id="onlineStatus">● オンライン</span><button id="installBtn" class="btn secondary installBtn" hidden>ホーム画面に追加</button></div><div id="today"></div></div>
   <nav>
     <button class="tab active" data-tab="dash">ダッシュボード</button>
     <button class="tab" data-tab="records">記録</button>
@@ -1137,7 +1137,17 @@ function fitAggregate(parsed){
   const dateVal=sess?fitField(sess,2):(rec[0]?fitField(rec[0],253):null);
   return {rec,laps,sess,dist,timeMs,avgHr,maxHr,avgSpeed,maxSpeed,ascent,avgCad,maxCad,date:fitTimestamp(dateVal),meta:parsed.meta};
 }
-function fitClassify(a){const d=a.dist,p=a.avgSpeed?1000/a.avgSpeed/60:null;if(a.laps.length>=3)return 'Interval';if(d>=18)return 'Long';if(p&&p<5.5)return 'Threshold';if(d<6)return 'Recovery';return 'Easy'}
+function fitClassify(a){
+  const d=a.dist, p=a.avgSpeed?1000/a.avgSpeed/60:null;
+  // Garminの自動1kmラップは「インターバル本数」ではないため、
+  // ラップ数だけではInterval判定しない。
+  // 今後、FITのworkout/workout_stepが取得できる場合は明示的な
+  // インターバル情報を優先する設計にする。
+  if(d>=18)return 'Long';
+  if(p&&p<5.5)return 'Threshold';
+  if(d<6)return 'Recovery';
+  return 'Easy';
+}
 function fitLapSummary(a){
   return a.laps.map((m,i)=>{const d=Number(fitField(m,9)||0)/100000,t=Number(fitField(m,8)||fitField(m,7)||0),sp=Number(fitField(m,13)||0)/1000;const pace=sp>0?secToPace(1000/sp):(d&&t?secToPace(t/d):'--');return {i:i+1,d,t,pace,hr:Number(fitField(m,15)||0)}});
 }
@@ -1146,15 +1156,15 @@ async function importFIT(e){
   try{
     const buf=await file.arrayBuffer(),view=new DataView(buf),headerSize=view.getUint8(0),sig=String.fromCharCode(...new Uint8Array(buf,8,4));
     const parsed=fitParse(buf),msgs=parsed.messages,a=fitAggregate(parsed),counts={};msgs.forEach(m=>counts[m.global]=(counts[m.global]||0)+1);
-    const diagnostics=`<div class="report" style="margin-top:10px"><div class="reportTitle" style="font-size:18px">🔎 Garmin FIT診断</div><div class="metrics" style="margin-top:8px"><div class="metric"><span>アプリ版</span><b>V18</b></div><div class="metric"><span>FIT署名</span><b>${sig==='.FIT'?'OK':'NG'}</b></div><div class="metric"><span>ヘッダー</span><b>${headerSize} bytes</b></div><div class="metric"><span>定義メッセージ</span><b>${a.meta.definitionCount}件</b></div><div class="metric"><span>圧縮タイムスタンプ</span><b>${a.meta.compressedCount}件</b></div><div class="metric"><span>解析メッセージ</span><b>${msgs.length}件</b></div><div class="metric"><span>Session</span><b>${a.sess?'あり':'なし'}${counts[18]?` (${counts[18]}件)`:''}</b></div><div class="metric"><span>Lap</span><b>${a.laps.length}件</b></div><div class="metric"><span>Record</span><b>${a.rec.length}件</b></div><div class="metric"><span>取得距離</span><b>${a.dist?a.dist.toFixed(2)+' km':'未取得'}</b></div></div></div>`;
+    const diagnostics=`<div class="report" style="margin-top:10px"><div class="reportTitle" style="font-size:18px">🔎 Garmin FIT診断</div><div class="metrics" style="margin-top:8px"><div class="metric"><span>アプリ版</span><b>V18.1</b></div><div class="metric"><span>FIT署名</span><b>${sig==='.FIT'?'OK':'NG'}</b></div><div class="metric"><span>ヘッダー</span><b>${headerSize} bytes</b></div><div class="metric"><span>定義メッセージ</span><b>${a.meta.definitionCount}件</b></div><div class="metric"><span>圧縮タイムスタンプ</span><b>${a.meta.compressedCount}件</b></div><div class="metric"><span>解析メッセージ</span><b>${msgs.length}件</b></div><div class="metric"><span>Session</span><b>${a.sess?'あり':'なし'}${counts[18]?` (${counts[18]}件)`:''}</b></div><div class="metric"><span>Lap</span><b>${a.laps.length}件</b></div><div class="metric"><span>Record</span><b>${a.rec.length}件</b></div><div class="metric"><span>取得距離</span><b>${a.dist?a.dist.toFixed(2)+' km':'未取得'}</b></div></div></div>`;
     fitPreview.innerHTML=diagnostics;
     if(!a.dist&&!a.laps.length){fitStatus.textContent='FITは読み込めましたが、ランニングデータを取得できませんでした。診断結果を確認してください。';return}
     const type=fitClassify(a),laps=fitLapSummary(a),date=a.date?new Date(a.date):new Date(file.lastModified),dateStr=localDateStr(date),timeMin=a.timeMs/60000,pace=a.avgSpeed?secToPace(1000/a.avgSpeed):calcPace(a.dist,timeMin);
-    const workout=type==='Interval'&&laps.length?`Garmin FIT自動取込。ラップ${laps.length}本。${laps.slice(0,8).map(x=>x.pace).join(' / ')}`:`Garmin FIT自動取込（${type}）`,memo=`FITファイル：${file.name}。${a.laps.length?'ラップ情報を自動解析。':''}`;
+    const workout=`Garmin FIT自動取込（${type}）。${laps.length?`自動ラップ${laps.length}本を解析。`:''}`,memo=`FITファイル：${file.name}。${a.laps.length?'自動ラップ情報を解析しました。':''}`;
     const candidate={id:Date.now(),date:dateStr,dist:+a.dist.toFixed(2),time:+timeMin.toFixed(2),pace,avgHr:Math.round(a.avgHr||0),maxHr:Math.round(a.maxHr||0),temp:'',elev:Math.round(a.ascent||0),type,workout,memo};
     fitPreview.innerHTML+=`<div class="report" style="margin-top:10px"><div class="reportTop"><div><div class="reportTitle">FIT解析結果</div><div class="note">${file.name.replace(/</g,'&lt;')}</div></div><div class="dateBox"><b>${dateStr}</b><br>${type}</div></div><div class="metrics" style="margin-top:10px"><div class="metric"><span>距離</span><b>${candidate.dist.toFixed(2)} km</b></div><div class="metric"><span>時間</span><b>${secToPace(candidate.time*60)}</b></div><div class="metric"><span>平均ペース</span><b>${candidate.pace}/km</b></div><div class="metric"><span>平均/最大心拍</span><b>${candidate.avgHr||'--'} / ${candidate.maxHr||'--'} bpm</b></div><div class="metric"><span>判定</span><b>${type}</b></div></div>${laps.length?`<h3 style="margin:12px 0 6px">ラップ解析</h3><div class="laps">${laps.map(x=>`<div class="lap">L${x.i}<b>${x.pace}</b><span class="note">${x.d?x.d.toFixed(2)+'km':''}</span></div>`).join('')}</div>`:''}<div class="actions"><button class="btn" onclick='saveFITCandidate(${JSON.stringify(candidate).replace(/</g,"\\u003c")})'>このFITを記録に保存</button><button class="btn secondary" onclick='previewFITReport(${JSON.stringify(candidate).replace(/</g,"\\u003c")})'>レポートを見る</button></div></div>`;
     fitStatus.textContent='解析完了。診断と解析結果を確認して保存できます。';
-  }catch(err){fitStatus.textContent='解析できませんでした：'+err.message;fitPreview.innerHTML='<div class="report"><div class="reportTitle">🔎 Garmin FIT診断</div><div class="note">V18 / 読み込み中にエラーが発生しました。</div><div class="metric"><span>エラー</span><b>'+String(err.message).replace(/</g,'&lt;')+'</b></div></div>'}
+  }catch(err){fitStatus.textContent='解析できませんでした：'+err.message;fitPreview.innerHTML='<div class="report"><div class="reportTitle">🔎 Garmin FIT診断</div><div class="note">V18.1 / 読み込み中にエラーが発生しました。</div><div class="metric"><span>エラー</span><b>'+String(err.message).replace(/</g,'&lt;')+'</b></div></div>'}
 }
 function saveFITCandidate(r){
   records.unshift(r);save();evaluatePlansForRecord(r);rebuildFuturePlan(true);showAutoReport(r.id);render();
