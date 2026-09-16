@@ -3,259 +3,1364 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>RunLog Pro v6</title>
+<meta name="theme-color" content="#07090c">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="icon-192.svg">
+
+<title>My Running Log AI Coach V8</title>
 <style>
-:root{--bg:#f4f6f8;--card:#fff;--text:#17212b;--muted:#68727d;--line:#e2e7eb;--accent:#1769aa;--good:#168a55;--warn:#c77800;--danger:#c33}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-header{position:sticky;top:0;z-index:5;background:rgba(255,255,255,.96);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);padding:14px 16px}
-h1{font-size:22px;margin:0 0 3px}.sub{font-size:12px;color:var(--muted)}
-main{max-width:900px;margin:auto;padding:14px 12px 60px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:15px;margin:12px 0;box-shadow:0 2px 8px rgba(0,0,0,.035)}
-.card h2{font-size:17px;margin:0 0 12px}.hero{display:grid;grid-template-columns:1.2fr .8fr;gap:10px}
-.big{font-size:30px;font-weight:800;line-height:1.1}.muted{color:var(--muted)}.small{font-size:12px}
-.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:9px}.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
-.stat{border:1px solid var(--line);border-radius:12px;padding:10px;background:#fafbfc}.stat b{display:block;font-size:19px;margin-top:3px}
-button,select,input,textarea{font:inherit}button{border:0;border-radius:11px;padding:11px 13px;background:var(--accent);color:white;font-weight:700}
-button.secondary{background:#eef2f5;color:#25313c}button.danger{background:#b43b3b}
-.actions{display:flex;gap:8px;flex-wrap:wrap}.actions input{display:none}
-table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:9px 6px;border-bottom:1px solid var(--line);text-align:left}th{color:var(--muted);font-weight:600}
-.badge{display:inline-block;padding:4px 8px;border-radius:999px;background:#eef2f5;font-size:11px;font-weight:700}.badge.easy{background:#e8f6ee;color:#147044}.badge.long{background:#fff1d8;color:#8a5600}.badge.quality{background:#f9e8ed;color:#9b314b}
-.menu{display:flex;gap:8px;overflow:auto;padding-bottom:3px}.day{min-width:118px;border:1px solid var(--line);border-radius:12px;padding:10px;background:#fafbfc}.day.today{border:2px solid var(--accent)}
-.bar{height:9px;background:#e8edf1;border-radius:99px;overflow:hidden}.bar i{display:block;height:100%;background:var(--accent);border-radius:99px}
-canvas{width:100%;height:210px;border:1px solid var(--line);border-radius:12px;background:#fff}
-textarea{width:100%;min-height:80px;border:1px solid var(--line);border-radius:10px;padding:10px}
-input[type=text],input[type=date],input[type=number]{width:100%;border:1px solid var(--line);border-radius:10px;padding:9px}
-label{font-size:12px;color:var(--muted);display:block;margin-bottom:4px}
-.formgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
-.note{background:#f7f9fb;border-left:4px solid var(--accent);padding:10px;border-radius:8px;font-size:13px}
-.empty{padding:18px;text-align:center;color:var(--muted)}
-@media(max-width:620px){.hero{grid-template-columns:1fr}.grid4{grid-template-columns:repeat(2,1fr)}table th:nth-child(4),table td:nth-child(4){display:none}}
+:root{
+  --bg:#07090c; --panel:#11151a; --panel2:#171c22; --line:#26303a;
+  --text:#f5f7fa; --muted:#a9b1ba; --cyan:#16d8ff; --yellow:#ffd83d;
+  --green:#5cff79; --orange:#ff9a3d; --pink:#ff4e9b; --purple:#a67cff;
+}
+*{box-sizing:border-box}
+body{margin:0;background:linear-gradient(180deg,#05070a,#0a0d11 55%,#05070a);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Noto Sans JP",sans-serif}
+button,input,select,textarea{font:inherit}
+button{cursor:pointer}
+.app{max-width:720px;margin:auto;padding-bottom:90px}
+header{position:sticky;top:0;z-index:5;background:rgba(7,9,12,.92);backdrop-filter:blur(14px);border-bottom:1px solid #1d242c;padding:10px 12px}
+.head{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.logo{font-size:22px;font-weight:900;letter-spacing:.04em}.logo span{color:var(--cyan)}
+.head small{color:var(--muted)}
+nav{display:flex;gap:6px;overflow:auto;margin-top:12px}
+nav button{border:1px solid var(--line);background:#0d1116;color:#aeb7c0;padding:8px 12px;border-radius:999px;white-space:nowrap}
+nav button.active{color:#001014;background:var(--cyan);border-color:var(--cyan);font-weight:800}
+main{padding:10px}
+.hero{display:flex;justify-content:space-between;gap:12px;align-items:center;background:linear-gradient(135deg,#101820,#0c1116);border:1px solid #20313b;border-radius:18px;padding:16px;margin-bottom:14px}
+.hero h1{font-size:24px;margin:0 0 4px}.hero p{margin:0;color:var(--muted)}
+.badge{border:1px solid #3a4650;border-radius:12px;padding:9px 12px;text-align:center;background:#0b0f14}.badge b{display:block;color:var(--yellow);font-size:20px}
+.cards{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:13px}
+.card .k{color:var(--muted);font-size:12px}.card .v{font-size:24px;font-weight:900;margin-top:5px}.card .s{font-size:12px;color:var(--muted)}
+.section{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:15px;margin:14px 0}
+.section h2{font-size:18px;margin:0 0 12px}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.report{background:#05080b;border:1px solid #1f3943;border-radius:18px;padding:14px;overflow:hidden}
+.reportTop{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}.reportTitle{font-size:21px;font-weight:950}.dateBox{border:1px solid #28515d;border-radius:12px;padding:8px 11px;text-align:right;color:#dce7ec}.dateBox b{color:var(--cyan)}
+.scoreRow{display:grid;grid-template-columns:1fr;gap:10px;margin-top:12px}
+.scoreBox{border:1px solid #174653;border-radius:15px;padding:16px;background:radial-gradient(circle at 50% 30%,#14241d,#070a0d 62%)}
+.score{font-size:58px;line-height:.9;font-weight:1000;color:var(--yellow);letter-spacing:-.04em}.score span{font-size:18px;color:#c7ccd0}
+.comment{margin-top:13px;color:#d4dbe0;line-height:1.7}
+.metrics{border:1px solid #174653;border-radius:15px;padding:14px}.metrics h3{margin:0 0 10px;color:var(--cyan);font-size:18px}
+.metric{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #182329}.metric:last-child{border:0}.metric span:first-child{color:#b9c3ca}.metric b{font-size:16px}
+.laps{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:9px}.lap{background:#0c1116;border:1px solid #26313a;border-radius:9px;padding:8px;text-align:center}.lap b{display:block;color:var(--cyan);font-size:17px}
+.reportGrid{display:grid;grid-template-columns:1fr;gap:8px;margin-top:10px}.rbox{border-radius:14px;padding:14px;min-height:150px}.rbox h3{margin:0 0 9px;font-size:17px}.rbox ul{margin:0;padding-left:18px;color:#d8dee2;line-height:1.7;font-size:13px}.good{border:1px solid #1d7b36;background:#07130a}.good h3{color:var(--green)}.improve{border:1px solid #8a551c;background:#140d07}.improve h3{color:var(--orange)}.next{border:1px solid #7a2451;background:#140810}.next h3{color:var(--pink)}
+.linkGrid{display:grid;grid-template-columns:1fr;gap:8px;margin-top:10px}.linkbox{border-radius:14px;padding:14px;min-height:125px}.linkbox h3{margin:0 0 8px;font-size:17px}.marathon{border:1px solid #135a70;background:#071217}.marathon h3{color:var(--cyan)}.relay{border:1px solid #64286f;background:#110a15}.relay h3{color:#c08cff}
+.progress{height:10px;background:#273039;border-radius:99px;overflow:hidden}.progress i{display:block;height:100%;background:linear-gradient(90deg,var(--green),var(--cyan));width:0}
+table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:9px 6px;border-bottom:1px solid #222b33;text-align:left}th{color:var(--muted)}
+.form{display:grid;grid-template-columns:1fr 1fr;gap:8px}.form label{font-size:12px;color:var(--muted);display:block}.form input,.form select,.form textarea{width:100%;margin-top:5px;background:#0b0f14;border:1px solid #2a343d;color:var(--text);border-radius:10px;padding:9px}.form textarea{min-height:80px;resize:vertical}.wide{grid-column:1/-1}
+.btn{border:0;background:var(--cyan);color:#001014;font-weight:900;border-radius:10px;padding:10px 14px}.btn.secondary{background:#202830;color:#eaf0f3}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.hidden{display:none!important}.empty{color:var(--muted);padding:15px;text-align:center}
+.note{font-size:12px;color:var(--muted);line-height:1.6}
+
+
+.loadbar{height:9px;background:#1a2027;border-radius:999px;overflow:hidden}.loadbar i{display:block;height:100%;background:var(--cyan)}
+@media(max-width:600px){
+  body{font-size:14px}
+  .app{width:100%;padding-bottom:70px}
+  header{padding:9px 10px;position:sticky}
+  .head{align-items:center}
+  .logo{font-size:17px;letter-spacing:0}
+  .head small{display:block;font-size:10px;margin-top:2px}
+  #today{font-size:11px;color:var(--muted)}
+  nav{margin-top:8px;gap:5px;padding-bottom:2px}
+  nav button{font-size:12px;padding:7px 10px}
+  .hero{padding:13px;border-radius:14px;margin-bottom:9px}
+  .hero h1{font-size:19px}
+  .badge{padding:7px 9px;border-radius:10px}.badge b{font-size:17px}
+  .cards{gap:7px;margin-bottom:9px}
+  .card{border-radius:12px;padding:9px}
+  .card .k{font-size:10px}.card .v{font-size:19px;margin-top:3px}.card .s{font-size:10px}
+  .section{padding:11px;border-radius:13px;margin:9px 0}
+  .section h2{font-size:16px;margin-bottom:9px}
+  .report{padding:10px;border-radius:15px}
+  .reportTop{gap:7px}
+  .reportTitle{font-size:19px}
+  .dateBox{padding:6px 8px;font-size:10px}
+  .scoreRow{gap:8px;margin-top:8px}
+  .scoreBox,.metrics{padding:11px;border-radius:12px}
+  .score{font-size:54px}
+  .score span{font-size:15px}
+  .comment{font-size:12px;line-height:1.6;margin-top:8px}
+  .metrics h3{font-size:15px;margin-bottom:6px}
+  .metric{padding:6px 0;font-size:12px}.metric b{font-size:13px}
+  .laps{gap:5px;margin-top:6px}.lap{padding:6px 3px}.lap b{font-size:15px}
+  .reportGrid{gap:7px;margin-top:7px}
+  .rbox{padding:10px;min-height:0;border-radius:12px}
+  .rbox h3{font-size:15px;margin-bottom:6px}.rbox ul{font-size:11px;line-height:1.55}
+  .linkGrid{gap:7px;margin-top:7px}
+  .linkbox{padding:10px;min-height:0;border-radius:12px}
+  .linkbox h3{font-size:15px}.note{font-size:11px;line-height:1.55}
+  table{font-size:11px}th,td{padding:7px 4px}
+  .form{gap:8px}.form input,.form select,.form textarea{padding:8px;font-size:14px}
+  .btn{padding:9px 11px;font-size:13px}
+}
+@media(max-width:380px){
+  .logo{font-size:15px}
+  nav button{font-size:11px;padding:6px 8px}
+  .cards{grid-template-columns:1fr 1fr}
+  .card .v{font-size:18px}
+  .score{font-size:48px}
+}
+
+@media(max-width:560px){
+ body{font-size:14px}.app{width:100%;padding-bottom:70px}header{padding:10px 10px}.head{align-items:flex-start}.logo{font-size:18px}.head small{font-size:10px}main{padding:8px}.hero{padding:12px;border-radius:14px}.hero h1{font-size:19px}.badge{padding:7px 9px}.badge b{font-size:17px}.section{padding:11px;border-radius:13px;margin:9px 0}.section h2{font-size:16px}.card{border-radius:11px;padding:10px}.card .v{font-size:21px}.report{padding:9px;border-radius:14px}.reportTop{display:block}.reportTitle{font-size:20px;margin-bottom:8px}.dateBox{text-align:left;display:inline-block;font-size:11px}.scoreBox,.metrics{padding:12px}.score{font-size:56px}.comment{font-size:13px;line-height:1.6}.metric{padding:6px 0;font-size:12px}.metric b{font-size:14px}.laps{gap:5px}.lap{padding:6px}.lap b{font-size:15px}.rbox,.linkbox{min-height:auto;padding:11px}.rbox h3,.linkbox h3{font-size:15px}.rbox ul{font-size:12px;line-height:1.55}nav{margin-top:8px;gap:5px}nav button{padding:7px 10px;font-size:12px}.form{grid-template-columns:1fr}.wide{grid-column:auto}table{font-size:11px;display:block;overflow-x:auto;white-space:nowrap}.actions .btn{width:100%}
+}
+@media(max-width:720px){
+ .cards{grid-template-columns:1fr 1fr}.grid2,.scoreRow,.linkGrid{grid-template-columns:1fr}.reportGrid{grid-template-columns:1fr}
+ .form{grid-template-columns:1fr 1fr}.wide{grid-column:1/-1}
+ .hero{align-items:flex-start}.hero h1{font-size:21px}.dateBox{font-size:12px}.score{font-size:60px}
+}
+@media(max-width:430px){main{padding:10px}.form{grid-template-columns:1fr}.wide{grid-column:auto}.cards{gap:7px}.card{padding:10px}.card .v{font-size:20px}}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}.calhead{color:var(--muted);font-size:10px;text-align:center;padding:4px}.day{min-height:92px;background:#0b0f14;border:1px solid #202a32;border-radius:9px;padding:6px;overflow:hidden}.day.other{opacity:.35}.day.today{border-color:var(--cyan);box-shadow:0 0 0 1px #123a44 inset}.daynum{font-weight:900;font-size:12px}.event{margin-top:5px;border-left:3px solid var(--cyan);padding-left:5px;font-size:10px;line-height:1.35}.event.done{border-left-color:var(--green)}.event.quality{border-left-color:var(--orange)}
+
+.coach{border:1px solid #2a5360;background:linear-gradient(135deg,#0a151a,#0b1015);border-radius:16px;padding:14px}
+.coachHead{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}.coachTitle{font-size:18px;font-weight:950}.coachBadge{font-size:11px;padding:5px 8px;border-radius:999px;border:1px solid #31545e;color:#9feaff}
+.coachMain{margin-top:10px;padding:12px;border-radius:13px;background:#070b0e;border:1px solid #21343b}.coachMain h3{margin:0 0 7px;color:var(--cyan);font-size:17px}.coachMain p{margin:5px 0;line-height:1.6}.coachMeta{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:9px}.coachMini{background:#0e1419;border:1px solid #222d35;border-radius:10px;padding:8px}.coachMini small{display:block;color:var(--muted);font-size:10px}.coachMini b{display:block;margin-top:3px;font-size:15px}
+.coachReason{margin-top:9px;color:#cbd5da;font-size:12px;line-height:1.6}.coachWarn{color:var(--orange)}.coachGood{color:var(--green)}
+ .adaptBox{border:1px solid #30404a;background:#0b1014;border-radius:14px;padding:13px;margin-top:10px}
+.adaptGrid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:10px}
+.adaptStat{background:#070b0e;border:1px solid #202a31;border-radius:11px;padding:10px}.adaptStat small{display:block;color:var(--muted);font-size:11px}.adaptStat b{font-size:20px}
+.readiness{border-left:3px solid var(--cyan);padding:10px 12px;background:#081116;border-radius:8px;line-height:1.65}
+.fullCycle{margin-top:8px}.cycleWeek{border:1px solid #27323a;background:#0c1116;border-radius:13px;padding:12px;margin-bottom:8px}
+.coachDay{display:grid;grid-template-columns:52px 1fr;gap:9px;padding:10px 0;border-bottom:1px solid #202830}.coachDay:last-child{border-bottom:0}.coachDate{font-weight:900;color:var(--cyan);font-size:12px}.coachDay h4{margin:0 0 4px;font-size:14px}.coachDay p{margin:0;font-size:11px;color:#cbd5da;line-height:1.55}.tag{display:inline-block;margin-left:5px;padding:2px 6px;border:1px solid #31424b;border-radius:999px;font-size:9px;color:var(--muted)}
+.cycleGrid{display:grid;grid-template-columns:1fr;gap:8px}
+.cycleWeek{background:#0b1015;border:1px solid #26323a;border-radius:13px;padding:11px}
+.cycleWeek h3{margin:0 0 6px;font-size:15px;color:var(--cyan)}
+.cycleWeek p{margin:3px 0;font-size:11px;line-height:1.55;color:#cbd5da}
+.review{border:1px solid #394f2e;background:#0b1209;border-radius:14px;padding:12px}
+.review h3{margin:0 0 7px;color:var(--green);font-size:16px}
+.review li{font-size:12px;line-height:1.6;margin:3px 0}
+
+
+
+.closedLoop{display:grid;gap:10px}.loopStep{padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--panel2)}.loopStep b{display:block;margin-bottom:4px}.loopArrow{text-align:center;color:#8f9aa5;font-size:18px}.stateBar{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}.stateCell{padding:10px;border:1px solid var(--line);border-radius:10px;text-align:center}.stateCell small{display:block;color:#8f9aa5;font-size:11px}.stateCell b{display:block;font-size:18px;margin-top:3px}.autoUpdate{margin-top:10px;padding:11px;border-radius:10px;background:#0d1711;border:1px solid #24452e}.autoUpdate strong{display:block;margin-bottom:4px}
+.paceProfile{margin-top:10px;padding:12px;border:1px solid #29404a;border-radius:14px;background:#0d1419}.paceGrid{display:grid;grid-template-columns:1fr;gap:7px;margin:9px 0}.paceGrid>div{display:flex;justify-content:space-between;gap:8px;padding:8px 10px;background:#111a20;border-radius:10px}.paceGrid small{color:#a9b1ba}.paceGrid strong{color:#16d8ff}.trendGrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.trendCard{padding:11px;border:1px solid #25343c;border-radius:12px;background:#0c1318}.trendCard small{display:block;color:var(--muted);font-size:10px}.trendCard b{display:block;font-size:20px;margin-top:4px}.trendUp{color:var(--green)}.trendDown{color:var(--orange)}.trendNeutral{color:#cbd5da}.trendList{margin-top:10px}.trendRow{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid #202830;font-size:12px}.trendRow:last-child{border-bottom:0}.milestone{padding:9px 10px;margin-top:8px;border-radius:10px;background:#0e171d;border:1px solid #26363e}.milestone b{color:var(--cyan)}
+.progressDashboard{display:grid;gap:10px}.rpHero{padding:14px;border:1px solid #26363e;border-radius:14px;background:#0e171d}.rpTitle{font-size:18px;font-weight:800}.rpSub{font-size:12px;color:#9fb0b8;margin-top:4px}.rpGrid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}.rpCard{padding:11px;border:1px solid #26363e;border-radius:12px;background:#101c23}.rpCard small{display:block;color:#8fa2ab;font-size:11px}.rpCard b{display:block;font-size:18px;margin-top:4px}.rpBar{height:9px;background:#18262d;border-radius:999px;overflow:hidden;margin-top:8px}.rpBar i{display:block;height:100%;width:0;background:var(--cyan)}.rpList{display:grid;gap:7px;margin-top:9px}.rpRow{display:flex;justify-content:space-between;gap:12px;padding:9px 10px;background:#0e171d;border:1px solid #26363e;border-radius:10px;font-size:12px}.rpRow span{color:#a7b7be}.rpTag{font-size:11px;padding:3px 7px;border-radius:999px;border:1px solid #334851}.rpNote{font-size:12px;color:#9fb0b8;line-height:1.6}.trendMini{font-size:12px;color:#b6c4c9;margin-top:8px}
+
+.v11Status{display:flex;align-items:center;gap:7px;flex-wrap:wrap;justify-content:flex-end}.v11Status span{font-size:10px;color:#8fa2ab}.v11Status span.offline{color:#f0b36a}.installBtn{font-size:10px;padding:6px 8px}.pwaNotice{margin:10px 0;padding:11px;border:1px solid #29404a;border-radius:12px;background:#0d151a;font-size:11px;line-height:1.55;color:#b9c7cc}.pwaNotice b{color:#fff}
+.v13Panel{margin-top:10px}.v13Hero{background:linear-gradient(135deg,#0c151a,#10151c);border:1px solid #26323b;border-radius:14px;padding:14px}.v13Title{font-size:18px;font-weight:800}.v13Sub{font-size:12px;color:#9aa7b2;margin-top:4px;line-height:1.6}.v13Rows{margin-top:10px;display:grid;gap:7px}.v13Row{display:flex;justify-content:space-between;gap:12px;padding:9px 10px;background:#0a0e12;border:1px solid #202a31;border-radius:9px;font-size:12px}.v13Tag{padding:2px 7px;border-radius:99px;background:#18252d;color:#bfeaff;font-size:10px}.v13Next{margin-top:10px;padding:12px;background:#081116;border-left:3px solid #7fd6ff;border-radius:8px;line-height:1.65}.v13Small{font-size:11px;color:#8d99a3}.v13Btns{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}.v13Btns button{flex:1;min-width:130px}
+.v14Panel{margin-top:10px}.v14Hero{background:linear-gradient(135deg,#11131a,#0b1518);border:1px solid #2a343b;border-radius:14px;padding:14px}.v14Title{font-size:18px;font-weight:800}.v14Sub{font-size:12px;color:#9aa7b2;margin-top:4px;line-height:1.6}.v14Grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}.v14Card{background:#090d11;border:1px solid #202a31;border-radius:10px;padding:10px}.v14Card small{display:block;color:#8996a0;font-size:10px}.v14Card b{display:block;margin-top:3px;font-size:14px}.v14Plan{margin-top:10px;padding:12px;background:#081116;border-left:3px solid #9be17b;border-radius:8px;line-height:1.7}.v14Steps{display:grid;gap:7px;margin-top:10px}.v14Step{display:flex;gap:9px;align-items:flex-start;padding:9px 10px;background:#0a0e12;border:1px solid #202a31;border-radius:9px;font-size:12px}.v14Num{min-width:22px;height:22px;border-radius:50%;display:grid;place-items:center;background:#18252d;font-weight:800}.v14Btns{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}.v14Btns button{flex:1;min-width:130px}
+.v16Panel{border:1px solid rgba(255,255,255,.09);background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,.015));}.v16Hero{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.v16Hero h2{margin:0 0 6px}.v16Hero p{margin:0;color:#9aa4b2;font-size:13px}.v16Badge{font-size:11px;padding:6px 9px;border-radius:999px;background:rgba(255,255,255,.08);white-space:nowrap}.v16Grid{display:grid;gap:10px;margin-top:14px}.v16Card{padding:13px;border:1px solid rgba(255,255,255,.08);border-radius:14px;background:rgba(0,0,0,.12)}.v16Metrics{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}.v16Metric{padding:10px;border-radius:12px;background:rgba(255,255,255,.045)}.v16Metric b{display:block;font-size:18px;margin-top:3px}.v16Small{font-size:12px;color:#9aa4b2}.v16Split{display:grid;gap:8px}.v16Seg{display:flex;justify-content:space-between;gap:10px;padding:10px;border-radius:10px;background:rgba(255,255,255,.035)}.v16Reason{color:#c9d1dc;font-size:13px;line-height:1.55}.v16Warn{padding:10px;border-radius:10px;background:rgba(255,255,255,.055);font-size:13px;line-height:1.55}.v16Strong{font-weight:700}</style>
+
+<style>
+.v12Dash{display:grid;gap:12px}.v12Hero{padding:16px;border:1px solid rgba(255,255,255,.1);border-radius:18px;background:linear-gradient(135deg,rgba(255,255,255,.07),rgba(255,255,255,.02))}.v12Title{font-size:18px;font-weight:800}.v12Grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px}.v12Card{padding:13px;border:1px solid rgba(255,255,255,.08);border-radius:14px;background:rgba(255,255,255,.035)}.v12Card small{display:block;opacity:.65}.v12Card b{display:block;font-size:21px;margin-top:4px}.v12Road{display:grid;gap:8px;margin-top:12px}.v12Week{padding:12px;border-radius:14px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07)}.v12WeekHead{display:flex;justify-content:space-between;gap:8px;font-weight:700}.v12Bar{height:7px;background:rgba(255,255,255,.08);border-radius:9px;overflow:hidden;margin:8px 0}.v12Bar i{display:block;height:100%;background:currentColor}.v12Actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.v12Btn{border:0;border-radius:12px;padding:10px 12px;font-weight:700;background:rgba(255,255,255,.1);color:inherit}.v12Note{font-size:12px;opacity:.68;line-height:1.5}.v12Tag{font-size:11px;padding:3px 7px;border-radius:999px;background:rgba(255,255,255,.09)}
+</style>
+
+<style>
+.v15Hero{display:flex;justify-content:space-between;align-items:center;gap:12px}.v15Hero h2{margin:0}.v15Badge,.v15Tag{padding:5px 9px;border-radius:999px;background:rgba(255,255,255,.09);font-size:11px;font-weight:800}.v15Grid{display:grid;gap:10px;margin-top:12px}.v15Card{padding:14px;border:1px solid rgba(255,255,255,.08);border-radius:16px;background:rgba(255,255,255,.035)}.v15Card h3{margin:0 0 7px;font-size:16px}.v15Meta{font-size:12px;opacity:.75;margin-bottom:8px}.v15Why{font-size:13px;line-height:1.55}.v15Bar{height:7px;border-radius:99px;background:rgba(255,255,255,.08);overflow:hidden;margin:8px 0}.v15Bar i{display:block;height:100%;width:0;background:currentColor}.v15Actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.v15Actions button{border:0;border-radius:10px;padding:9px 11px;background:rgba(255,255,255,.1);color:inherit}.v15Focus{font-weight:800}.v15Small{font-size:11px;opacity:.7}
 </style>
 </head>
 <body>
-<header><h1>🏃 RunLog Pro</h1><div class="sub">Daily Running Manager / Garmin FIT対応</div></header>
+<div class="app">
+<header>
+  <div class="head"><div><div class="logo">🏃 <span>MY RUNNING LOG</span></div><small>走った記録を、次の練習につなげる</small></div><div class="v11Status"><span id="onlineStatus">● オンライン</span><button id="installBtn" class="btn secondary installBtn" hidden>ホーム画面に追加</button></div><div id="today"></div></div>
+  <nav>
+    <button class="tab active" data-tab="dash">ダッシュボード</button>
+    <button class="tab" data-tab="records">記録</button>
+    <button class="tab" data-tab="report">練習レポート</button>
+    <button data-tab="v12">🧠 V12 Engine</button><button class="tab" data-tab="coach">AIコーチ</button>
+    <button class="tab" data-tab="calendar">カレンダー</button><button class="tab" data-tab="plan">練習計画</button>
+    <button class="tab" data-tab="backup">バックアップ</button>
+  </nav>
+</header>
 <main>
-<section class="card hero">
-  <div><div class="small muted">次のレース</div><div id="raceName" class="big">富山マラソン2026</div><div id="countdown" style="font-weight:800;margin-top:5px"></div><div id="raceGoal" class="small muted"></div></div>
-  <div><div class="small muted">今日のおすすめ</div><div id="todayMenu" style="font-size:19px;font-weight:800;margin-top:5px">読み込み中…</div><div id="todayPace" class="small" style="margin-top:5px;font-weight:700"></div><div id="todayReason" class="small muted"></div></div>
-</section>
+<div class="pwaNotice"><b>V11・アプリ化対応</b>　このページはオフライン利用とiPhoneのホーム画面追加に対応しています。GitHub Pages等で公開するとPWAとして利用できます。</div>
+<section id="dash">
+  <div class="hero"><div><h1>今月のランニング</h1><p id="monthLabel"></p></div><div class="badge"><span>月間目標</span><b id="goalText">150 km</b></div></div>
+  <div class="cards">
+    <div class="card"><div class="k">月間走行距離</div><div class="v" id="monthKm">0.0</div><div class="s">km</div></div>
+    <div class="card"><div class="k">ラン回数</div><div class="v" id="runCount">0</div><div class="s">回</div></div>
+    <div class="card"><div class="k">平均ペース</div><div class="v" id="avgPace">--</div><div class="s">/km</div></div>
+    <div class="card"><div class="k">平均心拍</div><div class="v" id="avgHr">--</div><div class="s">bpm</div></div>
+  </div>
+  <div class="section"><h2>月間目標の進捗</h2><div class="progress"><i id="progressBar"></i></div><p class="note" id="progressText"></p></div>
 
-<section class="card"><h2>📊 今日の基本情報</h2>
-<div class="grid4">
- <div class="stat"><span class="small muted">今週</span><b id="weekKm">0.0 km</b></div>
- <div class="stat"><span class="small muted">今月</span><b id="monthKm">0.0 km</b></div>
- <div class="stat"><span class="small muted">直近</span><b id="lastRun">—</b></div>
- <div class="stat"><span class="small muted">疲労目安</span><b id="fatigue">—</b></div>
+  <div class="section" id="raceProgressSection">
+    <div class="hero"><div><h2 style="margin:0">🎯 富山マラソン・サブ4:30進捗</h2><p>目標ペース 6:24/km を基準に、実績から現在地を確認</p></div><div class="badge"><span>11/1</span><b id="rpDays">--日</b></div></div>
+    <div id="raceProgress" class="progressDashboard"></div>
+  </div>
+  <div class="section" id="v15PlanSection">
+    <div class="v15Hero"><div><h2>🧭 V15 レース最適化プラン</h2><p>現在の実績から、富山マラソンまでの次の14日間を自動再配置</p></div><span class="v15Badge">ADAPTIVE</span></div>
+    <div id="v15Plan" class="v15Grid"></div>
+  </div>
+  <div class="section v16Panel"><div class="v16Hero"><div><h2>🏁 V16 富山マラソン レースモード</h2><p>直近の実績から、レース当日のペース運用・区間別戦略・補給リズムを整理</p></div><span class="v16Badge">RACE MODE</span></div><div id="v16RacePlan" class="v16Grid"></div></div>
+  <div class="section"><h2>最近の記録</h2><div id="recent"></div></div>
+<div class="section"><h2>今週の走行状況</h2>
+  <div class="cards">
+    <div class="card"><div class="k">今週の距離</div><div class="v" id="weekKm">0.0</div><div class="s">km</div></div>
+    <div class="card"><div class="k">今週の本数</div><div class="v" id="weekCount">0</div><div class="s">回</div></div>
+    <div class="card"><div class="k">直近7日負荷</div><div class="v" id="load7">0</div><div class="s">負荷ポイント</div></div>
+    <div class="card"><div class="k">直近28日距離</div><div class="v" id="km28">0.0</div><div class="s">km</div></div>
+  </div>
+  <div id="loadMessage" class="note"></div>
 </div>
-<div style="margin-top:12px"><div class="small muted">今週の目標 <span id="weekGoalText"></span></div><div class="bar"><i id="weekBar" style="width:0%"></i></div></div>
-</section>
-
-<section class="card"><h2>🗓️ 今週のおすすめメニュー</h2><div id="weeklyMenu" class="menu"></div><div id="weekTheme" class="note" style="margin-top:10px"></div><div id="paceGuide" class="note" style="margin-top:8px"></div></section>
-
-<section class="card"><h2>🏁 レース設定</h2>
-<div class="formgrid">
- <div><label>大会名</label><input id="raceNameInput" type="text"></div>
- <div><label>開催日</label><input id="raceDateInput" type="date"></div>
- <div><label>目標タイム（分）</label><input id="goalMin" type="number" min="0"></div>
- <div><label>月間目標 km</label><input id="monthGoal" type="number" min="0" step="1"></div>
+<div class="section"><h2>富山マラソンまで</h2>
+  <div class="cards">
+    <div class="card"><div class="k">大会まで</div><div class="v" id="raceDays">--</div><div class="s">日</div></div>
+    <div class="card"><div class="k">今月の目標</div><div class="v">150</div><div class="s">km</div></div>
+    <div class="card"><div class="k">Long走</div><div class="v" id="longCount">0</div><div class="s">今月</div></div>
+    <div class="card"><div class="k">ポイント練習</div><div class="v" id="qualityCount">0</div><div class="s">今月</div></div>
+  </div><div class="note">2026年11月1日 富山マラソン / サブ4:30目標</div>
 </div>
-<div class="actions" style="margin-top:10px"><button id="saveRace">設定を保存</button></div>
-</section>
-
-<section class="card"><h2>📥 Garmin FIT取り込み</h2>
-<div class="actions">
-<button id="fitBtn" type="button">FITファイルを選択</button><input id="fitInput" type="file" accept=".fit,application/octet-stream" style="display:none">
-
+<div class="section"><h2>目標</h2>
+  <div class="metric"><span>富山マラソン</span><b>サブ4:30 / 6:24/km前後</b></div>
+  <div class="metric"><span>金沢城リレー</span><b>9:30切り / 約5:00/km</b></div>
+  <div class="metric"><span>月間走行距離</span><b>150km</b></div>
 </div>
-<div id="importStatus" class="small muted" style="margin-top:9px"></div>
-<div class="note" style="margin-top:10px">FITはGarmin Connectから書き出した活動ファイルをそのまま選択してください。詳細画面では心拍・ピッチなどの記録点を表示します。</div>
-</section>
 
-<section class="card"><h2>📈 ランニング分析</h2>
-<div class="grid4">
- <div class="stat"><span class="small muted">平均ペース</span><b id="avgPace">—</b></div>
- <div class="stat"><span class="small muted">平均心拍</span><b id="avgHr">—</b></div>
- <div class="stat"><span class="small muted">平均ピッチ</span><b id="avgCad">—</b></div>
- <div class="stat"><span class="small muted">走行回数</span><b id="runCount">0</b></div>
+<div class="section">
+  <div class="coach">
+    <div class="coachHead"><div><div class="coachTitle">🧠 AIトレーニングコーチ</div><div class="note">あなたの直近の練習履歴から次の一手を自動判断</div></div><span class="coachBadge">AUTO</span></div>
+    <div class="coachMain"><h3 id="coachTitle">次回おすすめ</h3><p id="coachMenu">記録を追加すると自動提案します。</p><p id="coachReason" class="coachReason"></p></div>
+    <div class="coachMeta">
+      <div class="coachMini"><small>今週</small><b id="coachWeek">--</b></div>
+      <div class="coachMini"><small>7日負荷</small><b id="coachLoad">--</b></div>
+      <div class="coachMini"><small>Long間隔</small><b id="coachLongGap">--</b></div>
+    </div>
+  </div>
 </div>
-<div style="margin-top:12px"><canvas id="trend"></canvas></div>
+
 </section>
 
-<section class="card"><h2>🧾 走行履歴</h2><div style="overflow:auto"><table><thead><tr><th>日付</th><th>距離</th><th>ペース</th><th>種別</th><th>詳細</th></tr></thead><tbody id="runTable"></tbody></table></div></section>
+<section id="records" class="hidden">
+  <div class="section"><h2>ラン記録を追加</h2>
+    <div class="form">
+      <label>日付<input id="fDate" type="date"></label>
+      <label>距離 (km)<input id="fDist" type="number" step="0.01"></label>
+      <label>時間 (分)<input id="fTime" type="number" step="0.01" placeholder="例 48.17"></label>
+      <label>平均ペース<input id="fPace" placeholder="6:30"></label>
+      <label>平均心拍<input id="fAvgHr" type="number"></label>
+      <label>最大心拍<input id="fMaxHr" type="number"></label>
+      <label>気温 (℃)<input id="fTemp" type="number" step="0.1"></label>
+      <label>高低差 (m)<input id="fElev" type="number"></label>
+      <label>種類<select id="fType"><option>Easy</option><option>Long</option><option>Threshold</option><option>Interval</option><option>Race</option><option>Trail</option><option>Recovery</option></select></label>
+      <label class="wide">トレーニング内容<textarea id="fWorkout" placeholder="例：800m×4、R2:30ジョグ。体育館217m×4周で実施"></textarea></label>
+      <label class="wide">メモ<textarea id="fMemo" placeholder="脚の状態、きつさ、感想など"></textarea></label>
+    </div>
+    <div class="actions">
+      <button class="btn" onclick="addRecord()">記録を保存</button>
+      <button class="btn secondary" onclick="loadInterval()">9/15インターバルを入力</button>
+      <label class="btn" style="display:inline-block">Garmin FITを読み込む<input id="fitFile" type="file" accept=".fit" style="display:none" onchange="importFIT(event)"></label>
+    </div>
+    <div id="fitStatus" class="note" style="margin-top:9px"></div>
+  </div>
+  <div class="section"><h2>ランニング履歴</h2><div id="recordTable"></div></div>
+  <div class="section"><h2>Garmin FIT自動解析</h2>
+    <div id="fitPreview" class="empty">FITファイルを読み込むと、セッション・ラップ・心拍・ペースなどを解析して記録候補を作成します。</div>
+  </div>
+</section>
 
-<section class="card" id="detailCard" style="display:none"><h2>🔎 ラン詳細</h2><div id="detailText"></div><canvas id="detailChart"></canvas></section>
+<section id="report" class="hidden">
+  <div id="autoReport"></div>
+</section>
 
-<section class="card"><h2>⚙️ データ</h2><div class="actions">
-<button id="exportBtn" class="secondary">JSONバックアップ</button>
-<label style="display:inline-block"><button type="button" class="secondary">JSON復元</button><input id="jsonInput" type="file" accept=".json,application/json"></label>
-<button id="clearBtn" class="danger">全記録を削除</button>
-</div></section>
+
+<section id="v12" class="hidden">
+  <div class="hero"><div><h1>🧠 Adaptive Training Engine V13</h1><p>実績→負荷→達成度→次週計画を連続更新</p></div><div class="badge"><span>V13</span><b id="v12RaceDays">--</b></div></div>
+  <div class="section"><div id="v12Adaptive" class="v12Dash"></div></div>
+  <div class="section v13Panel"><h2>⚙️ V13 自動調整エンジン</h2><div id="v13Decision"></div></div>
+  <div class="section v14Panel"><h2>🎯 V14 個別メニュー生成</h2><div id="v14Prescription"></div></div>
+</section>
+<section id="coach" class="hidden">
+  <div class="hero"><div><h1>AIトレーニングコーチ</h1><p>過去の記録・負荷・大会日程から、今週の練習を自動作成</p></div><div class="badge"><span>COACH</span><b id="coachRaceBadge">--</b></div></div>
+
+  <div class="section">
+    <div class="coach">
+      <div class="coachHead"><div><div class="coachTitle" id="coachFullTitle">今週のおすすめ</div><div class="note">無理に予定を埋めず、直近の疲労と大会までの期間を優先します。</div></div><span class="coachBadge">自動更新</span></div>
+      <div class="coachMain"><h3 id="coachFullMenu">--</h3><p id="coachFullReason" class="coachReason"></p></div>
+    </div>
+  </div>
+
+  <div class="section"><h2>今週の練習バランス</h2>
+    <div class="cards">
+      <div class="card"><div class="k">Easy / Recovery</div><div class="v" id="balEasy">0</div><div class="s">回</div></div>
+      <div class="card"><div class="k">ポイント</div><div class="v" id="balQuality">0</div><div class="s">回</div></div>
+      <div class="card"><div class="k">Long</div><div class="v" id="balLong">0</div><div class="s">回</div></div>
+      <div class="card"><div class="k">休養目安</div><div class="v" id="balRest">--</div><div class="s">日</div></div>
+    </div>
+  </div>
+
+  <div class="section"><h2>次の7日間 自動メニュー</h2>
+    <div id="weeklyCoachPlan"></div>
+    <div class="actions"><button class="btn" onclick="applyCoachWeek()">この7日間を練習計画に追加</button><button class="btn secondary" onclick="renderCoach()">AIコーチを再計算</button></div>
+    <p class="note">既存の同日予定は残し、新しいAI提案を追加します。</p>
+  </div>
+
+  <div class="grid2">
+    <div class="section"><h2>金沢城リレー</h2><p><b>2026/9/27</b></p><p class="note" id="coachRelayText">--</p></div>
+    <div class="section"><h2>富山マラソン</h2><p><b>2026/11/1</b></p><p class="note" id="coachToyamaText">--</p></div>
+  </div>
+  <div class="section"><h2>富山マラソンまでの自動サイクル</h2>
+    <div id="cyclePlan" class="cycleGrid"></div>
+    <p class="note">記録が増えるたびに、直近4週間の負荷・ポイント練習・Long走を見て次の週を組み直します。</p>
+  </div>
+  <div class="section"><h2>トレーニング状況と自動調整</h2>
+    <div id="adaptiveStatus" class="adaptBox"></div>
+  </div>
+  <div class="section"><h2>富山マラソンまでの全期間プラン</h2>
+    <div id="fullCyclePlan" class="fullCycle"></div>
+    <div class="actions"><button class="btn" onclick="applyFullCycle()">全期間プランを練習計画に追加</button><button class="btn secondary" onclick="renderCoach()">最新データで再計算</button></div>
+    <p class="note">実績が追加されるたびに、未実施の期間は現在の疲労・練習量・ポイント練習の実績を反映して再計算します。</p>
+  </div>
+  <div class="section"><h2>📈 走力の変化</h2>
+    <div id="performanceTrend"></div>
+    <p class="note">同じ指標を継続して比較するための参考値です。記録条件が違うため、走力を確定するものではありません。</p>
+  </div>
+  <div class="section"><h2>🔄 実績連動・クローズドループ</h2>
+    <div id="closedLoopPanel"></div>
+    <div class="actions"><button class="btn" onclick="rebuildFuturePlan()">実績から今後の計画を自動再構築</button></div>
+    <p class="note">Garmin FIT/通常記録を保存すると、同日の予定評価 → 負荷・準備度更新 → 今後のAI計画再計算までを行います。既存の手動予定は残し、AIが作った未実施予定だけを更新します。</p>
+  </div>
+  <div class="section"><h2>直近の振り返り → 次週への調整</h2>
+    <div id="coachReview" class="review"></div>
+  </div>
+</section>
+
+<section id="calendar" class="hidden">
+  <div class="section">
+    <div class="hero"><div><h1 id="calTitle">2026年9月</h1><p>予定と実績を同じ画面で確認</p></div>
+      <div class="actions" style="margin:0"><button class="btn secondary" onclick="changeMonth(-1)">‹</button><button class="btn secondary" onclick="changeMonth(1)">›</button></div></div>
+    <div id="calendarGrid"></div>
+  </div>
+  <div class="section"><h2>練習計画を追加</h2>
+    <div class="form">
+      <label>日付<input id="pDate" type="date"></label>
+      <label>種類<select id="pType"><option>Easy</option><option>Long</option><option>Threshold</option><option>Interval</option><option>Race</option><option>Recovery</option></select></label>
+      <label>目安<input id="pTarget" placeholder="例：7km @6:30/km"></label>
+      <label class="wide">内容<textarea id="pWorkout" placeholder="例：20km。前半ゆっくり、後半少しペースアップ"></textarea></label>
+    </div><div class="actions"><button class="btn" onclick="addPlan()">予定を保存</button></div>
+  </div>
+</section>
+<section id="plan" class="hidden">
+  <div class="section"><h2>今週の練習計画</h2><table><thead><tr><th>日付</th><th>内容</th><th>目安</th><th>状態</th></tr></thead><tbody>
+    <tr><td>9/15</td><td>インターバル</td><td>4周×4本 / R2:30</td><td>✅ 完了</td></tr>
+    <tr><td>9/16</td><td>ランオフ</td><td>回復</td><td>✅ 完了</td></tr>
+    <tr><td>9/17</td><td>イージー</td><td>約7km @6:30/km</td><td>予定</td></tr>
+    <tr><td>9/18</td><td>オフ or 軽め</td><td>疲労次第</td><td>予定</td></tr>
+    <tr><td>9/19</td><td>ロング</td><td>約20km</td><td>予定</td></tr>
+  </tbody></table></div>
+  <div class="grid2">
+    <div class="section"><h2>富山マラソン</h2><p><b>サブ4:30</b></p><p class="note">目標ペース：約6:24/km。スピードよりもロング走・閾値走・回復のバランスを重視。</p></div>
+    <div class="section"><h2>金沢城リレーマラソン</h2><p><b>9分30秒切り</b></p><p class="note">1周約1.9km → 約5:00/km。余裕があれば2・3本目で上げる。</p></div>
+  </div>
+</section>
+
+<section id="backup" class="hidden">
+  <div class="section"><h2>バックアップ / 復元</h2><p class="note">記録はこのブラウザに保存されます。端末変更前などにJSONを書き出して保管してください。</p>
+  <div class="actions"><button class="btn" onclick="exportData()">JSONを書き出す</button><button class="btn secondary" onclick="exportCSV()">CSVを書き出す</button><label class="btn secondary" style="display:inline-block">JSONを復元<input id="importFile" type="file" accept=".json" style="display:none" onchange="importData(event)"></label></div></div>
+</section>
 </main>
+</div>
 
-<script type="module">
-const KEY="runlogpro_runs";
-const SETKEY="runlogpro_settings";
-let runs=JSON.parse(localStorage.getItem(KEY)||"[]");
-let settings=Object.assign({raceName:"富山マラソン2026",raceDate:"2026-11-01",goalMin:240,monthGoal:150},JSON.parse(localStorage.getItem(SETKEY)||"{}"));
-
-const $=id=>document.getElementById(id);
-const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const save=()=>localStorage.setItem(KEY,JSON.stringify(runs));
-const fmtPace=s=>{if(!s||!isFinite(s))return "—";let m=Math.floor(s/60),sec=Math.round(s%60);return `${m}:${String(sec).padStart(2,"0")}/km`};
-const avg=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:0;
-const startOfWeek=d=>{let x=new Date(d);let n=(x.getDay()+6)%7;x.setHours(0,0,0,0);x.setDate(x.getDate()-n);return x};
-const sameDay=(a,b)=>a.toISOString().slice(0,10)===b.toISOString().slice(0,10);
-
-function autoType(dist,pace,hr,recs){
-  if(dist>=18)return "Long";
-  if(recs&&recs.length>10){
-    let sp=recs.map(x=>Number(x.speed)).filter(x=>x>0);
-    if(sp.length>10){let lo=Math.min(...sp),hi=Math.max(...sp);if(hi/Math.max(lo,.1)>1.35&&dist>=4)return "Interval";}
-  }
-  if(pace&&pace<=300&&hr>=150)return "Threshold";
-  if(pace>=330&&pace<=355&&hr&&hr<=155)return "Marathon Pace";
-  return "Easy";
+<script>
+const KEY='my_running_log_v2';
+const GOAL=150;
+let records=JSON.parse(localStorage.getItem(KEY)||'[]');
+const PLANKEY='my_running_plan_v1';
+let plans=JSON.parse(localStorage.getItem(PLANKEY)||'[]');
+let calMonth=new Date(2026,8,1);
+function save(){localStorage.setItem(KEY,JSON.stringify(records));render();}
+function paceToSec(p){if(!p)return null; const m=p.match(/(\\d+):(\\d{1,2})/); return m?+m[1]*60+ +m[2]:null}
+function secToPace(s){if(!s)return '--';s=Math.round(s);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')}
+function calcPace(dist,timeMin){return dist&&timeMin?secToPace(timeMin*60/dist):'--'}
+function addRecord(){
+ const r={id:Date.now(),date:fDate.value,dist:+fDist.value||0,time:+fTime.value||0,pace:fPace.value||calcPace(+fDist.value,+fTime.value),avgHr:+fAvgHr.value||0,maxHr:+fMaxHr.value||0,temp:fTemp.value,elev:fElev.value,type:fType.value,workout:fWorkout.value,memo:fMemo.value};
+ if(!r.date||!r.dist){alert('日付と距離を入力してください');return}
+ records.unshift(r);save();evaluatePlansForRecord(r);rebuildFuturePlan(true);alert('保存しました。予定との実績評価→AI計画の再構築まで更新しました。');showAutoReport(r.id);render();
 }
-function sampleRecords(records){
-  if(!records?.length)return [];
-  let step=Math.max(1,Math.ceil(records.length/300));
-  return records.filter((_,i)=>i%step===0).map(r=>({timestamp:r.timestamp instanceof Date?r.timestamp.toISOString():r.timestamp,hr:Number(r.heartRate||r.hr||0),cadence:Number(r.cadence||0),speed:Number(r.speed||0),distance:Number(r.distance||0),altitude:Number(r.altitude||0)}));
+function loadInterval(){
+ fDate.value='2026-09-15';fDist.value='5.56';fTime.value='36.35';fPace.value='6:32';fAvgHr.value=143;fMaxHr.value=169;fElev.value='';fType.value='Interval';
+ fWorkout.value='800m×4（体育館217m×4周＝868m）／R2:30ジョグ。各セット：4:33、4:08、3:56、3:59';
+ fMemo.value='後半にペースアップ。スピード刺激として良い内容。';
+}
+
+function dayStart(d){const x=new Date(d);x.setHours(0,0,0,0);return x}
+function trainingLoad(r){
+  const type=r.type||'Easy', dist=+r.dist||0, hr=+r.avgHr||0, pace=paceSecondsFromRecord(r);
+  let base=dist*1.0;
+  if(type==='Interval') base*=1.45;
+  else if(type==='Threshold') base*=1.30;
+  else if(type==='Race') base*=1.50;
+  else if(type==='Long') base*=1.10;
+  else if(type==='Recovery') base*=0.75;
+  if(hr>=165) base*=1.10;
+  return Math.round(base);
 }
 function weeklyStats(){
-  let now=new Date(), st=startOfWeek(now);
-  let arr=runs.filter(r=>new Date(r.date)>=st);
-  return {km:arr.reduce((s,r)=>s+Number(r.dist||0),0),arr};
+  const today=dayStart(new Date()), dow=today.getDay(), monday=new Date(today);
+  monday.setDate(today.getDate()-(dow===0?6:dow-1));
+  const next=new Date(monday);next.setDate(monday.getDate()+7);
+  const w=records.filter(r=>{const d=dayStart(r.date);return d>=monday&&d<next});
+  const km=w.reduce((a,r)=>a+(+r.dist||0),0);
+  const d28=new Date(today);d28.setDate(today.getDate()-27);
+  const r28=records.filter(r=>dayStart(r.date)>=d28&&dayStart(r.date)<=today);
+  const d7=new Date(today);d7.setDate(today.getDate()-6);
+  const r7=records.filter(r=>dayStart(r.date)>=d7&&dayStart(r.date)<=today);
+  const load=r7.reduce((a,r)=>a+trainingLoad(r),0);
+  return {km,wcount:w.length,km28:r28.reduce((a,r)=>a+(+r.dist||0),0),load};
 }
-function monthlyKm(){
-  let now=new Date(), key=now.toISOString().slice(0,7);
-  return runs.filter(r=>String(r.date).slice(0,7)===key).reduce((s,r)=>s+Number(r.dist||0),0);
+function loadText(load,km){
+  if(load>=120)return '⚠️ 直近7日の負荷が高めです。次のポイント練習は回復度を見て調整しましょう。';
+  if(load>=90)return '🟡 しっかり走れています。Easy日は本当にEasyにして疲労を抜きましょう。';
+  return '🟢 現時点では負荷に余裕があります。ロング走・閾値走を計画的に積み上げられます。';
 }
-function fatigueScore(){
-  let now=new Date(), recent=runs.filter(r=>(now-new Date(r.date))/86400000<=7);
-  let km=recent.reduce((s,r)=>s+Number(r.dist||0),0), hard=recent.filter(r=>["Threshold","Interval","Race"].includes(r.type)).length;
-  let last=runs[0];
-  let score=0;
-  if(km>settings.monthGoal/4*1.3)score+=2;
-  if(hard>=3)score+=2;
-  if(last&&(now-new Date(last.date))/86400000<0.8&&Number(last.dist||0)>12)score+=1;
-  return score>=4?"高め":score>=2?"中": "低め";
+function savePlans(){localStorage.setItem(PLANKEY,JSON.stringify(plans));renderCalendar()}
+function addPlan(){const r={id:Date.now(),date:pDate.value,type:pType.value,target:pTarget.value,workout:pWorkout.value};if(!r.date){alert('日付を入力してください');return}plans.push(r);savePlans();alert('練習予定を保存しました')}
+function changeMonth(n){calMonth=new Date(calMonth.getFullYear(),calMonth.getMonth()+n,1);renderCalendar()}
+function renderCalendar(){const y=calMonth.getFullYear(),m=calMonth.getMonth();calTitle.textContent=`${y}年${m+1}月`;const first=new Date(y,m,1),start=(first.getDay()+6)%7,days=new Date(y,m+1,0).getDate();let out='<div class="cal">';['月','火','水','木','金','土','日'].forEach(x=>out+=`<div class="calhead">${x}</div>`);for(let i=0;i<42;i++){const n=i-start+1,d=new Date(y,m,n),inMonth=n>=1&&n<=days,ds=d.toISOString().slice(0,10);let ev='';plans.filter(x=>x.date===ds).forEach(x=>ev+=`<div class="event ${['Interval','Threshold','Race'].includes(x.type)?'quality':''}">予定 ${x.type}<br>${(x.target||x.workout||'').replace(/</g,'&lt;')}</div>`);records.filter(x=>x.date===ds).forEach(x=>ev+=`<div class="event done">✓ ${x.type}<br>${x.dist.toFixed(1)}km ${x.pace||''}</div>`);out+=`<div class="day ${inMonth?'':'other'} ${ds===todayLocalStr()?'today':''}"><div class="daynum">${d.getDate()}</div>${ev}</div>`}calendarGrid.innerHTML=out+'</div>'}
+
+function dateDiffDays(a,b){
+  const x=dayStart(a), y=dayStart(b); return Math.round((x-y)/86400000);
 }
-function paceGuides(){
-  const mp=settings.goalMin*60/42.195, f=s=>fmtPace(s);
+function localDateStr(d=new Date()){
+  const x=new Date(d);
+  return `${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,'0')}-${String(x.getDate()).padStart(2,'0')}`;
+}
+function localDate(s){ return new Date(String(s).slice(0,10)+'T00:00:00'); }
+function dateDiffDays(a,b){
+  const x=typeof a==='string'?localDate(a):new Date(a);
+  const y=typeof b==='string'?localDate(b):new Date(b);
+  return Math.round((x-y)/86400000);
+}
+function daysFromToday(s){ return dateDiffDays(localDateStr(),s); }
+function isQuality(r){ return ['Interval','Threshold','Race'].includes(r.type); }
+function sortedRecords(){ return records.slice().filter(r=>r.date).sort((a,b)=>String(b.date).localeCompare(String(a.date))); }
+
+function coachAnalysis(){
+  const today=localDateStr(), now=new Date();
+  const recent=sortedRecords();
+  const last7=recent.filter(r=>{const d=daysFromToday(r.date);return d>=0&&d<=6;});
+  const last28=recent.filter(r=>{const d=daysFromToday(r.date);return d>=0&&d<=27;});
+  const quality7=last7.filter(isQuality).length;
+  const easy7=last7.filter(r=>['Easy','Recovery'].includes(r.type)).length;
+  const long7=last7.filter(r=>r.type==='Long'||(+r.dist||0)>=18).length;
+  const longRuns=recent.filter(r=>r.type==='Long'||(+r.dist||0)>=18);
+  const qualityRuns=recent.filter(isQuality);
+  const lastLong=longRuns[0], lastQuality=qualityRuns[0], lastRun=recent[0];
+  const longGap=lastLong?daysFromToday(lastLong.date):null;
+  const qualityGap=lastQuality?daysFromToday(lastQuality.date):null;
+  const lastRunGap=lastRun?daysFromToday(lastRun.date):null;
+  const ws=weeklyStats();
+  const relayGap=Math.max(0,daysFromToday('2026-09-27'));
+  const toyamaGap=Math.max(0,daysFromToday('2026-11-01'));
+
+  let title='次回おすすめ', menu='Easy 5〜7km @6:30〜7:00/km', reason='まずは無理のない有酸素走からスタートします。', tone='coachGood', type='Easy';
+
+  if(!recent.length){
+    title='まずはベース作り'; menu='Easy 5〜7km @6:30〜7:00/km'; type='Easy';
+    reason='まだ記録がないため、最初は会話できる強度のEasyを基準にします。';
+  }else if(relayGap===0){
+    title='今日は金沢城リレー'; menu='1.9km × 1〜2周。目標は1周9:30以内（約5:00/km）'; type='Race';
+    reason='レース当日はウォームアップを入れ、最初から飛ばしすぎず一定ペースを意識します。'; tone='coachGood';
+  }else if(relayGap>0 && relayGap<=3){
+    title='リレー直前は疲労を残さない'; menu='Easy 4〜6km + 20秒流し×3〜4本 / 余裕がなければ完全休養'; type='Recovery';
+    reason=`金沢城リレーまで${relayGap}日。ここで負荷を上げるより、5:00/km前後の動きだけ残して回復を優先します。`; tone='coachWarn';
+  }else if(quality7>=2 || ws.load>=120){
+    title='回復を優先'; menu='ランオフ or Recovery 4〜6km @6:40〜7:10/km'; type='Recovery';
+    reason=`直近7日でポイント${quality7}回、負荷${ws.load}pt。今は強度を重ねず、次の練習の質を守ります。`; tone='coachWarn';
+  }else if(lastRunGap===0 && lastRun && isQuality(lastRun)){
+    title='ポイント練習の翌日'; menu='Easy 6〜8km @6:30〜6:50/km'; type='Easy';
+    reason='直前が高強度なので、翌日は回復と有酸素ベースを優先します。';
+  }else if(relayGap>3 && relayGap<=10){
+    title='リレーに向けて調整'; menu='Easy 6〜8km + 20秒流し×3〜4本'; type='Easy';
+    reason=`金沢城リレーまで${relayGap}日。重いインターバルは避け、脚の回転と余裕を残します。`;
+  }else if((longGap===null||longGap>=7) && lastRunGap!==0){
+    title='ロング走を入れるタイミング'; menu='Long 18〜22km @6:35〜7:00/km'; type='Long';
+    reason=longGap===null?'ロング走の記録がまだありません。富山に向けて持久力を積み上げます。':`前回のLongから${longGap}日。今は持久力を伸ばす刺激を入れるタイミングです。`;
+  }else if(qualityGap===null||qualityGap>=5){
+    title='閾値走を入れるタイミング'; menu='Easy 15分 → Threshold 15〜20分 @5:05〜5:15/km → Easy'; type='Threshold';
+    reason='ポイント練習から間隔が空いているため、800mのような短い刺激より20分前後の閾値走でマラソンにつながる持続力を狙います。';
+  }else if(toyamaGap<=35){
+    title='富山マラソン仕様'; menu='18〜22km。後半3〜5kmを6:20〜6:30/km目安（余裕がある場合のみ）'; type='Long';
+    reason=`富山マラソンまで${toyamaGap}日。距離だけでなく目標ペースを終盤に維持する練習へ少しずつ寄せます。`;
+  }else{
+    title='有酸素ベースを継続'; menu='Easy 6〜8km @6:25〜6:50/km'; type='Easy';
+    reason='ポイント練習とLong走の間をつなぐEasyとして、疲労をためずに走行量を積み上げます。';
+  }
+
+  return {title,menu,reason,tone,type,week:ws.km.toFixed(1)+'km / '+ws.wcount+'回',load:ws.load+'pt',
+          longGap:longGap===null?'未実施':longGap+'日',relayGap,toyamaGap,quality7,easy7,long7,last28km:last28.reduce((a,r)=>a+(+r.dist||0),0)};
+}
+
+function countTypes(rs){
   return {
-    mp:`${f(mp-5)}〜${f(mp+5)}`,
-    easy:`${f(mp+45)}〜${f(mp+90)}`,
-    long:`${f(mp+30)}〜${f(mp+75)}`,
-    threshold:`${f(mp-30)}〜${f(mp-15)}`,
-    interval:`${f(mp-75)}〜${f(mp-45)}`
+    easy:rs.filter(r=>['Easy','Recovery'].includes(r.type)).length,
+    quality:rs.filter(isQuality).length,
+    long:rs.filter(r=>r.type==='Long'||(+r.dist||0)>=18).length,
+    trail:rs.filter(r=>r.type==='Trail').length
   };
 }
-function recommend(){
-  const g=paceGuides(), now=new Date(), recent14=runs.filter(r=>(now-new Date(r.date))/86400000<=14);
-  const hard=recent14.filter(r=>["Threshold","Interval","Race","Marathon Pace"].includes(r.type)).length;
-  const lastLong=runs.find(r=>Number(r.dist||0)>=15);
-  const longDays=lastLong?(now-new Date(lastLong.date))/86400000:999;
-  if(fatigueScore()==="高め") return {title:"休足 / 回復",pace:"完全休養、または30分以内のごくゆるジョグ",reason:"直近の負荷が高めなので回復を優先"};
-  if(now.getDay()===1) return {title:"休足",pace:"完全休養",reason:"月曜は固定の休足日にしています"};
-  if(now.getDay()===0 || longDays>9) return {title:"Long 14〜18 km",pace:`参考 ${g.long}`,reason:"週末のロング走。会話できる強度で"};
-  if(now.getDay()===3 && hard===0) return {title:"ポイント練習",pace:`Mペース ${g.mp} / 閾値 ${g.threshold}`,reason:"平日のポイント練習日。今週はMペース中心"};
-  return {title:"Easy 5〜8 km",pace:`参考 ${g.easy}`,reason:"疲労をためず、次のポイント練習・ロングにつなぐ"};
+function getWeekRecords(offsetWeeks=0){
+  const today=localDate(todayLocalStr());
+  const end=new Date(today); end.setDate(end.getDate()-offsetWeeks*7);
+  const start=new Date(end); start.setDate(start.getDate()-6);
+  return sortedRecords().filter(r=>{const d=localDate(r.date);return d>=start&&d<=end;});
 }
-function buildWeek(){
-  const start=startOfWeek(new Date()), now=new Date(), g=paceGuides();
-  const names=["月","火","水","木","金","土","日"];
-  const plans=[
-    ["休足","完全休養"],
-    ["Easy 5〜8 km",g.easy],
-    ["ポイント：Mペース 2〜3 km × 2〜3本",g.mp],
-    ["休養 / 補強","完全休養または軽い補強"],
-    ["Easy 5〜8 km",g.easy],
-    ["休養 / 30分ゆるジョグ",g.easy],
-    ["Long 14〜18 km",g.long]
-  ];
-  $("weeklyMenu").innerHTML=plans.map((p,i)=>{
-    let d=new Date(start);d.setDate(start.getDate()+i);
-    return `<div class="day ${sameDay(d,now)?"today":""}"><b>${names[i]}</b><div class="small muted">${d.getMonth()+1}/${d.getDate()}</div><div style="margin-top:7px;font-size:13px;font-weight:700">${esc(p[0])}</div><div class="small" style="margin-top:5px">${esc(p[1])}</div></div>`;
-  }).join("");
-  const weeks=Math.ceil((new Date(settings.raceDate+"T09:00:00")-now)/604800000);
-  const theme=weeks>8?"土台づくり：週4回・Easy中心＋平日1回ポイント＋週末Long":
-    weeks>4?"マラソン特化：週4回を安定。MペースとLongを軸に":
-    "仕上げ：距離を無理に増やさず、ポイント練習の量を抑えて疲労を残さない";
-  $("weekTheme").textContent=`今週のテーマ：${theme}`;
-  $("paceGuide").textContent=`参考ペース（目標 ${Math.floor(settings.goalMin/60)}時間${settings.goalMin%60}分基準）：Easy ${g.easy} / Long ${g.long} / Mペース ${g.mp} / 閾値 ${g.threshold}`;
+function medianNums(a){const x=a.filter(Number.isFinite).slice().sort((a,b)=>a-b);if(!x.length)return null;const m=Math.floor(x.length/2);return x.length%2?x[m]:(x[m-1]+x[m])/2;}
+function personalizedPaceProfile(){
+  const rs=sortedRecords().filter(r=>daysFromToday(r.date)>=0&&daysFromToday(r.date)<=55);
+  const pace=r=>paceSecondsFromRecord(r);
+  const easy=rs.filter(r=>['Easy','Recovery'].includes(r.type)&&pace(r)&&(+r.avgHr||0)>0&&+r.avgHr<=155);
+  const thr=rs.filter(r=>r.type==='Threshold'&&pace(r));
+  const longs=rs.filter(r=>r.type==='Long'&&pace(r)&&+r.dist>=16);
+  const races=rs.filter(r=>r.type==='Race'&&pace(r));
+  const easySec=medianNums(easy.map(pace)), thrSec=medianNums(thr.map(pace)), longSec=medianNums(longs.map(pace)), raceSec=medianNums(races.map(pace));
+  // Conservative individualized ranges. These are training heuristics, not physiological tests.
+  const easyBase=easySec||390, easyMin=Math.round(easyBase-8), easyMax=Math.round(easyBase+18);
+  const thrBase=thrSec||308, thrMin=Math.round(thrBase-4), thrMax=Math.round(thrBase+7);
+  const mpBase=longSec?Math.min(390,Math.max(372,longSec-12)):384;
+  const mpMin=Math.round(mpBase-4), mpMax=Math.round(mpBase+4);
+  const confidence=Math.min(100,Math.round(30+easy.length*8+thr.length*12+longs.length*10+races.length*8));
+  return {easySec,thrSec,longSec,raceSec,easy:{min:easyMin,max:easyMax},thr:{min:thrMin,max:thrMax},mp:{min:mpMin,max:mpMax},confidence,samples:{easy:easy.length,thr:thr.length,long:longs.length,race:races.length}};
 }
+function fmtPaceRange(x){return `${secToPace(x.min)}〜${secToPace(x.max)}/km`;}
+function coachStateWithPersonalPace(c){return {...c,paces:personalizedPaceProfile()};}
+
+function buildAdaptiveWeek(startDate,c){
+  c=coachStateWithPersonalPace(c||coachAnalysis());
+  const out=[];
+  const start=typeof startDate==='string'?localDate(startDate):new Date(startDate);
+  let hardUsed=false, longUsed=false;
+  for(let i=0;i<7;i++){
+    const d=new Date(start); d.setDate(d.getDate()+i);
+    const ds=localDateStr(d);
+    const relay=dateDiffDays('2026-09-27',ds);
+    const toyama=dateDiffDays('2026-11-01',ds);
+    let type='Easy',title='Easy',target=`6〜8km @${secToPace(c.paces.easy.min)}〜${secToPace(c.paces.easy.max)}/km`,workout='余裕を残した有酸素走';
+    if(relay===0){
+      type='Race'; title='金沢城リレー'; target='1.9km × 1〜2周 / 1周9:30以内'; workout='レース。アップ後、最初から突っ込みすぎず一定リズム';
+    } else if(relay>0 && relay<=2){
+      type='Recovery'; title='レース後リカバリー'; target='OFF or 4〜6km'; workout='脚の状態優先。張りがあれば完全休養';
+    } else if(relay>2 && relay<=6){
+      type='Easy'; title='リレー前Easy'; target=`5〜7km @${secToPace(c.paces.easy.min)}〜${secToPace(c.paces.easy.max)}/km`; workout='最後に20秒流し×3〜4本。疲労時は流しなし';
+    } else if(i===0){
+      type=(c.type==='Recovery'||c.quality7>=2)?'Recovery':'Easy';
+      title=type==='Recovery'?'回復走':'Easy';
+      target=type==='Recovery'?`4〜6km @${secToPace(c.paces.easy.max+5)}〜${secToPace(c.paces.easy.max+25)}/km`:`6〜8km @${secToPace(c.paces.easy.min)}〜${secToPace(c.paces.easy.max)}/km`;
+      workout='前週の疲労を抜きながらつなぐ';
+    } else if(i===1 && !hardUsed && c.qualityGap>=4 && relay>6){
+      type='Threshold'; title='閾値走'; target=`15〜20分 @${secToPace(c.paces.thr.min)}〜${secToPace(c.paces.thr.max)}/km`; workout='Easy 15分 → Threshold → Easy'; hardUsed=true;
+    } else if(i===2){
+      type='Recovery'; title='休養 / Recovery'; target='OFF or 4〜5km'; workout='ポイント翌日の回復を最優先';
+    } else if(i===3 && !longUsed && relay>10){
+      type='Long'; title='ロング走'; target=`18〜22km @${secToPace(c.paces.easy.max)}〜${secToPace(c.paces.easy.max+20)}/km`;
+      workout=toyama<=35?'後半3〜5kmを6:20〜6:30/km（余裕がある場合のみ）':'一定ペース。補給・給水も確認';
+      longUsed=true;
+    } else if(i===4){
+      type='Recovery'; title='休養 / Recovery'; target='OFF or 4〜6km'; workout='脚が重ければ迷わずOFF';
+    } else if(i===5 && !hardUsed && relay>10 && toyama>14){
+      type='Interval'; title='短いスピード刺激'; target='800m×4 / R2:30、4:40〜4:50/km目安'; workout='全本数を揃える。余裕を1〜2本分残す'; hardUsed=true;
+    } else if(i===6){
+      type='Easy'; title='Easy / 次週へ'; target=`6〜8km @${secToPace(c.paces.easy.min)}〜${secToPace(c.paces.easy.max)}/km`; workout='疲労があれば5km程度へ短縮';
+    }
+    // Marathon phase overrides: after relay, prioritize durability and marathon pace.
+    if(relay<0 && toyama<=35 && type==='Easy' && i>=3){
+      target=`8〜10km @${secToPace(c.paces.easy.min)}〜${secToPace(c.paces.easy.max)}/km`; workout=`最後2〜3kmだけ${fmtPaceRange(c.paces.mp)}（余裕時）`;
+    }
+    out.push({date:ds,type,title,target,workout});
+  }
+  return out;
+}
+function buildWeekPlan(c){
+  return buildAdaptiveWeek(localDateStr(new Date(Date.now()+86400000)),c);
+}
+function buildCyclePlan(c){
+  const today=localDate(todayLocalStr()), weeks=[];
+  for(let w=0;w<4;w++){
+    const start=new Date(today); start.setDate(start.getDate()+w*7+1);
+    const relay=dateDiffDays('2026-09-27',start), toyama=dateDiffDays('2026-11-01',start);
+    const week=buildAdaptiveWeek(start,c);
+    const counts=countTypes(week);
+    let phase='基礎・調整';
+    if(relay>=0 && relay<=10) phase='金沢城リレー調整';
+    else if(relay<0 && toyama<=35) phase='富山マラソン特化';
+    else if(relay<0) phase='持久力強化';
+    weeks.push({start,relay,toyama,week,counts,phase});
+  }
+  return weeks;
+}
+function coachWeeklyReview(){
+  const cur=getWeekRecords(0), prev=getWeekRecords(1), older=getWeekRecords(2);
+  const a=countTypes(cur), b=countTypes(prev);
+  const km=cur.reduce((x,r)=>x+(+r.dist||0),0), pk=prev.reduce((x,r)=>x+(+r.dist||0),0);
+  const load=cur.reduce((x,r)=>x+trainingLoad(r),0);
+  const notes=[];
+  if(!cur.length) notes.push('今週の実績はまだありません。まずは予定通り1〜2回のEasyから再開します。');
+  if(a.quality>=2) notes.push(`今週はポイント練習が${a.quality}回。次週は高強度を増やさず、Easyと回復を厚めにします。`);
+  else if(a.quality===0 && cur.length>=2) notes.push('今週はポイント練習がありません。疲労が少なければ次週に閾値走を1回入れます。');
+  if(a.long===0 && pk>=18) notes.push('今週Longがありません。レース直前でなければ次週に18〜22kmを確保します。');
+  if(a.long>=1) notes.push(`Longを${a.long}回実施。距離耐性の土台を継続します。`);
+  if(load>=120) notes.push(`直近7日負荷は${load}pt。次週は回復を優先し、強度を詰め込みません。`);
+  if(pk>0 && km>pk*1.25) notes.push(`今週${km.toFixed(1)}km、前週${pk.toFixed(1)}km。走行量の急増を避け、次週は疲労を見ながら調整します。`);
+  if(!notes.length) notes.push('今週のバランスは大きく崩れていません。Easy → ポイント → 回復 → Longの流れを基本に継続します。');
+  return {cur,prev,older,a,b,km,pk,load,notes};
+}
+
+
+function parseTargetPace(target){
+  if(!target)return null;
+  const m=String(target).match(/@?\s*(\d{1,2}):(\d{2})(?:[〜~\-](\d{1,2}):(\d{2}))?\s*\/?km/);
+  if(!m)return null;
+  const a=+m[1]*60 + +m[2], b=m[3]?(+m[3]*60 + +m[4]):a;
+  return {min:Math.min(a,b),max:Math.max(a,b)};
+}
+function evaluatePlan(plan,r){
+  const typeMatch = r.type===plan.type || (plan.type==='Recovery'&&['Easy','Recovery'].includes(r.type)) ||
+    (plan.type==='Easy'&&['Easy','Recovery'].includes(r.type));
+  const distTarget = (String(plan.target||'').match(/(\d+(?:\.\d+)?)\s*km/)||[])[1];
+  const distPct = distTarget ? Math.min(150,(+r.dist/(+distTarget))*100) : null;
+  const pp=parseTargetPace(plan.target), rp=paceSecondsFromRecord(r);
+  let paceState='対象外';
+  if(pp&&rp){
+    if(rp>=pp.min && rp<=pp.max) paceState='範囲内';
+    else if(rp<pp.min) paceState='速め';
+    else paceState='遅め';
+  }
+  let status=typeMatch?'done':'partial';
+  if(distPct!==null && distPct<70) status='partial';
+  return {status,typeMatch,distPct:distPct===null?null:Math.round(distPct),paceState,actualType:r.type,actualDist:+r.dist.toFixed(2),actualPace:r.pace||'',updatedAt:Date.now()};
+}
+function evaluatePlansForRecord(r){
+  let changed=0;
+  plans.forEach(p=>{
+    if(p.date===r.date){
+      p.evaluation=evaluatePlan(p,r);
+      changed++;
+    }
+  });
+  if(changed)savePlans();
+  return changed;
+}
+function planEvaluationSummary(){
+  const past=plans.filter(p=>p.date && localDate(p.date)<=localDate(todayLocalStr()));
+  const evaluated=past.filter(p=>p.evaluation);
+  const done=evaluated.filter(p=>p.evaluation.status==='done').length;
+  const partial=evaluated.filter(p=>p.evaluation.status==='partial').length;
+  const missed=past.filter(p=>!p.evaluation && localDate(p.date)<localDate(todayLocalStr())).length;
+  return {evaluated,done,partial,missed,total:past.length};
+}
+function readinessScore(c){
+  const ad=plannedAdherence();
+  const ps=planEvaluationSummary();
+  let score=70;
+  if(c.load>=120)score-=15; else if(c.load>=90)score-=5;
+  if(c.quality7>=3)score-=10; else if(c.quality7===2)score-=3;
+  if(c.long7>=1)score+=7;
+  if(c.long7>=2)score+=3;
+  if(ad.rate!==null){ if(ad.rate>=85)score+=8; else if(ad.rate<60)score-=8; }
+  if(c.qualityGap>=5)score-=4;
+  if(c.longGap>=10)score-=5;
+  const recent=sortedRecords().filter(r=>daysFromToday(r.date)>=0&&daysFromToday(r.date)<=13);
+  const qualityRecent=recent.filter(isQuality);
+  if(qualityRecent.length>=1)score+=3;
+  score=Math.max(0,Math.min(100,Math.round(score)));
+  let label=score>=80?'良好':score>=65?'安定':'調整優先';
+  return {score,label,planSummary:ps};
+}
+function refreshPlanEvaluations(){
+  let n=0;
+  records.forEach(r=>{n+=evaluatePlansForRecord(r)});
+  render();
+  return n;
+}
+
+function plannedAdherence(){
+  const today=localDate(todayLocalStr()), start=new Date(today); start.setDate(start.getDate()-14);
+  const pastPlans=plans.filter(p=>p.date).filter(p=>{const d=localDate(p.date);return d>=start&&d<today;});
+  let done=0;
+  pastPlans.forEach(p=>{
+    const hit=records.some(r=>r.date===p.date && (r.type===p.type || (p.type==='Recovery'&&['Easy','Recovery'].includes(r.type))));
+    if(hit) done++;
+  });
+  return {planned:pastPlans.length,done,rate:pastPlans.length?Math.round(done/pastPlans.length*100):null};
+}
+function readinessSnapshot(c){
+  const ad=plannedAdherence();
+  let status='安定', note='現状の練習リズムを大きく変えず、Easy・ポイント・Longのバランスを維持します。';
+  if(c.load>=120){status='回復優先';note='直近負荷が高め。次のポイント練習を急がず、睡眠・脚の状態を優先します。';}
+  else if(ad.rate!==null&&ad.rate<60){status='計画を軽く';note='予定消化率が低め。未実施分を取り戻そうとせず、次の7日間を現実的な量に調整します。';}
+  else if(c.quality7>=2){status='強度を整理';note='ポイント練習が重なっています。次週はEasy/Recoveryを厚くして質を守ります。';}
+  else if(c.long7>=1&&c.quality7<=1){status='持久力を継続';note='Longを確保できています。次のポイントは閾値走など持続力寄りを基本にします。';}
+  return {status,note,ad};
+}
+function buildFullRacePlan(c){
+  const today=localDate(todayLocalStr()), race=localDate('2026-11-01'), weeks=[];
+  let cursor=new Date(today); cursor.setDate(cursor.getDate()+1);
+  while(cursor<=race){
+    const week=buildAdaptiveWeek(cursor,c).filter(x=>localDate(x.date)<=race);
+    const relay=dateDiffDays('2026-09-27',localDateStr(cursor)), toyama=dateDiffDays('2026-11-01',localDateStr(cursor));
+    let phase='持久力強化';
+    if(relay>=0&&relay<=10) phase='金沢城リレー調整';
+    else if(relay<0&&toyama<=35) phase='富山マラソン特化';
+    weeks.push({start:new Date(cursor),week,phase});
+    cursor.setDate(cursor.getDate()+7);
+  }
+  return weeks;
+}
+function applyFullCycle(){
+  const c=coachAnalysis(), cycles=buildFullRacePlan(c); let added=0;
+  cycles.forEach(w=>w.week.forEach(x=>{
+    if(!plans.some(p=>p.date===x.date&&p.type===x.type)){
+      plans.push({id:Date.now()+added,date:x.date,type:x.type,target:x.target,workout:x.workout,source:'AI Coach Full Cycle'});
+      added++;
+    }
+  }));
+  savePlans(); renderCoach(); alert(`${added}件の全期間AIプランを追加しました。`);
+}
+function loopReadiness(){
+  const c=coachAnalysis(), ad=plannedAdherence(), ps=planEvaluationSummary();
+  const recent=sortedRecords().filter(r=>daysFromToday(r.date)>=0&&daysFromToday(r.date)<=27);
+  const paceRuns=recent.filter(r=>paceSecondsFromRecord(r));
+  const mp=paceRuns.length?paceRuns.reduce((a,r)=>a+paceSecondsFromRecord(r),0)/paceRuns.length:null;
+  const score=readinessScore(c).score;
+  const paces=personalizedPaceProfile(); return {c,ad,ps,score,mp,paces};
+}
+function plannedLoadForWeek(week){
+  return week.reduce((a,x)=>a+trainingLoad({type:x.type,dist:+((String(x.target).match(/(\d+(?:\.\d+)?)\s*km/)||[])[1]||0)}),0);
+}
+function buildClosedLoopCycle(){
+  const base=loopReadiness(), weeks=[], cursor=localDate(todayLocalStr()); cursor.setDate(cursor.getDate()+1);
+  let state={...base.c, load:base.c.load, quality7:base.c.quality7, long7:base.c.long7};
+  for(let i=0;i<7 && cursor<=localDate('2026-11-01');i++){
+    const week=buildAdaptiveWeek(cursor,state).filter(x=>localDate(x.date)<=localDate('2026-11-01'));
+    const simulatedLoad=plannedLoadForWeek(week);
+    const q=week.filter(x=>isQuality({type:x.type})).length;
+    const l=week.filter(x=>x.type==='Long').length;
+    const phase=(dateDiffDays('2026-09-27',localDateStr(cursor))>=0)?'金沢城リレー調整':(dateDiffDays('2026-11-01',localDateStr(cursor))<=35?'富山マラソン特化':'持久力強化');
+    weeks.push({start:new Date(cursor),week,phase,simulatedLoad,quality:q,long:l});
+    // Advance a lightweight projected state so later weeks are not identical copies.
+    state={...state,load:Math.round(simulatedLoad*0.75),quality7:q,long7:l,qualityGap:q?0:7,longGap:l?0:10,type:q?'Threshold':'Easy'};
+    cursor.setDate(cursor.getDate()+7);
+  }
+  return {base,weeks};
+}
+function rebuildFuturePlan(silent=false){
+  const cycle=buildClosedLoopCycle(), tomorrow=localDate(todayLocalStr()); tomorrow.setDate(tomorrow.getDate()+1);
+  // Only replace AI-generated future plans. Manual/user plans remain untouched.
+  const before=plans.length;
+  plans=plans.filter(p=>!(p.source&&String(p.source).startsWith('AI Coach')&&localDate(p.date)>=tomorrow));
+  let added=0;
+  cycle.weeks.forEach(w=>w.week.forEach(x=>{
+    if(!plans.some(p=>p.date===x.date&&p.type===x.type)){
+      plans.push({id:Date.now()+added,date:x.date,type:x.type,target:x.target,workout:x.workout,source:'AI Coach Closed Loop',generatedFromScore:cycle.base.score}); added++;
+    }
+  }));
+  savePlans(); render();
+  if(!silent) alert(`${added}件の今後のAI計画を再構築しました。手動予定は保持しています。`);
+  return {removed:before-plans.length+added,added,cycle};
+}
+function renderClosedLoop(){
+  const x=loopReadiness(), p=x.ps;
+  const future=buildClosedLoopCycle();
+  const first=future.weeks[0], nextLoad=first?first.simulatedLoad:0;
+  closedLoopPanel.innerHTML=`<div class="closedLoop">
+    <div class="loopStep"><b>① 実績を取り込む</b><span class="note">Garmin FITまたは通常記録を保存</span></div>
+    <div class="loopArrow">↓</div>
+    <div class="loopStep"><b>② 予定と照合</b><span class="note">種別・距離・ペースを評価：完了 ${p.done}件 / 一部 ${p.partial}件 / 未実施 ${p.missed}件</span></div>
+    <div class="loopArrow">↓</div>
+    <div class="loopStep"><b>③ 現在の状態を更新</b><div class="stateBar"><div class="stateCell"><small>簡易準備度</small><b>${x.score}/100</b></div><div class="stateCell"><small>直近7日負荷</small><b>${x.c.load}pt</b></div><div class="stateCell"><small>予定消化率</small><b>${x.ad.rate===null?'--':x.ad.rate+'%'}</b></div></div></div>
+    <div class="loopArrow">↓</div>
+    <div class="loopStep"><b>④ 次の計画を再構築</b><span class="note">次週の予定負荷目安 ${nextLoad}pt / ポイント ${first?first.quality:0}回 / Long ${first?first.long:0}回</span></div>
+    <div class="paceProfile"><b>🎯 個人化ペース設定</b><div class="paceGrid"><div><small>Easy</small><strong>${fmtPaceRange(x.paces.easy)}</strong></div><div><small>Threshold</small><strong>${fmtPaceRange(x.paces.thr)}</strong></div><div><small>Marathon Pace</small><strong>${fmtPaceRange(x.paces.mp)}</strong></div></div><span class="note">実績${x.paces.confidence}%の信頼度（Easy ${x.paces.samples.easy} / 閾値 ${x.paces.samples.thr} / Long ${x.paces.samples.long} / Race ${x.paces.samples.race}件）。データが増えるほど設定を更新します。</span></div><div class="autoUpdate"><strong>現在の状態：${readinessSnapshot(x.c).status}</strong>${readinessSnapshot(x.c).note}</div>
+  </div>`;
+}
+function performanceTrend(){
+  const today=localDate(todayLocalStr());
+  const d28=new Date(today); d28.setDate(d28.getDate()-28);
+  const d56=new Date(today); d56.setDate(d56.getDate()-56);
+  const range=(a,b)=>sortedRecords().filter(r=>{const d=localDate(r.date);return d>=a&&d<b;});
+  const valid=r=>paceSecondsFromRecord(r)&&r.avgHr&&+r.dist>=5;
+  const recent=range(d28,today).filter(valid), prev=range(d56,d28).filter(valid);
+  const av=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:null;
+  const rp=av(recent.map(r=>paceSecondsFromRecord(r))), pp=av(prev.map(r=>paceSecondsFromRecord(r)));
+  const rh=av(recent.map(r=>+r.avgHr)), ph=av(prev.map(r=>+r.avgHr));
+  const re=av(recent.map(r=>paceSecondsFromRecord(r)/+r.avgHr)), pe=av(prev.map(r=>paceSecondsFromRecord(r)/+r.avgHr));
+  const delta=(re!==null&&pe!==null)?(pe-re)/pe*100:null;
+  const label=delta===null?'比較データ待ち':delta>=3?'改善傾向':delta<=-3?'調整傾向':'概ね安定';
+  const cls=delta===null?'trendNeutral':delta>=3?'trendUp':delta<=-3?'trendDown':'trendNeutral';
+  const longs=recent.filter(r=>r.type==='Long'||+r.dist>=18); const ll=longs[0];
+  return `<div class="trendGrid"><div class="trendCard"><small>ペース×心拍効率</small><b class="${cls}">${label}</b><span class="note">${delta===null?'過去28日との比較データ不足':(delta>=0?'+':'')+delta.toFixed(1)+'%'}</span></div><div class="trendCard"><small>直近28日 平均ペース</small><b>${rp===null?'--':fmtPace(rp)}</b><span class="note">${recent.length}件 / HR ${rh===null?'--':Math.round(rh)}</span></div><div class="trendCard"><small>前28日 平均ペース</small><b>${pp===null?'--':fmtPace(pp)}</b><span class="note">${prev.length}件 / HR ${ph===null?'--':Math.round(ph)}</span></div><div class="trendCard"><small>最新Long</small><b>${ll?(ll.pace||'--'):'--'}</b><span class="note">${ll?(+ll.dist).toFixed(1)+'km / HR '+(ll.avgHr||'--'):'18km以上の記録なし'}</span></div></div><div class="trendList"><div class="trendRow"><span>効率指標</span><b>${re===null?'--':re.toFixed(3)} → ${pe===null?'--':pe.toFixed(3)} sec/HR</b></div><div class="trendRow"><span>直近28日</span><b>${recent.length}回 / ${recent.reduce((a,r)=>a+(+r.dist||0),0).toFixed(1)}km</b></div></div><div class="milestone"><b>次に見るポイント</b><br>${ll?'Long走の距離と後半ペースを継続比較します。':'18km以上のLong走が入ると持久力の変化も追跡できます。'}</div>`;
+}
+
+function renderCoach(){
+  if(typeof performanceTrendEl!=='undefined') performanceTrendEl.innerHTML=performanceTrend();
+  renderClosedLoop();
+  const c=coachAnalysis();
+  coachTitle.textContent=c.title; coachMenu.textContent=c.menu;
+  coachWeek.textContent=c.week; coachLoad.textContent=c.load; coachLongGap.textContent=c.longGap;
+  coachReason.textContent=c.reason; coachReason.className='coachReason '+c.tone;
+  if(typeof coachFullTitle!=='undefined'){
+    coachFullTitle.textContent=c.title; coachFullMenu.textContent=c.menu; coachFullReason.textContent=c.reason;
+    coachRaceBadge.textContent=`富山まで${c.toyamaGap}日`;
+    coachRelayText.textContent=c.relayGap===0?'今日です。':`あと${c.relayGap}日。9:30切り / 約5:00/kmを目安に調整。`;
+    coachToyamaText.textContent=`あと${c.toyamaGap}日。サブ4:30 / 約6:24/kmに向けて持久力を優先。`;
+    const week=buildWeekPlan(c);
+    weeklyCoachPlan.innerHTML=week.map(x=>`<div class="coachDay"><div class="coachDate">${x.date.slice(5).replace('-','/')}<span class="tag">${['日','月','火','水','木','金','土'][new Date(x.date+'T00:00:00').getDay()]}</span></div><div><h4>${x.title}</h4><p><b>${x.target}</b><br>${x.workout}</p></div></div>`).join('');
+    const last7=sortedRecords().filter(r=>{const d=daysFromToday(r.date);return d>=0&&d<=6;});
+    balEasy.textContent=last7.filter(r=>['Easy','Recovery'].includes(r.type)).length;
+    balQuality.textContent=last7.filter(isQuality).length;
+    balLong.textContent=last7.filter(r=>r.type==='Long'||(+r.dist||0)>=18).length;
+    balRest.textContent=Math.max(0,7-last7.length);
+
+    const cycle=buildCyclePlan(c);
+    cyclePlan.innerHTML=cycle.map((w,i)=>{
+      const end=new Date(w.start);end.setDate(end.getDate()+6);
+      const label=`${w.start.getMonth()+1}/${w.start.getDate()}〜${end.getMonth()+1}/${end.getDate()}`;
+      const hard=w.week.filter(x=>isQuality({type:x.type})).length;
+      return `<div class="cycleWeek"><h3>第${i+1}週　${label} <span class="tag">${w.phase}</span></h3><p>Easy/Recovery ${w.counts.easy}回　・ポイント ${hard}回　・Long ${w.counts.long}回</p><p>${w.week.filter(x=>['Threshold','Interval','Long','Race'].includes(x.type)).map(x=>`${x.date.slice(5)} ${x.title}`).join(' / ')||'回復・Easy中心'}</p></div>`;
+    }).join('');
+
+    const rv=coachWeeklyReview();
+    coachReview.innerHTML=`<h3>今週 ${rv.km.toFixed(1)}km / 負荷 ${rv.load}pt</h3><ul>${rv.notes.map(n=>`<li>${n}</li>`).join('')}</ul>`;
+    const rs=readinessSnapshot(c);
+    const rr=readinessScore(c);
+    const ps=rr.planSummary;
+    const adText=rs.ad.planned?`${rs.ad.done}/${rs.ad.planned}件（${rs.ad.rate}%）`:'過去14日にAI予定なし';
+    adaptiveStatus.innerHTML=`<div class="readiness"><b>現在の判定：${rs.status}</b><br>${rs.note}</div>
+      <div class="adaptGrid">
+        <div class="adaptStat"><small>予定消化率（14日）</small><b>${adText}</b></div>
+        <div class="adaptStat"><small>直近7日負荷</small><b>${c.load}pt</b></div>
+        <div class="adaptStat"><small>ポイント練習</small><b>${c.quality7}回</b></div>
+        <div class="adaptStat"><small>Long</small><b>${c.long7}回</b></div>
+        <div class="adaptStat"><small>準備度（参考値）</small><b>${rr.score}/100・${rr.label}</b></div>
+      </div>
+      <p class="note" style="margin-top:9px">※準備度は記録から作る簡易指標で、医療的・生理学的な判定ではありません。未実施メニューを後から詰め込まず、現在の状態から先の計画を組み直します。</p>
+      <div class="adaptGrid" style="margin-top:8px">
+        <div class="adaptStat"><small>実績評価済み</small><b>${ps.evaluated.length}件</b></div>
+        <div class="adaptStat"><small>完了</small><b>${ps.done}件</b></div>
+        <div class="adaptStat"><small>一部実施</small><b>${ps.partial}件</b></div>
+        <div class="adaptStat"><small>未実施</small><b>${ps.missed}件</b></div>
+      </div>
+      <p class="note" style="margin-top:9px">Garmin FITまたは通常記録を保存すると、同日の予定に対して「種別・距離・ペース」を自動評価し、次回のAIコーチ更新に反映します。</p>
+      <div class="actions"><button class="btn secondary" onclick="refreshPlanEvaluations()">既存記録を再評価</button></div>
+      <p class="note" style="margin-top:9px">※消化できなかったメニューを後から詰め込まず、現在の状態から先の計画を組み直します。</p>`;
+    const full=buildFullRacePlan(c);
+    fullCyclePlan.innerHTML=full.map((w,i)=>{
+      const end=new Date(w.start); end.setDate(end.getDate()+6);
+      const hard=w.week.filter(x=>isQuality({type:x.type})).length;
+      const long=w.week.filter(x=>x.type==='Long').length;
+      const items=w.week.filter(x=>['Threshold','Interval','Long','Race'].includes(x.type)).map(x=>`${x.date.slice(5)} ${x.title}`).join(' / ')||'Easy・Recovery中心';
+      return `<div class="cycleWeek"><h3>第${i+1}週　${w.start.getMonth()+1}/${w.start.getDate()}〜${end.getMonth()+1}/${end.getDate()} <span class="tag">${w.phase}</span></h3><p>ポイント ${hard}回　・Long ${long}回</p><p>${items}</p></div>`;
+    }).join('');
+
+  }
+}
+function applyCoachWeek(){
+  const c=coachAnalysis(), week=buildWeekPlan(c);
+  let added=0;
+  week.forEach(x=>{
+    if(!plans.some(p=>p.date===x.date && p.type===x.type)){
+      plans.push({id:Date.now()+added,date:x.date,type:x.type,target:x.target,workout:x.workout,source:'AI Coach'});
+      added++;
+    }
+  });
+  savePlans();
+  renderCoach();
+  alert(`${added}件のAI練習計画を追加しました。`);
+}
+function todayLocalStr(){ return localDateStr(new Date()); }
+
+function marathonProgress(){
+  const race=localDate('2026-11-01'), today=localDate(todayLocalStr());
+  const days=Math.max(0,Math.round((race-today)/86400000));
+  const target=384; // 6:24/km
+  const recent=sortedRecords().filter(r=>{const d=daysFromToday(r.date);return d>=0&&d<=55;});
+  const mpRuns=recent.filter(r=>{const p=paceSecondsFromRecord(r);return p&&+r.dist>=6&&Math.abs(p-target)<=25;});
+  const longRuns=recent.filter(r=>r.type==='Long'||+r.dist>=18).sort((a,b)=>String(b.date).localeCompare(String(a.date)));
+  const long=longRuns[0];
+  const longP=long?paceSecondsFromRecord(long):null;
+  const longKm=long?+long.dist:0;
+  const longHr=long?+long.avgHr||0:0;
+  const mpSec=mpRuns.length?mpRuns.reduce((a,r)=>a+paceSecondsFromRecord(r),0)/mpRuns.length:null;
+  const prof=personalizedPaceProfile();
+  const targetHold=mpRuns.length?Math.max(0,Math.min(100,Math.round((1-Math.abs(mpSec-target)/40)*100))):0;
+  const longScore=long?Math.max(0,Math.min(100,Math.round((longKm/22)*70+(longP&&longP<=390?20:0)+(longHr&&longHr<=150?10:0)))):0;
+  const consistency=Math.min(100,Math.round((recent.length/12)*100));
+  const progress=Math.round(targetHold*.4+longScore*.35+consistency*.25);
+  const trend=performanceTrend().includes('改善傾向')?'改善傾向':performanceTrend().includes('調整傾向')?'調整傾向':'概ね安定';
+  let focus='EasyとLongを土台に、6:24/km前後を楽に扱える時間を少しずつ増やす';
+  if(days<=45) focus='Long走の後半に6:20〜6:30/kmを短く入れ、目標ペースへの耐性を確認';
+  if(days<=21) focus='距離を追いすぎず、目標ペース感覚と回復を優先';
+  return {days,target,mpSec,long, longP,longKm,longHr,mpRuns,targetHold,longScore,consistency,progress,trend,focus,prof};
+}
+function renderMarathonProgress(){
+  const el=document.getElementById('raceProgress'); if(!el)return;
+  const x=marathonProgress(); document.getElementById('rpDays').textContent=x.days+'日';
+  const mp=x.mpSec?fmtPace(x.mpSec)+'/km':'データ待ち';
+  const longText=x.long?`${x.longKm.toFixed(1)}km / ${x.longP?fmtPace(x.longP):'--'} / HR ${x.longHr||'--'}`:'18km以上のLongなし';
+  const prof=x.prof;
+  el.innerHTML=`<div class="rpHero"><div class="rpTitle">現在地 ${x.progress}/100 <span class="rpTag">参考指標</span></div><div class="rpBar"><i style="width:${x.progress}%"></i></div><div class="rpSub">これは予測ではなく、記録から継続比較するための進捗指標です。</div></div>
+    <div class="rpGrid">
+      <div class="rpCard"><small>目標マラソンペース</small><b>6:24/km</b><span class="trendMini">42.195kmをこのペースで走る目標</span></div>
+      <div class="rpCard"><small>直近の目標ペース帯実績</small><b>${mp}</b><span class="trendMini">該当 ${x.mpRuns.length}件</span></div>
+      <div class="rpCard"><small>最新Long</small><b>${longText}</b><span class="trendMini">後半維持力を継続確認</span></div>
+      <div class="rpCard"><small>走力トレンド</small><b>${x.trend}</b><span class="trendMini">直近28日と前28日を比較</span></div>
+    </div>
+    <div class="rpList">
+      <div class="rpRow"><span>目標ペースへの慣れ</span><b>${x.targetHold}/100</b></div>
+      <div class="rpRow"><span>Long走の積み上げ</span><b>${x.longScore}/100</b></div>
+      <div class="rpRow"><span>継続状況</span><b>${x.consistency}/100</b></div>
+      <div class="rpRow"><span>現在の個人化設定</span><b>Easy ${prof.easyText} / Threshold ${prof.thrText}</b></div>
+    </div>
+    <div class="rpHero" style="margin-top:9px"><b>次に見るポイント</b><p class="rpNote">${x.focus}</p></div>`;
+}
+
+function v12WeekActual(start,end){
+ const rs=sortedRecords().filter(r=>{const d=localDate(r.date);return d>=start&&d<end;});
+ const km=rs.reduce((a,r)=>a+(+r.dist||0),0);
+ const load=rs.reduce((a,r)=>a+trainingLoadForRecord(r),0);
+ const quality=rs.filter(r=>isQuality(r)).length;
+ const longs=rs.filter(r=>r.type==='Long'||+r.dist>=18).length;
+ return {rs,km,load,quality,longs};
+}
+function v12ProjectedWeek(state,start){
+ let week=buildAdaptiveWeek(start,state).filter(x=>localDate(x.date)<=localDate('2026-11-01'));
+ const raceGap=dateDiffDays('2026-11-01',localDateStr(start));
+ // Marathon taper: preserve frequency while reducing volume/intensity near race day.
+ if(raceGap<=14){
+   week=week.map(x=>{if(x.type==='Long'){return {...x,type:'Easy',title:'短めEasy',target:'8〜12km ゆったり',workout:'疲労を残さず終了'};} if(x.type==='Interval'||x.type==='Threshold'){return {...x,type:'Easy',title:'目標ペース感覚走',target:'5〜8km / うち1〜2kmを6:20〜6:30/km',workout:'余裕を残して終了'};} return x;});
+ }
+ if(raceGap<=7){
+   week=week.map(x=>localDate(x.date)<localDate('2026-11-01')?{...x,type:x.type==='Easy'?'Easy':'Recovery',title:x.type==='Easy'?'軽めEasy':'休養 / Recovery',target:x.type==='Easy'?'4〜6km':'OFF or 3〜5km',workout:'本番へ疲労を持ち越さない'}:x);
+ }
+ return week;
+}
+function v12Roadmap(){
+ const base=loopReadiness(), weeks=[], cursor=localDate(todayLocalStr()); cursor.setDate(cursor.getDate()+1);
+ let state={...base.c,load:base.c.load,quality7:base.c.quality7,long7:base.c.long7,qualityGap:base.c.qualityGap,longGap:base.c.longGap,type:base.c.type};
+ for(let i=0;i<12&&cursor<=localDate('2026-11-01');i++){
+   const start=new Date(cursor), end=new Date(cursor); end.setDate(end.getDate()+7);
+   const week=v12ProjectedWeek(state,start); const planned=plannedLoadForWeek(week);
+   const actual=v12WeekActual(start,end);
+   const relayGap=dateDiffDays('2026-09-27',localDateStr(start)); const raceGap=dateDiffDays('2026-11-01',localDateStr(start));
+   let phase='持久力強化'; if(relayGap>=0&&relayGap<=10)phase='金沢城リレー調整'; else if(raceGap<=35)phase='富山マラソン特化';
+   weeks.push({start,end,week,planned,actual,phase,raceGap});
+   const actualQ=actual.quality, actualL=actual.longs;
+   state={...state,load:Math.round((actual.rs.length?actual.load:planned)*.72),quality7:actualQ,long7:actualL,qualityGap:actualQ?0:7,longGap:actualL?0:10,type:actualQ?'Threshold':'Easy'};
+   cursor.setDate(cursor.getDate()+7);
+ }
+ return {base,weeks};
+}
+function v12RoadmapScore(w){
+ if(!w.actual.rs.length)return null;
+ const completion=Math.min(100,Math.round((w.actual.km/Math.max(1,w.planned*.78))*100));
+ return Math.max(0,Math.min(100,completion));
+}
+function renderV12(){
+ const el=document.getElementById('v12Adaptive'); if(!el)return;
+ const x=v12Roadmap(); const days=Math.max(0,dateDiffDays(localDateStr(localDate(todayLocalStr())),'2026-11-01')); document.getElementById('v12RaceDays').textContent='あと'+days+'日';
+ const cur=x.weeks[0], ad=x.base.ad, next=cur?cur.planned:0;
+ let html=`<div class="v12Hero"><div class="v12Title">現在の判断：${readinessSnapshot(x.base.c).status}</div><div class="v12Note">${readinessSnapshot(x.base.c).note}</div><div class="v12Grid"><div class="v12Card"><small>簡易準備度</small><b>${x.base.score}/100</b></div><div class="v12Card"><small>直近7日負荷</small><b>${x.base.c.load}pt</b></div><div class="v12Card"><small>次週予定負荷</small><b>${next}pt</b></div><div class="v12Card"><small>予定消化率</small><b>${ad.rate===null?'--':ad.rate+'%'}</b></div></div><div class="v12Actions"><button class="v12Btn" onclick="rebuildFuturePlan(false)">🔄 今後のAI計画を再構築</button><button class="v12Btn" onclick="renderV12();alert('最新の実績から再計算しました。')">📊 再計算</button></div></div><div class="v12Road">`;
+ x.weeks.forEach((w,i)=>{const score=v12RoadmapScore(w), label=i===0?'次の7日間':`${w.start.getMonth()+1}/${w.start.getDate()}〜`; const q=w.week.filter(z=>isQuality({type:z.type})).length,l=w.week.filter(z=>z.type==='Long').length; html+=`<div class="v12Week"><div class="v12WeekHead"><span>${label} <span class="v12Tag">${w.phase}</span></span><span>${score===null?'実績待ち':score+'%'}</span></div><div class="v12Note">予定 ${w.planned}pt / 実績 ${w.actual.load}pt ・ ${w.actual.km.toFixed(1)}km</div><div class="v12Bar"><i style="width:${score===null?0:score}%"></i></div><div class="v12Note">ポイント ${q}回 ・ Long ${l}回 ・ ${w.week.map(z=>z.title).join(' / ')}</div></div>`;});
+ html+='</div><div class="v12Note">※スコアと負荷は、この記録アプリ内の簡易ヒューリスティックです。医療的な疲労判定や大会結果の予測ではありません。</div>'; el.innerHTML=html;
+}
+
+function v13CapabilityProfile(){
+  const recent=sortedRecords().filter(r=>{const d=daysFromToday(r.date);return d>=0&&d<=55;});
+  const thr=recent.filter(r=>r.type==='Threshold'&&paceSecondsFromRecord(r));
+  const longs=recent.filter(r=>r.type==='Long'||(+r.dist||0)>=18);
+  const mp=recent.filter(r=>{const p=paceSecondsFromRecord(r);return p&&(+r.dist||0)>=6&&Math.abs(p-384)<=25;});
+  const consistency=Math.min(100,Math.round(recent.length/12*100));
+  const durability=longs.length?Math.min(100,Math.round(Math.max(...longs.map(r=>+r.dist||0))/22*100)):0;
+  const mpFamiliarity=mp.length?Math.min(100,Math.round(mp.length/4*100)):0;
+  const threshold=thr.length?Math.min(100,70+thr.length*8):0;
+  const speed=recent.filter(r=>r.type==='Interval'||r.type==='Race').length?Math.min(100,70+recent.filter(r=>r.type==='Interval'||r.type==='Race').length*10):0;
+  return {speed,threshold,mp:mpFamiliarity,durability,consistency};
+}
+function v13Decision(){
+  const c=coachAnalysis(), cap=v13CapabilityProfile();
+  const latest=sortedRecords()[0]||null;
+  let next=buildAdaptiveWeek(localDateStr(new Date(Date.now()+86400000)),c)[0];
+  let reason='現在の負荷と直近の練習バランスから、次の7日間を自動調整しています。';
+  let adjustment='標準';
+  if(c.load>=120){next={date:next.date,type:'Recovery',title:'回復走 / OFF',target:'OFF or 4〜5km ゆっくり',workout:'疲労を抜くことを優先。脚が重ければ完全休養'};adjustment='負荷ダウン';reason='直近7日負荷が高めのため、次回ポイントを急がず回復を優先します。';}
+  else if(c.quality7>=2){next={date:next.date,type:'Easy',title:'Easy（強度整理）',target:`5〜7km @${secToPace(c.paces.easy.min)}〜${secToPace(c.paces.easy.max)}/km`,workout:'ポイントを重ねず、余裕を残して終了'};adjustment='強度整理';reason='直近7日にポイント練習が重なっているため、次回はEasyに寄せます。';}
+  else if(c.longGap>=10){next={date:next.date,type:'Easy',title:'Easy → Long準備',target:`6〜8km @${secToPace(c.paces.easy.min)}〜${secToPace(c.paces.easy.max)}/km`,workout:'次回Longに疲労を残さない。必要なら距離短縮'};adjustment='持久力準備';reason='Long間隔が空いているため、いきなり強度を上げず次のLongにつなげます。';}
+  return {cap,latest,next,reason,adjustment};
+}
+function renderV13(){
+ const el=document.getElementById('v13Decision');if(!el)return;
+ const x=v13Decision(),cap=x.cap,n=x.next;
+ const latest=x.latest?`${x.latest.date} / ${x.latest.type} / ${(+x.latest.dist||0).toFixed(1)}km / ${x.latest.pace||'--'}`:'まだ記録なし';
+ const rows=[['スピード刺激',cap.speed],['閾値・持続力',cap.threshold],['目標ペース慣れ',cap.mp],['距離耐性',cap.durability],['継続性',cap.consistency]];
+ el.innerHTML=`<div class="v13Hero"><div class="v13Title">次回メニュー：${n.title} <span class="v13Tag">${x.adjustment}</span></div><div class="v13Sub">${n.date} ・ ${n.target}</div><div class="v13Next"><b>自動判断理由</b><br>${x.reason}<br><span class="v13Small">${n.workout}</span></div><div class="v13Btns"><button class="btn" onclick="rebuildFuturePlan(false)">🔄 未来の計画を再構築</button><button class="btn secondary" onclick="renderV13();alert('V13を最新記録から再計算しました。')">📊 状態を再計算</button></div></div><div class="v13Rows"><div class="v13Row"><span>直近の実績</span><b>${latest}</b></div>${rows.map(r=>`<div class="v13Row"><span>${r[0]}</span><b>${r[1]}/100</b></div>`).join('')}</div><p class="note" style="margin-top:9px">※各能力値は、このアプリに保存された練習記録から作る比較用指標です。医学的な疲労・能力判定や大会結果の予測ではありません。</p>`;
+}
+
+function v14Prescription(){
+ const c=coachAnalysis(), cap=v13CapabilityProfile(), p=personalizedPaceProfile();
+ const tomorrow=localDateStr(new Date(Date.now()+86400000));
+ let type='Easy', title='Easy走', target=`${p.easyText||'ゆったり'} / 6〜8km`, workout='会話できる余裕を残して終了。';
+ let focus='有酸素の土台を維持';
+ if(c.load>=120){type='Recovery';title='Recovery / OFF';target='OFF または 4〜5km';workout='脚の重さ・睡眠不足があればOFF。走るなら極めて楽に。';focus='疲労を抜いて次の質を確保';}
+ else if(cap.mp<50){type='Marathon Pace';title='目標ペース感覚走';target='7〜9km / うち2〜3kmを6:20〜6:30/km';workout='前後はEasy。目標ペース区間も余裕を残し、フォームが崩れたら終了。';focus='6:24/km前後を楽に維持する感覚';}
+ else if(cap.durability<70){type='Long';title='Long走';target='18〜20km / 前半Easy、後半6:25〜6:40/kmを目安';workout='補給・給水を確認。後半に無理なペースアップはしない。';focus='長時間動き続ける耐性';}
+ else if(cap.threshold<78){type='Threshold';title='Threshold';target=`15〜20分 @ ${p.thrText||'5:05〜5:15/km'}`;workout='アップ10〜15分→設定区間→ダウン10分。余裕を残して終える。';focus='持続力・乳酸閾値周辺の刺激';}
+ else if(cap.speed<80){type='Interval';title='短いInterval';target='800m×4 / 3分ジョグ';workout='1本目から飛ばさず、4本目までフォームを維持。全力走にはしない。';focus='スピード刺激を維持';}
+ return {c,cap,p,tomorrow,type,title,target,workout,focus};
+}
+function applyV14Prescription(){
+ const x=v14Prescription();
+ plans=plans.filter(z=>!(z.date===x.tomorrow&&z.source==='V14'));
+ plans.push({date:x.tomorrow,type:x.type,title:x.title,target:x.target,workout:x.workout,source:'V14'});
+ save();renderCalendar();renderV12();renderV13();renderV14();
+ alert('V14の個別メニューを明日の練習計画に追加しました。');
+}
+function renderV14(){
+ const el=document.getElementById('v14Prescription'); if(!el)return;
+ const x=v14Prescription(), cap=x.cap;
+ const rows=[['スピード',cap.speed],['閾値・持続力',cap.threshold],['目標ペース慣れ',cap.mp],['距離耐性',cap.durability],['継続性',cap.consistency]];
+ el.innerHTML=`<div class="v14Hero"><div class="v14Title">明日の推奨：${x.title}</div><div class="v14Sub">${x.tomorrow} ・ ${x.type}</div><div class="v14Plan"><b>🎯 ${x.target}</b><br>${x.workout}<br><span style="color:#9aa7b2">今回の重点：${x.focus}</span></div><div class="v14Grid">${rows.map(r=>`<div class="v14Card"><small>${r[0]}</small><b>${r[1]}/100</b></div>`).join('')}</div><div class="v14Steps"><div class="v14Step"><span class="v14Num">1</span><span>直近負荷 ${x.c.load}pt とポイント練習 ${x.c.quality7}回を確認</span></div><div class="v14Step"><span class="v14Num">2</span><span>不足している能力を1つだけ優先して刺激</span></div><div class="v14Step"><span class="v14Num">3</span><span>次の記録が入ったら、V14が再評価して次のメニューを更新</span></div></div><div class="v14Btns"><button class="btn" onclick="applyV14Prescription()">📅 このメニューを明日の計画へ追加</button><button class="btn secondary" onclick="renderV14();alert('最新記録からV14を再計算しました。')">🔄 再計算</button></div></div><p class="note" style="margin-top:9px">※これは記録データから作るトレーニング補助ロジックです。医療的な疲労判定や大会結果の予測ではありません。</p>`;
+}
+
 function render(){
-  $("raceName").textContent=settings.raceName;
-  $("raceNameInput").value=settings.raceName;$("raceDateInput").value=settings.raceDate;$("goalMin").value=settings.goalMin;$("monthGoal").value=settings.monthGoal;
-  let days=Math.ceil((new Date(settings.raceDate+"T09:00:00")-new Date())/86400000);
-  $("countdown").textContent=days>=0?`あと ${days} 日`:`開催日から ${Math.abs(days)} 日`;
-  $("raceGoal").textContent=`目標 ${Math.floor(settings.goalMin/60)}時間${settings.goalMin%60}分 / ${fmtPace(settings.goalMin*60/42.195)}`;
-  let w=weeklyStats();$("weekKm").textContent=w.km.toFixed(1)+" km";$("monthKm").textContent=monthlyKm().toFixed(1)+" km";$("weekGoalText").textContent=`/ ${Math.max(1,Math.round((settings.monthGoal/4)*10)/10)} km`;
-  $("weekBar").style.width=Math.min(100,w.km/Math.max(1,settings.monthGoal/4)*100)+"%";
-  $("fatigue").textContent=fatigueScore();
-  let last=runs[0];$("lastRun").textContent=last?`${Number(last.dist).toFixed(1)} km`:"—";
-  let rec=recommend();$("todayMenu").textContent=rec.title;$("todayPace").textContent=rec.pace;$("todayReason").textContent=rec.reason;
-  let last10=runs.slice(0,10);$("runCount").textContent=runs.length;
-  let p=avg(last10.map(r=>Number(r.paceSec||0)).filter(Boolean));$("avgPace").textContent=fmtPace(p);
-  $("avgHr").textContent=(avg(last10.map(r=>Number(r.hr||0)).filter(Boolean))||0).toFixed(0)+" bpm";
-  $("avgCad").textContent=(avg(last10.map(r=>Number(r.cad||0)).filter(Boolean))||0).toFixed(0)+" spm";
-  $("runTable").innerHTML=runs.slice(0,50).map((r,i)=>`<tr><td>${esc(String(r.date).slice(0,10))}</td><td>${Number(r.dist||0).toFixed(1)} km</td><td>${fmtPace(r.paceSec)}</td><td><span class="badge ${r.type==="Easy"?"easy":r.type==="Long"?"long":"quality"}">${esc(r.type||"Easy")}</span></td><td><button class="secondary" data-detail="${i}" style="padding:6px 8px;color:#234">詳細</button></td></tr>`).join("")||`<tr><td colspan="5" class="empty">まだ記録がありません</td></tr>`;
-  document.querySelectorAll("[data-detail]").forEach(b=>b.onclick=()=>showDetail(Number(b.dataset.detail)));
-  drawTrend();
-  buildWeek();
+ const now=new Date(), ym=localDateStr(now).slice(0,7);
+ monthLabel.textContent=ym.replace('-','年')+'月';
+ const mr=records.filter(r=>r.date&&r.date.startsWith(ym));
+ const km=mr.reduce((a,r)=>a+r.dist,0);
+ monthKm.textContent=km.toFixed(1);runCount.textContent=mr.length;
+ const weighted=mr.filter(r=>r.dist&&r.time).reduce((a,r)=>{a.t+=r.time*60;a.d+=r.dist;return a},{t:0,d:0});
+ avgPace.textContent=weighted.d?secToPace(weighted.t/weighted.d):'--';
+ const hrs=mr.filter(r=>r.avgHr);avgHr.textContent=hrs.length?Math.round(hrs.reduce((a,r)=>a+r.avgHr,0)/hrs.length):'--';
+ progressBar.style.width=Math.min(100,km/GOAL*100)+'%';progressText.textContent=`${km.toFixed(1)} / ${GOAL} km　達成率 ${Math.round(km/GOAL*100)}%`; const race=new Date('2026-11-01T00:00:00');const t0=dayStart(new Date());raceDays.textContent=Math.max(0,Math.ceil((race-t0)/86400000));longCount.textContent=mr.filter(r=>r.type==='Long').length;qualityCount.textContent=mr.filter(r=>['Interval','Threshold','Race'].includes(r.type)).length;renderCoach();renderCalendar();renderV15();
+ recent.innerHTML=mr.slice(0,5).map(r=>`<div class="metric"><span>${r.date}　${r.type}</span><b>${r.dist.toFixed(2)}km　${r.pace||'--'}</b></div>`).join('')||'<div class="empty">まだ今月の記録がありません。</div>';
+ const ws=weeklyStats();
+ renderMarathonProgress();renderV13();renderV14();renderV15();renderV16();
+ weekKm.textContent=ws.km.toFixed(1); weekCount.textContent=ws.wcount; load7.textContent=ws.load; km28.textContent=ws.km28.toFixed(1);
+ loadMessage.textContent=loadText(ws.load,ws.km);
+ recordTable.innerHTML=records.length?`<table><thead><tr><th>日付</th><th>距離</th><th>ペース</th><th>種類</th><th>トレーニング内容</th><th>レポート</th></tr></thead><tbody>${records.map(r=>`<tr><td>${r.date}</td><td>${r.dist.toFixed(2)} km</td><td>${r.pace||calcPace(r.dist,r.time)}</td><td>${r.type}</td><td>${(r.workout||'').replace(/</g,'&lt;')}</td><td><button class="btn secondary" style="padding:6px 8px;font-size:11px" onclick="showAutoReport(${r.id})">レポート</button></td></tr>`).join('')}</tbody></table>`:'<div class="empty">記録を追加するとここに表示されます。</div>';
 }
-function drawTrend(){
-  let c=$("trend"),ctx=c.getContext("2d"),w=c.clientWidth||600,h=210,dpr=devicePixelRatio||1;c.width=w*dpr;c.height=h*dpr;ctx.scale(dpr,dpr);ctx.clearRect(0,0,w,h);
-  let a=runs.slice(0,14).reverse(), vals=a.map(r=>Number(r.dist||0));if(!vals.length){ctx.fillText("走行記録を追加すると推移が表示されます",15,35);return}
-  let max=Math.max(...vals,1), pad=24;ctx.beginPath();
-  vals.forEach((v,i)=>{let x=pad+i*(w-pad*2)/Math.max(1,vals.length-1),y=h-pad-(v/max)*(h-pad*2);i?ctx.lineTo(x,y):ctx.moveTo(x,y);});ctx.stroke();
+
+
+/* ---------- Garmin FIT import (browser-side) ---------- */
+const FIT_GLOBAL = {
+  0:'file_id',18:'session',19:'lap',20:'record',21:'event',26:'workout',27:'workout_step',34:'activity'
+};
+const FIT_TYPES = {
+  0:{bytes:1,signed:false,kind:'enum'},1:{bytes:1,signed:false,kind:'sint'},2:{bytes:1,signed:true,kind:'sint'},
+ 3:{bytes:1,signed:false,kind:'uint'},4:{bytes:2,signed:false,kind:'uint'},5:{bytes:2,signed:true,kind:'sint'},
+ 6:{bytes:4,signed:false,kind:'uint'},7:{bytes:4,signed:true,kind:'sint'},8:{bytes:4,signed:false,kind:'float'},
+ 9:{bytes:8,signed:false,kind:'double'},10:{bytes:4,signed:false,kind:'string'},11:{bytes:2,signed:false,kind:'uint'},
+ 12:{bytes:1,signed:true,kind:'sint'},13:{bytes:2,signed:false,kind:'uint'},14:{bytes:4,signed:false,kind:'uint'},
+ 15:{bytes:8,signed:false,kind:'uint'},16:{bytes:8,signed:true,kind:'sint'}
+};
+function rdU8(v,o){return v.getUint8(o)}
+function rdNum(v,o,n,signed,le){
+  if(n===1)return signed?v.getInt8(o):v.getUint8(o);
+  if(n===2)return signed?(le?v.getInt16(o,true):v.getInt16(o,false)):(le?v.getUint16(o,true):v.getUint16(o,false));
+  if(n===4)return signed?(le?v.getInt32(o,true):v.getInt32(o,false)):(le?v.getUint32(o,true):v.getUint32(o,false));
+  if(n===8)return signed?(le?v.getBigInt64(o,true):v.getBigInt64(o,false)):(le?v.getBigUint64(o,true):v.getBigUint64(o,false));
 }
-function drawDetailChart(r){
-  let c=$("detailChart"),ctx=c.getContext("2d"),w=c.clientWidth||600,h=230,dpr=devicePixelRatio||1;c.width=w*dpr;c.height=h*dpr;ctx.scale(dpr,dpr);ctx.clearRect(0,0,w,h);
-  let s=r.samples||[];if(!s.length){ctx.fillText("FITの記録点が保存されていません。新しいFITを再取り込みしてください。",15,35);return}
-  let hr=s.map(x=>x.hr).filter(x=>x>0),cad=s.map(x=>x.cadence).filter(x=>x>0),max=Math.max(...hr,180),min=Math.min(...hr,80),pad=25;
-  ctx.beginPath();hr.forEach((v,i)=>{let x=pad+i*(w-pad*2)/Math.max(1,hr.length-1),y=h-pad-(v-min)/(max-min||1)*(h-pad*2);i?ctx.lineTo(x,y):ctx.moveTo(x,y)});ctx.stroke();
-  ctx.fillText(`心拍 ${Math.round(avg(hr))} bpm / ピッチ ${Math.round(avg(cad)||0)} spm / ${s.length}点`,10,18);
+function fitBaseType(t){return t&0x1f}
+function fitScale(v,field){return field&&field.scale?(Number(v)/field.scale):v}
+function fitOffset(v,field){return field&&field.offset?(Number(v)-field.offset):v}
+function fitFieldValue(view,off,base,bytes,le){
+  if(base===8)return view.getFloat32(off,le);
+  if(base===9)return view.getFloat64(off,le);
+  if(base===10){
+    let a=[]; for(let i=0;i<bytes;i++){let c=view.getUint8(off+i);if(!c)break;a.push(c)}
+    return new TextDecoder().decode(new Uint8Array(a));
+  }
+  const t=FIT_TYPES[base]||{signed:false};
+  return rdNum(view,off,bytes,t.signed,le);
 }
-function showDetail(i){
-  let r=runs[i];$("detailCard").style.display="block";
-  let s=r.samples||[],hrs=s.map(x=>x.hr).filter(Boolean),cads=s.map(x=>x.cadence).filter(Boolean);
-  $("detailText").innerHTML=`<div class="grid"><div class="stat">日付<b>${esc(String(r.date).slice(0,10))}</b></div><div class="stat">距離<b>${Number(r.dist||0).toFixed(1)} km</b></div><div class="stat">平均心拍<b>${Math.round(avg(hrs)||r.hr||0)} bpm</b></div><div class="stat">平均ピッチ<b>${Math.round(avg(cads)||r.cad||0)} spm</b></div></div><p class="small muted">${esc(r.fileName||"")} / FIT記録点 ${s.length}点</p>`;
-  drawDetailChart(r);$("detailCard").scrollIntoView({behavior:"smooth"});
+function fitTimestamp(v){ return v?new Date((Number(v)+631065600)*1000):null; }
+function fitParse(buf){
+  const view=new DataView(buf), headerSize=view.getUint8(0);
+  if(headerSize<12 || String.fromCharCode(...new Uint8Array(buf,8,4))!=='FIT\0') throw new Error('FITファイルではありません');
+  const dataSize=view.getUint32(4,true), dataStart=headerSize, dataEnd=Math.min(buf.byteLength,dataStart+dataSize);
+  let pos=dataStart, defs={}, messages=[], lastTimestamp=0, lastTsByLocal={};
+  while(pos<dataEnd){
+    const hb=view.getUint8(pos++);
+    let compressed=!!(hb&0x80), local=(hb>>5)&0x03;
+    if(compressed){
+      local=(hb>>5)&0x03;
+      const timeOffset=hb&0x1f;
+      const base=(lastTsByLocal[local]??lastTimestamp);
+      const ts=(base&~0x1f)+timeOffset;
+      lastTimestamp = ts < base ? ts+32 : ts;
+    }
+    if(!compressed && (hb&0x40)){
+      const reserved=view.getUint8(pos++), arch=view.getUint8(pos++), global=view.getUint16(pos,true); 
+      const nf=view.getUint8(pos++); const fields=[];
+      for(let i=0;i<nf;i++){const num=view.getUint8(pos++), size=view.getUint8(pos++), type=view.getUint8(pos++);fields.push({num,size,type})}
+      let nd=0;
+      if((reserved&0x20)===0){ /* developer fields may follow only after standard fields; handle below */ }
+      defs[local]={global,fields,arch:arch===0};
+      continue;
+    }
+    let def=defs[local]; if(!def) break;
+    let values={};
+    for(const f of def.fields){
+      const raw=fitFieldValue(view,pos,fitBaseType(f.type),f.size,def.arch); pos+=f.size;
+      values[f.num]=raw;
+    }
+    if(def.global===20 && values[253]!=null){
+      let ts=Number(values[253]); lastTimestamp=ts; lastTsByLocal[local]=ts;
+    } else if(compressed){ values[253]=lastTimestamp; }
+    messages.push({global:def.global, name:FIT_GLOBAL[def.global]||String(def.global), values});
+  }
+  return messages;
 }
-async function importFit(file){
-  $("importStatus").textContent="FITを解析しています…";
+function fitField(msg,num){return msg&&msg.values?msg.values[num]:null}
+function fitAggregate(messages){
+  const rec=messages.filter(m=>m.global===20), laps=messages.filter(m=>m.global===19), sessions=messages.filter(m=>m.global===18);
+  const sess=sessions[sessions.length-1];
+  let dist=0,timeMs=0,avgHr=0,maxHr=0,avgSpeed=0,maxSpeed=0,ascent=0,avgCad=0,maxCad=0;
+  if(sess){
+    dist=Number(fitField(sess,9)||0)/100/1000; // total_distance is usually cm
+    timeMs=Number(fitField(sess,8)||fitField(sess,7)||0)/1000;
+    avgHr=Number(fitField(sess,16)||0); maxHr=Number(fitField(sess,17)||0);
+    avgSpeed=Number(fitField(sess,14)||0)/1000; maxSpeed=Number(fitField(sess,15)||0)/1000;
+    ascent=Number(fitField(sess,22)||0);
+    avgCad=Number(fitField(sess,21)||0); maxCad=Number(fitField(sess,22)||0);
+  }
+  // Fallback from record stream when session fields are missing.
+  if(!dist && rec.length){
+    const ds=rec.map(x=>Number(fitField(x,5)||0)).filter(x=>x>0);
+    if(ds.length) dist=Math.max(...ds)/100/1000;
+  }
+  if(!timeMs && rec.length>=2){
+    const a=Number(fitField(rec[0],253)||0), b=Number(fitField(rec[rec.length-1],253)||0);
+    if(a&&b) timeMs=(b-a)*1000;
+  }
+  if(!avgHr){const hs=rec.map(x=>Number(fitField(x,3)||0)).filter(x=>x>0); if(hs.length)avgHr=hs.reduce((a,b)=>a+b,0)/hs.length}
+  if(!maxHr){const hs=rec.map(x=>Number(fitField(x,3)||0)).filter(x=>x>0); if(hs.length)maxHr=Math.max(...hs)}
+  if(!avgSpeed){const ss=rec.map(x=>Number(fitField(x,6)||0)).filter(x=>x>0); if(ss.length)avgSpeed=ss.reduce((a,b)=>a+b,0)/ss.length}
+  const dateVal=sess?fitField(sess,2): (rec[0]?fitField(rec[0],253):null);
+  return {rec,laps,sess,dist,timeMs,avgHr,maxHr,avgSpeed,maxSpeed,ascent,avgCad,maxCad,date:fitTimestamp(dateVal)};
+}
+function fitClassify(a){
+  const d=a.dist, p=a.avgSpeed?1000/a.avgSpeed/60:null;
+  if(a.laps.length>=3) return 'Interval';
+  if(d>=18) return 'Long';
+  if(p&&p<5.5) return 'Threshold';
+  if(d<6) return 'Recovery';
+  return 'Easy';
+}
+function fitLapSummary(a){
+  return a.laps.map((m,i)=>{
+    const d=Number(fitField(m,9)||0)/100/1000, t=Number(fitField(m,8)||fitField(m,7)||0)/1000;
+    const sp=Number(fitField(m,13)||0)/1000;
+    const pace=sp>0?secToPace(1000/sp): (d&&t?secToPace(t/d):'--');
+    return {i:i+1,d,t,pace,hr:Number(fitField(m,15)||0)};
+  });
+}
+async function importFIT(e){
+  const file=e.target.files[0]; if(!file)return;
+  fitStatus.textContent='FITを解析しています…';
   try{
-    const mod=await import("https://esm.sh/@garmin/fitsdk@21.214.0");
-    const buf=await file.arrayBuffer();
-    const stream=mod.Stream.fromArrayBuffer(buf),dec=new mod.Decoder(stream);
-    if(!dec.isFIT())throw new Error("FITファイルとして認識できません");
-    const out=dec.read({applyScaleAndOffset:true,convertDateTimesToDates:true,convertTypesToStrings:true,mergeHeartRates:true});
-    const m=out.messages||{};
-    const sessions=m.sessionMesgs||m.session||[], records=m.recordMesgs||m.record||[];
-    if(!sessions.length&&!records.length)throw new Error("ランニング記録が見つかりません");
-    const ses=sessions[0]||{};
-    const dist=Number(ses.totalDistance||0)/1000 || (records.length?Number(records.at(-1).distance||0)/1000:0);
-    const elapsed=Number(ses.totalElapsedTime||ses.totalTimerTime||0);
-    const paceSec=dist>0?elapsed/dist:0;
-    const hrs=records.map(x=>Number(x.heartRate||x.hr||0)).filter(x=>x>0);
-    const cads=records.map(x=>Number(x.cadence||0)).filter(x=>x>0);
-    const ascent=Number(ses.totalAscent||0);
-    const date=ses.startTime instanceof Date?ses.startTime.toISOString():records[0]?.timestamp instanceof Date?records[0].timestamp.toISOString():new Date().toISOString();
-    const r={date,dist,paceSec,hr:Math.round(avg(hrs)),cad:Math.round(avg(cads)),type:autoType(dist,paceSec,avg(hrs),records),memo:`Garmin FIT自動解析 / 上昇${Math.round(ascent)}m / ${Math.round(avg(cads)||0)}spm`,source:"garmin-fit",fileName:file.name,samples:sampleRecords(records)};
-    const key=date.slice(0,16);
-    runs=runs.filter(x=>String(x.date).slice(0,16)!==key);
-    runs.unshift(r);runs.sort((a,b)=>new Date(b.date)-new Date(a.date));save();render();
-    $("importStatus").textContent=`取り込み成功：${dist.toFixed(1)} km / ${fmtPace(paceSec)} / HR ${Math.round(avg(hrs)||0)} / ピッチ ${Math.round(avg(cads)||0)} / 詳細 ${r.samples.length}点`;
-  }catch(e){console.error(e);$("importStatus").textContent="取り込みエラー："+e.message}
+    const buf=await file.arrayBuffer(), msgs=fitParse(buf), a=fitAggregate(msgs);
+    if(!a.dist && !a.laps.length) throw new Error('ランニングデータを見つけられませんでした');
+    const type=fitClassify(a), laps=fitLapSummary(a);
+    const date=a.date?new Date(a.date):new Date(file.lastModified);
+    const dateStr=localDateStr(date);
+    const timeMin=a.timeMs/60000;
+    const pace=a.avgSpeed?secToPace(1000/a.avgSpeed):calcPace(a.dist,timeMin);
+    const workout = type==='Interval' && laps.length ? `Garmin FIT自動取込。ラップ${laps.length}本。${laps.slice(0,8).map(x=>x.pace).join(' / ')}` : `Garmin FIT自動取込（${type}）`;
+    const memo=`FITファイル：${file.name}。${a.laps.length?'ラップ情報を自動解析。':''}`;
+    const candidate={id:Date.now(),date:dateStr,dist:+a.dist.toFixed(2),time:+timeMin.toFixed(2),pace,avgHr:Math.round(a.avgHr||0),maxHr:Math.round(a.maxHr||0),temp:'',elev:Math.round(a.ascent||0),type,workout,memo};
+    fitPreview.innerHTML=`<div class="report"><div class="reportTop"><div><div class="reportTitle">FIT解析結果</div><div class="note">${file.name.replace(/</g,'&lt;')}</div></div><div class="dateBox"><b>${dateStr}</b><br>${type}</div></div>
+      <div class="metrics" style="margin-top:10px">
+        <div class="metric"><span>距離</span><b>${candidate.dist.toFixed(2)} km</b></div>
+        <div class="metric"><span>時間</span><b>${secToPace(candidate.time*60)}</b></div>
+        <div class="metric"><span>平均ペース</span><b>${candidate.pace}/km</b></div>
+        <div class="metric"><span>平均/最大心拍</span><b>${candidate.avgHr||'--'} / ${candidate.maxHr||'--'} bpm</b></div>
+        <div class="metric"><span>判定</span><b>${type}</b></div>
+      </div>
+      ${laps.length?`<h3 style="margin:12px 0 6px">ラップ解析</h3><div class="laps">${laps.map(x=>`<div class="lap">L${x.i}<b>${x.pace}</b><span class="note">${x.d?x.d.toFixed(2)+'km':''}</span></div>`).join('')}</div>`:''}
+      <div class="actions"><button class="btn" onclick='saveFITCandidate(${JSON.stringify(candidate).replace(/</g,"\\u003c")})'>このFITを記録に保存</button><button class="btn secondary" onclick='previewFITReport(${JSON.stringify(candidate).replace(/</g,"\\u003c")})'>レポートを見る</button></div>
+    </div>`;
+    fitStatus.textContent='解析完了。内容を確認して保存できます。';
+  }catch(err){fitStatus.textContent='解析できませんでした：'+err.message;fitPreview.innerHTML='<div class="empty">FITの形式やデータ構造を確認してください。</div>'}
+  e.target.value='';
 }
-$("fitBtn").onclick=()=>$("fitInput").click();
-$("fitInput").onchange=e=>{let f=e.target.files?.[0];if(f)importFit(f)};
-$("saveRace").onclick=()=>{settings={raceName:$("raceNameInput").value||"富山マラソン2026",raceDate:$("raceDateInput").value||"2026-11-01",goalMin:Number($("goalMin").value)||240,monthGoal:Number($("monthGoal").value)||150};localStorage.setItem(SETKEY,JSON.stringify(settings));render();alert("設定を保存しました")};
-$("exportBtn").onclick=()=>{let blob=new Blob([JSON.stringify({settings,runs},null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="runlogpro-backup.json";a.click();URL.revokeObjectURL(a.href)};
-$("jsonInput").onchange=async e=>{let f=e.target.files?.[0];if(!f)return;try{let o=JSON.parse(await f.text());if(Array.isArray(o.runs)){runs=o.runs;settings=Object.assign(settings,o.settings||{});localStorage.setItem(SETKEY,JSON.stringify(settings));save();render();alert("復元しました")}}catch(err){alert("JSONを読み込めません："+err.message)}};
-$("clearBtn").onclick=()=>{if(confirm("全記録を削除します。バックアップ済みですか？")){runs=[];save();render()}};
+function saveFITCandidate(r){
+  records.unshift(r);save();evaluatePlansForRecord(r);rebuildFuturePlan(true);showAutoReport(r.id);render();
+}
+function previewFITReport(r){
+  showAutoReportFromObject(r);
+}
+function showAutoReportFromObject(r){
+  const score=scoreRecord(r), adv=reportAdvice(r), pace=paceSecondsFromRecord(r);
+  const comment=r.memo||r.workout||`${r.type}として記録。`;
+  const date=new Date(r.date+'T00:00:00');
+  const dateText=isNaN(date)?r.date:date.toLocaleDateString('ja-JP',{year:'numeric',month:'numeric',day:'numeric',weekday:'short'});
+  autoReport.innerHTML=`<div class="report">
+    <div class="reportTop"><div><div class="reportTitle">AI RUN REPORT</div><div class="note">Garmin FITデータから自動生成</div></div><div class="dateBox"><b>${dateText}</b><br>${r.type}</div></div>
+    <div class="scoreRow"><div class="scoreBox"><div class="note">総合評価</div><div class="score">${score}<span>/100</span></div><div class="comment">${comment.replace(/</g,'&lt;')}</div></div>
+    <div class="metrics"><h3>ワークアウトデータ</h3>
+      <div class="metric"><span>距離</span><b>${r.dist.toFixed(2)} km</b></div><div class="metric"><span>時間</span><b>${secToPace(r.time*60)}</b></div>
+      <div class="metric"><span>平均ペース</span><b>${r.pace}/km</b></div><div class="metric"><span>平均心拍</span><b>${r.avgHr||'--'} bpm</b></div><div class="metric"><span>最大心拍</span><b>${r.maxHr||'--'} bpm</b></div>
+      <div class="metric"><span>トレーニング</span><b>${(r.workout||r.type).replace(/</g,'&lt;')}</b></div></div></div>
+    <div class="reportGrid"><div class="rbox good"><h3>👍 良かった点</h3><ul>${adv.good.map(x=>`<li>${x}</li>`).join('')}</ul></div>
+    <div class="rbox improve"><h3>🎯 改善ポイント</h3><ul>${adv.improve.map(x=>`<li>${x}</li>`).join('')}</ul></div>
+    <div class="rbox next"><h3>📈 次回への指令</h3><ul>${adv.next.map(x=>`<li>${x}</li>`).join('')}</ul></div></div>
+    <div class="linkGrid"><div class="linkbox marathon"><h3>↗ サブ4:30へのつながり</h3><div class="note">今回の${typeText(r.type)}を土台に、マラソンペース約6:24/kmを長く維持できる持久力へつなげます。</div></div>
+    <div class="linkbox relay"><h3>💡 次の目標へのつながり</h3><div class="note">金沢城リレーは1周約1.9km・<strong>9分30秒切り（約5:00/km）</strong>を第一目標にします。</div></div></div></div>`;
+  document.querySelector('[data-tab="report"]').click();
+}
+function paceSecondsFromRecord(r){
+  if(r.pace){const x=paceToSec(r.pace); if(x) return x}
+  if(r.dist&&r.time) return r.time*60/r.dist;
+  return null;
+}
+function scoreRecord(r){
+  let score=80;
+  const type=r.type||'Easy', pace=paceSecondsFromRecord(r), hr=+r.avgHr||0;
+  if(type==='Easy'||type==='Recovery'){
+    if(hr&&hr<=145) score+=8;
+    if(pace&&pace>=360) score+=5;
+    if(hr&&hr>=160) score-=8;
+  } else if(type==='Long'){
+    if(r.dist>=18) score+=8;
+    if(hr&&hr<=150) score+=5;
+  } else if(type==='Threshold'){
+    if(pace&&pace<=315) score+=7;
+    if(hr&&hr>=145) score+=3;
+  } else if(type==='Interval'){
+    score+=8;
+    if(hr>=155) score+=3;
+    if(r.dist>=4) score+=2;
+  } else if(type==='Race'){
+    score+=8;
+  }
+  return Math.max(70,Math.min(98,Math.round(score)));
+}
+function reportAdvice(r){
+  const type=r.type||'Easy', hr=+r.avgHr||0, max=+r.maxHr||0, dist=+r.dist||0;
+  let good=[], improve=[], next=[];
+  if(type==='Easy'||type==='Recovery'){
+    good=['設定した距離を無理なく消化できた','有酸素の土台づくりとして継続しやすい負荷','ポイント練習の合間の回復走として機能'];
+    improve=['ペースを上げたくなっても終盤まで余裕を残す','脚の左右差や張りを確認しながら走る'];
+    next=['次のポイント練習に疲労を残さない','必要なら最後に20秒程度の流しを3〜4本'];
+  } else if(type==='Long'){
+    good=[`${dist.toFixed(1)}kmの距離を確保できた`,'長時間動き続けるマラソン向けの刺激','後半までフォームとリズムを維持する練習になった'];
+    improve=['序盤を抑えて後半の余力を残す','補給・給水を実戦に近づける'];
+    next=['次回も18〜22kmを基本に継続','余裕があれば最後の3〜5kmだけ少しペースアップ'];
+  } else if(type==='Threshold'){
+    good=['狙った強度で一定時間走る練習ができた','マラソンより速い有酸素強度を刺激できた','ペースと呼吸のコントロールを意識できた'];
+    improve=['最初の数分を飛ばさず一定ペースへ','心拍だけでなく脚の感覚も確認'];
+    next=['次回は10〜20分の範囲で安定を優先','前後のEasyを十分に確保'];
+  } else if(type==='Interval'){
+    good=['設定したインターバルを完遂','速い動きへの刺激を入れられた','後半までフォームを維持できた'];
+    improve=['1本目から飛ばしすぎず全本数を揃える','回復区間ではしっかり呼吸を整える'];
+    next=['同じ本数ならペースのばらつきを小さくする','次のポイント練習まで48時間程度を目安に回復'];
+  } else {
+    good=['レース強度の刺激を実戦形式で入れられた','ペース感覚を確認できた'];
+    improve=['序盤の入りを管理する','翌日の疲労を確認する'];
+    next=['次の数日は回復優先','練習全体の中で高強度を詰め込みすぎない'];
+  }
+  if(hr>=165 || max>=175) improve.push('心拍負荷が高い日は睡眠・補給・脚の状態を優先');
+  return {good,improve,next};
+}
+function showAutoReport(id){
+  const r=records.find(x=>x.id===id); if(!r) return;
+  const score=scoreRecord(r), adv=reportAdvice(r), pace=paceSecondsFromRecord(r);
+  const comment = r.memo || r.workout || `${r.type}として記録。`;
+  const paceText=r.pace || (pace?secToPace(pace):'--');
+  const date=new Date(r.date+'T00:00:00');
+  const dateText=isNaN(date)?r.date:date.toLocaleDateString('ja-JP',{year:'numeric',month:'numeric',day:'numeric',weekday:'short'});
+  autoReport.innerHTML=`
+  <div class="report">
+    <div class="reportTop"><div><div class="reportTitle">AI RUN REPORT</div><div class="note">記録データから自動生成された練習レポート</div></div>
+      <div class="dateBox"><b>${dateText}</b><br>${r.type||'Run'}</div></div>
+    <div class="scoreRow">
+      <div class="scoreBox"><div class="note">総合評価</div><div class="score">${score}<span>/100</span></div>
+        <div class="comment">${comment.replace(/</g,'&lt;')}</div></div>
+      <div class="metrics"><h3>本日のワークアウトデータ</h3>
+        <div class="metric"><span>距離</span><b>${r.dist?r.dist.toFixed(2)+' km':'--'}</b></div>
+        <div class="metric"><span>時間</span><b>${r.time?secToPace(r.time*60):'--'}</b></div>
+        <div class="metric"><span>平均ペース</span><b>${paceText}/km</b></div>
+        <div class="metric"><span>平均心拍</span><b>${r.avgHr||'--'} bpm</b></div>
+        <div class="metric"><span>最大心拍</span><b>${r.maxHr||'--'} bpm</b></div>
+        <div class="metric"><span>気温</span><b>${r.temp!==''&&r.temp!=null?r.temp+' ℃':'--'}</b></div>
+        <div class="metric"><span>トレーニング</span><b>${(r.workout||r.type||'--').replace(/</g,'&lt;')}</b></div>
+      </div>
+    </div>
+    <div class="reportGrid">
+      <div class="rbox good"><h3>👍 良かった点</h3><ul>${adv.good.map(x=>`<li>${x}</li>`).join('')}</ul></div>
+      <div class="rbox improve"><h3>🎯 改善ポイント</h3><ul>${adv.improve.map(x=>`<li>${x}</li>`).join('')}</ul></div>
+      <div class="rbox next"><h3>📈 次回への指令</h3><ul>${adv.next.map(x=>`<li>${x}</li>`).join('')}</ul></div>
+    </div>
+    <div class="linkGrid">
+      <div class="linkbox marathon"><h3>↗ サブ4:30へのつながり</h3><div class="note">マラソン本番で6:24/km前後を維持するため、${typeText(r.type)}の役割を意識。速い練習の日だけでなく、Easyとロング走を積み重ねることが重要です。</div></div>
+      <div class="linkbox relay"><h3>💡 次の目標へのつながり</h3><div class="note">金沢城リレーは1周約1.9km・<strong>9分30秒切り（約5:00/km）</strong>を第一目標。ポイント練習では速さよりも全本数を安定してまとめることを優先します。</div></div>
+    </div>
+  </div>`;
+  document.querySelector('[data-tab="report"]').click();
+}
+function typeText(t){
+  return ({Easy:'Easyジョグ',Recovery:'回復走',Long:'ロング走',Threshold:'閾値走',Interval:'インターバル',Race:'レース',Trail:'トレイル'}[t]||'今回の練習');
+}
+
+function exportCSV(){
+  const headers=['date','distance_km','time_min','pace','avg_hr','max_hr','temp_c','elevation_m','type','workout','memo'];
+  const rows=records.map(r=>headers.map(h=>{
+    const v={date:r.date,distance_km:r.dist,time_min:r.time,pace:r.pace||calcPace(r.dist,r.time),avg_hr:r.avgHr,max_hr:r.maxHr,temp_c:r.temp,elevation_m:r.elev,type:r.type,workout:r.workout,memo:r.memo}[h];
+    return `"${String(v??'').replace(/"/g,'""')}"`;
+  }).join(','));
+  const blob=new Blob(['\ufeff'+headers.join(',')+'\n'+rows.join('\n')],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='running_log.csv';a.click();URL.revokeObjectURL(a.href);
+}
+function exportData(){const b=new Blob([JSON.stringify({records,plans},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='running-log-backup.json';a.click()}
+function importData(e){const f=e.target.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{try{const x=JSON.parse(rd.result);records=Array.isArray(x)?x:(x.records||[]);plans=Array.isArray(x)?plans:(x.plans||[]);localStorage.setItem(KEY,JSON.stringify(records));localStorage.setItem(PLANKEY,JSON.stringify(plans));render();renderCalendar();alert('復元しました')}catch{alert('JSONを読み込めませんでした')}};rd.readAsText(f)}
+document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelectorAll('main>section').forEach(s=>s.classList.add('hidden'));document.getElementById(b.dataset.tab).classList.remove('hidden')});
+today.textContent=new Date().toLocaleDateString('ja-JP',{month:'numeric',day:'numeric'});
 render();
+renderCalendar();
+if(records.length){ showAutoReport(records[0].id); document.querySelector('[data-tab="dash"]').click(); }
+
+// V11 PWA: offline cache + install prompt
+let deferredInstallPrompt=null;
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredInstallPrompt=e;const b=document.getElementById('installBtn');if(b)b.hidden=false;});
+const installBtn=document.getElementById('installBtn');
+if(installBtn)installBtn.onclick=async()=>{if(!deferredInstallPrompt)return;deferredInstallPrompt.prompt();await deferredInstallPrompt.userChoice;deferredInstallPrompt=null;installBtn.hidden=true;};
+window.addEventListener('appinstalled',()=>{if(installBtn)installBtn.hidden=true;});
+function updateOnlineStatus(){const e=document.getElementById('onlineStatus');if(!e)return;e.textContent=navigator.onLine?'● オンライン':'● オフライン';e.classList.toggle('offline',!navigator.onLine);}
+window.addEventListener('online',updateOnlineStatus);window.addEventListener('offline',updateOnlineStatus);updateOnlineStatus();
+if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));}
+
+function v15DateAdd(base,n){const d=new Date(base);d.setDate(d.getDate()+n);return localDateStr(d)}
+function v15Phase(date){const d=Math.ceil((new Date('2026-11-01T00:00:00')-dayStart(date))/86400000); if(d<=7)return 'テーパリング'; if(d<=35)return '富山マラソン特化'; if(d<=50)return '持久力強化'; return 'リレー・基礎調整'}
+function v15Seconds(p){return paceSeconds(p)||0}
+function v15PlanEngine(){
+ const now=dayStart(new Date()), c=coachAnalysis(), tr=performanceTrend(), prof=personalizedPaceProfile();
+ const last14=records.filter(r=>{const d=dayStart(r.date), x=new Date(now);x.setDate(x.getDate()-13);return d>=x&&d<=now});
+ const q=last14.filter(r=>['Interval','Threshold','Race'].includes(r.type)).length; const long=last14.filter(r=>r.type==='Long'||r.dist>=18).length;
+ const load=last14.reduce((a,r)=>a+trainingLoad(r),0); const last=records.slice().sort((a,b)=>String(b.date).localeCompare(String(a.date)))[0];
+ let recovery=load>=150||q>=2; let first=recovery?'Recovery':'Easy';
+ const daysLeft=Math.max(0,Math.ceil((new Date('2026-11-01T00:00:00')-now)/86400000));
+ const plans=[];
+ for(let i=1;i<=14;i++){let date=v15DateAdd(now,i), phase=v15Phase(date), type='Easy', target='Easy 6–9km', why='有酸素ベースを維持しながら疲労を抑える';
+   const gap=daysLeft-i;
+   if(i===1&&recovery){type='Recovery';target='Recovery 5–7km';why='直近14日負荷が高め、まず回復を優先';}
+   else if(i===2&&q===0&&daysLeft>14){type='Threshold';target='15–20分 @ '+(prof.thrText||'5:05–5:15/km');why='閾値刺激が不足しているため、短時間の持続走を追加';}
+   else if(i===3){type='Recovery';target='Recovery 5–7km';why='ポイント練習後の吸収日';}
+   else if(i===5&&daysLeft>14){type='Long';target=long===0?'18–20km':'20–22km';why='距離耐性を積み上げ、後半の持久力を確認';}
+   else if(i===7&&daysLeft>21){type='Marathon Pace';target='10–12km（中盤4–6km @ 6:20–6:30/km）';why='サブ4:30目標ペースへの慣れを高める';}
+   else if(i===9&&daysLeft>21&&q===0){type='Threshold';target='20分 @ '+(prof.thrText||'5:05–5:15/km');why='持続力を維持するためのポイント練習';}
+   else if(i===12&&daysLeft>14){type='Long';target='18–22km';why='次のLongで距離耐性を確認';}
+   if(daysLeft<=7){type=i===1?'Easy':'Recovery';target=i===1?'6–8km Easy':'4–6km Recovery';why='レース前の疲労を抜き、フレッシュさを優先';}
+   plans.push({date,phase,type,target,why});
+ }
+ return {plans,load,q,long,tr,prof,daysLeft,last,focus:recovery?'回復優先 → その後に質':'持久力＋目標ペース耐性'};
+}
+function v15Apply(){const e=v15PlanEngine(); let n=0; e.plans.slice(0,7).forEach(p=>{if(!plans.some(x=>x.date===p.date&&x.type===p.type)){plans.push({date:p.date,type:p.type,target:p.target,workout:p.target,memo:'V15自動生成 / '+p.why});n++;}});save();renderCalendar();alert(n+'件を練習計画へ追加しました。');}
+function renderV15(){const el=document.getElementById('v15Plan');if(!el)return;const e=v15PlanEngine();const rows=e.plans.slice(0,7).map((p,i)=>`<div class="v15Card"><div class="v15Meta">${p.date}　<span class="v15Tag">${p.phase}</span></div><h3>${p.type}　${p.target}</h3><div class="v15Why"><span class="v15Focus">理由：</span>${p.why}</div></div>`).join('');el.innerHTML=`<div class="v15Card"><div class="v15Meta">残り ${e.daysLeft}日　/　直近14日負荷 ${e.load}　/　ポイント ${e.q}回　/　Long ${e.long}回</div><div class="v15Why"><span class="v15Focus">現在の重点：</span>${e.focus}</div><div class="v15Bar"><i style="width:${Math.min(100,Math.round(e.load/180*100))}%"></i></div><div class="v15Small">走力トレンド：${e.tr.label||'概ね安定'}　｜ 個別Threshold：${e.prof.thrText||'--'}</div><div class="v15Actions"><button onclick="v15Apply()">この7日間を計画へ追加</button></div></div>${rows}`;}
+function v16RaceEngine(){
+ const now=dayStart(new Date()),race=new Date('2026-11-01T00:00:00'),days=Math.max(0,Math.ceil((race-now)/86400000));
+ const rs=records.slice().sort((a,b)=>String(b.date).localeCompare(String(a.date)));const last56=rs.filter(r=>{const d=dayStart(r.date),x=new Date(now);x.setDate(x.getDate()-55);return d>=x&&d<=now});
+ const mp=last56.filter(r=>r.dist>=6&&r.paceSec&&Math.abs(r.paceSec-384)<=25),longs=last56.filter(r=>r.type==='Long'||r.dist>=18),recentLong=longs[0],mpBest=mp.length?mp.slice().sort((a,b)=>a.paceSec-b.paceSec)[0]:null,mpAvg=mp.length?Math.round(mp.reduce((a,r)=>a+r.paceSec,0)/mp.length):null;
+ let opening=390,core=384,late=390;if(mpAvg){opening=Math.max(378,Math.min(396,Math.round(mpAvg+4)));core=Math.max(378,Math.min(390,Math.round(mpAvg)));late=Math.max(384,Math.min(402,Math.round(mpAvg+6)));}if(days<=14){opening=Math.min(opening,390);core=Math.min(core,390);late=Math.min(late,396);}
+ const fmt=s=>{const m=Math.floor(s/60),sec=String(Math.round(s%60)).padStart(2,'0');return m+':'+sec+'/km'};const confidence=Math.max(0,Math.min(100,40+mp.length*12+Math.min(24,longs.length*8)));
+ const startNote=mp.length?'目標ペース付近の実績があるため、序盤は目標よりわずかに抑えて入り、余裕を残す':'目標ペース付近の実績が少ないため、序盤は特に保守的に入り、体感と心拍を優先';const lateNote=longs.length?'30km以降はペースを無理に上げず、フォームと補給を優先':'30km以降の耐性データが少ないため、失速回避を最優先';
+ const segments=[['0–5km',fmt(opening),'抑えて入る',startNote],['5–20km',fmt(core),'一定化','呼吸・心拍・フォームを安定させる'],['20–30km',fmt(core),'維持','補給を先行し、ペースを守る'],['30–35km',fmt(late),'余裕を確認',lateNote],['35–40km',fmt(late),'状況判断',lateNote],['40–42.2km','余力次第','最後に調整','ここまで余裕があれば段階的にペースアップ']];
+ const fuel=[];for(let km=5;km<=40;km+=5)fuel.push(km+'km');return{days,mp,longs,recentLong,mpBest,confidence,segments,fuel};}
+function renderV16(){const el=document.getElementById('v16RacePlan');if(!el)return;const e=v16RaceEngine(),best=e.mpBest?(e.mpBest.pace||'--'):'--';const rows=e.segments.map(x=>`<div class="v16Seg"><div><b>${x[0]}</b><div class="v16Small">${x[2]}</div></div><div class="v16Strong">${x[1]}</div></div>`).join('');el.innerHTML=`<div class="v16Card"><div class="v16Metrics"><div class="v16Metric"><span class="v16Small">レースまで</span><b>${e.days}日</b></div><div class="v16Metric"><span class="v16Small">目標ペース</span><b>6:24/km</b></div><div class="v16Metric"><span class="v16Small">MP付近の実績</span><b>${e.mp.length}回</b></div><div class="v16Metric"><span class="v16Small">Long実績</span><b>${e.longs.length}回</b></div></div></div><div class="v16Card"><h3>📍 区間別ペース運用</h3><div class="v16Split">${rows}</div><div class="v16Reason" style="margin-top:10px"><b>根拠：</b>${e.mp.length?'直近56日の目標ペース帯の実績を基準に個別化しています。':'目標ペース帯の実績が不足しているため、標準目標6:24/kmを中心に保守的に設定しています。'}</div></div><div class="v16Card"><h3>🥤 補給リズム</h3><div class="v16Reason">5km前後から定期的に補給を確認するリズムを想定。実際の補給内容・量は普段の練習で試したものを優先してください。</div><div class="v16Small" style="margin-top:8px">確認ポイント：${e.fuel.join(' → ')}</div></div><div class="v16Card"><h3>🧩 現在の判断材料</h3><div class="v16Reason">直近Long：${e.recentLong?e.recentLong.dist.toFixed(1)+'km':'--'}<br>MP付近の最速実績：${best}<br>戦略データの充実度：${e.confidence}%</div><div class="v16Warn" style="margin-top:10px">これは現在の練習データから作る<strong>レース戦略のたたき台</strong>です。当日の気温・体調・コース状況で調整してください。</div></div>`;}
 </script>
 </body>
 </html>
