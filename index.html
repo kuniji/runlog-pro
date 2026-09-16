@@ -1070,7 +1070,9 @@ function fitFieldValue(view,off,base,bytes,le){
 function fitTimestamp(v){ return v?new Date((Number(v)+631065600)*1000):null; }
 function fitParse(buf){
   const view=new DataView(buf), headerSize=view.getUint8(0);
-  if(headerSize<12 || String.fromCharCode(...new Uint8Array(buf,8,4))!=='FIT\0') throw new Error('FITファイルではありません');
+  const fitSignature=String.fromCharCode(...new Uint8Array(buf,8,4));
+  if(headerSize<12 || fitSignature!=='.FIT') throw new Error('FITファイルではありません');
+  if(buf.byteLength < headerSize) throw new Error('FITヘッダが不完全です');
   const dataSize=view.getUint32(4,true), dataStart=headerSize, dataEnd=Math.min(buf.byteLength,dataStart+dataSize);
   let pos=dataStart, defs={}, messages=[], lastTimestamp=0, lastTsByLocal={};
   while(pos<dataEnd){
