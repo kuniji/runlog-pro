@@ -1081,47 +1081,83 @@ function fitFieldValue(view,off,base,bytes,le){
 }
 function fitTimestamp(v){ return v?new Date((Number(v)+631065600)*1000):null; }
 function fitParse(buf){
-  const view=new DataView(buf), headerSize=view.getUint8(0);
-  const fitSignature=String.fromCharCode(...new Uint8Array(buf,8,4));
-  if(headerSize<12 || fitSignature!=='.FIT') throw new Error('FITファイルではありません');
-  if(buf.byteLength < headerSize) throw new Error('FITヘッダが不完全です');
-  const dataSize=view.getUint32(4,true), dataStart=headerSize, dataEnd=Math.min(buf.byteLength,dataStart+dataSize);
-  let pos=dataStart, defs={}, messages=[], lastTimestamp=0, lastTsByLocal={};
+  const v=new DataView(buf), len=buf.byteLength;
+  if(len<12) throw new Error('FITファイルが短すぎます');
+  const headerSize=v.getUint8(0), dataSize=v.getUint32(4,true);
+  const sig=String.fromCharCode(...new Uint8Array(buf,8,4));
+  if(headerSize<12 || headerSize>len || sig!=='.FIT') throw new Error('FITヘッダが不正です');
+  const dataEnd=Math.min(len,headerSize+dataSize);
+  const defs=new Array(16).fill(null), messages=[];
+  let pos=headerSize, lastTs=0, lastTsLocal=new Array(4).fill(null), definitionCount=0;
+  const safeNum=(off,n,signed,le)=>{ if(off+n>dataEnd) throw new Error('FITデータが途中で終わっています'); return rdNum(v,off,n,signed,le); };
   while(pos<dataEnd){
-    const hb=view.getUint8(pos++);
-    let compressed=!!(hb&0x80), local=compressed?((hb>>5)&0x03):(hb&0x0f);
-    if(compressed){
-      local=(hb>>5)&0x03;
-      const timeOffset=hb&0x1f;
-      const base=(lastTsByLocal[local]??lastTimestamp);
-      const ts=(base&~0x1f)+timeOffset;
-      lastTimestamp = ts < base ? ts+32 : ts;
-    }
-    if(!compressed && (hb&0x40)){
-      const reserved=view.getUint8(pos++), arch=view.getUint8(pos++), global=view.getUint16(pos,true); 
-      const nf=view.getUint8(pos++); const fields=[];
-      for(let i=0;i<nf;i++){const num=view.getUint8(pos++), size=view.getUint8(pos++), type=view.getUint8(pos++);fields.push({num,size,type})}
+    const header=v.getUint8(pos++);
+    if(header===0) continue;
+    const compressed=(header&0x80)!==0;
+    const local=compressed?((header>>5)&0x03):(header&0x0f);
+    if(!compressed && (header&0x40)){
+      if(pos+5>dataEnd) throw new Error('定義メッセージが不完全です');
+      const reserved=v.getUint8(pos++), arch=v.getUint8(pos++), le=arch===0;
+      const global=v.getUint16(pos,le); pos+=2;
+      const nf=v.getUint8(pos++), fields=[];
+      if(nf>255 || pos+nf*3>dataEnd) throw new Error('フィールド定義が不正です');
+      for(let i=0;i<nf;i++) fields.push({num:v.getUint8(pos++),size:v.getUint8(pos++),type:v.getUint8(pos++)});
       const devFields=[];
-      if(reserved&0x20){
-        const nd=view.getUint8(pos++);
-        for(let i=0;i<nd;i++){const num=view.getUint8(pos++), size=view.getUint8(pos++), di=view.getUint8(pos++);devFields.push({num,size,di})}
+      if(header&0x20){
+        if(pos>=dataEnd) throw new Error('Developer Data定義が不完全です');
+        const nd=v.getUint8(pos++);
+        if(pos+nd*3>dataEnd) throw new Error('Developer Field定義が不正です');
+        for(let i=0;i<nd;i++) devFields.push({num:v.getUint8(pos++),size:v.getUint8(pos++),di:v.getUint8(pos++)});
       }
-      defs[local]={global,fields,devFields,arch:arch===0};
-      continue;
+      defs[local]={global,fields,devFields,le}; definitionCount++; continue;
     }
-    let def=defs[local]; if(!def) break;
-    let values={};
+    const def=defs[local];
+    if(!def) throw new Error('未定義のローカルメッセージです (local '+local+')');
+    const values={};
     for(const f of def.fields){
-      const raw=fitFieldValue(view,pos,fitBaseType(f.type),f.size,def.arch); pos+=f.size;
+      if(pos+f.size>dataEnd) throw new Error('FITフィールドが途中で終わっています');
+      const base=fitBaseType(f.type);
+      let raw=fitFieldValue(v,pos,base,f.size,def.le); pos+=f.size;
+      // FIT invalid values
+      if(base===2 && f.size===1 && raw===255) raw=null;
+      else if(base===3 && f.size===2 && raw===32767) raw=null;
+      else if(base===4 && f.size===2 && raw===65535) raw=null;
+      else if(base===5 && f.size===4 && raw===2147483647) raw=null;
+      else if(base===6 && f.size===4 && raw===4294967295) raw=null;
+      else if((base===14||base===15||base===16) && typeof raw==='bigint') raw=Number(raw);
       values[f.num]=raw;
     }
-    for(const f of (def.devFields||[])){ pos+=f.size; }
-    if(def.global===20 && values[253]!=null){
-      let ts=Number(values[253]); lastTimestamp=ts; lastTsByLocal[local]=ts;
-    } else if(compressed){ values[253]=lastTimestamp; }
-    messages.push({global:def.global, name:FIT_GLOBAL[def.global]||String(def.global), values});
+    for(const f of def.devFields){ if(pos+f.size>dataEnd) throw new Error('Developerフィールドが途中で終わっています'); pos+=f.size; }
+    if(values[253]!=null){ lastTs=Number(values[253]); lastTsLocal[local]=lastTs; }
+    else if(compressed){
+      const off=header&0x1f, base=lastTsLocal[local]!=null?lastTsLocal[local]:lastTs;
+      let ts=(base & ~31)+off; if(ts<base) ts+=32;
+      lastTs=ts; lastTsLocal[local]=ts; values[253]=ts;
+    }
+    messages.push({global:def.global,name:FIT_GLOBAL[def.global]||String(def.global),values});
   }
-  return messages;
+  messages._definitionCount=definitionCount; return messages;
+}
+function fitField(msg,num){return msg&&msg.values?msg.values[num]:null}
+function fitAggregate(messages){
+  const rec=messages.filter(m=>m.global===20), laps=messages.filter(m=>m.global===19), sessions=messages.filter(m=>m.global===18);
+  const sess=sessions[sessions.length-1];
+  let dist=0,timeMs=0,avgHr=0,maxHr=0,avgSpeed=0,maxSpeed=0,ascent=0,avgCad=0,maxCad=0;
+  if(sess){
+    dist=Number(fitField(sess,9)||0)/100/1000;
+    timeMs=Number(fitField(sess,8)||fitField(sess,7)||0)/1000;
+    avgHr=Number(fitField(sess,16)||0); maxHr=Number(fitField(sess,17)||0);
+    avgSpeed=Number(fitField(sess,14)||0)/1000; maxSpeed=Number(fitField(sess,15)||0)/1000;
+    ascent=Number(fitField(sess,22)||0); avgCad=Number(fitField(sess,18)||0); maxCad=Number(fitField(sess,19)||0);
+  }
+  if(!dist && laps.length){ const ds=laps.map(x=>Number(fitField(x,10)||0)).filter(x=>x>0); if(ds.length) dist=ds.reduce((a,b)=>a+b,0)/100/1000; }
+  if(!dist && rec.length){ const ds=rec.map(x=>Number(fitField(x,5)||0)).filter(x=>x>0); if(ds.length) dist=Math.max(...ds)/100/1000; }
+  if(!timeMs && rec.length>=2){ const ts=rec.map(x=>Number(fitField(x,253)||0)).filter(x=>x>0); if(ts.length>1) timeMs=(Math.max(...ts)-Math.min(...ts))*1000; }
+  if(!avgHr){const hs=rec.map(x=>Number(fitField(x,3)||0)).filter(x=>x>0); if(hs.length)avgHr=hs.reduce((a,b)=>a+b,0)/hs.length}
+  if(!maxHr){const hs=rec.map(x=>Number(fitField(x,3)||0)).filter(x=>x>0); if(hs.length)maxHr=Math.max(...hs)}
+  if(!avgSpeed){const ss=rec.map(x=>Number(fitField(x,6)||0)).filter(x=>x>0); if(ss.length)avgSpeed=ss.reduce((a,b)=>a+b,0)/ss.length/1000}
+  const dateVal=sess?fitField(sess,2):(rec[0]?fitField(rec[0],253):null);
+  return {rec,laps,sess,dist,timeMs,avgHr,maxHr,avgSpeed,maxSpeed,ascent,avgCad,maxCad,date:fitTimestamp(dateVal),definitionCount:messages._definitionCount||0};
 }
 function fitField(msg,num){return msg&&msg.values?msg.values[num]:null}
 function fitAggregate(messages){
@@ -1177,7 +1213,7 @@ async function importFIT(e){
     const sig=String.fromCharCode(...new Uint8Array(buf,8,4));
     const msgs=fitParse(buf), a=fitAggregate(msgs);
     const counts={}; msgs.forEach(m=>counts[m.global]=(counts[m.global]||0)+1);
-    const diagnostics=`<div class="report" style="margin-top:10px"><div class="reportTitle" style="font-size:18px">🔎 Garmin FIT診断</div><div class="metrics" style="margin-top:8px"><div class="metric"><span>アプリ版</span><b>V17.1</b></div><div class="metric"><span>FIT署名</span><b>${sig==='.FIT'?'OK':'NG'}</b></div><div class="metric"><span>ヘッダー</span><b>${headerSize} bytes</b></div><div class="metric"><span>解析メッセージ</span><b>${msgs.length}件</b></div><div class="metric"><span>Session</span><b>${a.sess?'あり':'なし'}${counts[18]?` (${counts[18]}件)`:''}</b></div><div class="metric"><span>Lap</span><b>${a.laps.length}件</b></div><div class="metric"><span>Record</span><b>${a.rec.length}件</b></div><div class="metric"><span>取得距離</span><b>${a.dist?a.dist.toFixed(2)+' km':'未取得'}</b></div></div></div>`;
+    const diagnostics=`<div class="report" style="margin-top:10px"><div class="reportTitle" style="font-size:18px">🔎 Garmin FIT診断</div><div class="metrics" style="margin-top:8px"><div class="metric"><span>アプリ版</span><b>V18</b></div><div class="metric"><span>FIT署名</span><b>${sig==='.FIT'?'OK':'NG'}</b></div><div class="metric"><span>ヘッダー</span><b>${headerSize} bytes</b></div><div class="metric"><span>解析メッセージ</span><b>${msgs.length}件</b></div><div class="metric"><span>定義メッセージ</span><b>${a.definitionCount}件</b></div><div class="metric"><span>Session</span><b>${a.sess?'あり':'なし'}${counts[18]?` (${counts[18]}件)`:''}</b></div><div class="metric"><span>Lap</span><b>${a.laps.length}件</b></div><div class="metric"><span>Record</span><b>${a.rec.length}件</b></div><div class="metric"><span>取得距離</span><b>${a.dist?a.dist.toFixed(2)+' km':'未取得'}</b></div></div></div>`;
     fitPreview.innerHTML=diagnostics;
     if(!a.dist && !a.laps.length){
       fitStatus.textContent='FITは読み込めましたが、ランニングデータを取得できませんでした。診断結果を確認してください。';
@@ -1196,7 +1232,7 @@ async function importFIT(e){
       ${laps.length?`<h3 style="margin:12px 0 6px">ラップ解析</h3><div class="laps">${laps.map(x=>`<div class="lap">L${x.i}<b>${x.pace}</b><span class="note">${x.d?x.d.toFixed(2)+'km':''}</span></div>`).join('')}</div>`:''}
       <div class="actions"><button class="btn" onclick='saveFITCandidate(${JSON.stringify(candidate).replace(/</g,"\\u003c")})'>このFITを記録に保存</button><button class="btn secondary" onclick='previewFITReport(${JSON.stringify(candidate).replace(/</g,"\\u003c")})'>レポートを見る</button></div></div>`;
     fitStatus.textContent='解析完了。診断と解析結果を確認して保存できます。';
-  }catch(err){fitStatus.textContent='解析できませんでした：'+err.message;fitPreview.innerHTML='<div class="report"><div class="reportTitle">🔎 Garmin FIT診断</div><div class="note">V17.1 / 読み込み中にエラーが発生しました。</div><div class="metric"><span>エラー</span><b>'+String(err.message).replace(/</g,'&lt;')+'</b></div></div>'}
+  }catch(err){fitStatus.textContent='解析できませんでした：'+err.message;fitPreview.innerHTML='<div class="report"><div class="reportTitle">🔎 Garmin FIT診断</div><div class="note">V18 / 読み込み中にエラーが発生しました。</div><div class="metric"><span>エラー</span><b>'+String(err.message).replace(/</g,'&lt;')+'</b></div></div>'}
 }
 function saveFITCandidate(r){
   records.unshift(r);save();evaluatePlansForRecord(r);rebuildFuturePlan(true);showAutoReport(r.id);render();
