@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="apple-touch-icon" href="icon-192.svg">
 
-<title>My Running Log AI Coach V18.3</title>
+<title>My Running Log AI Coach V18.4</title>
 <style>
 :root{
   --bg:#07090c; --panel:#11151a; --panel2:#171c22; --line:#26303a;
@@ -158,7 +158,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:9px 6px;b
 <body>
 <div class="app">
 <header>
-  <div class="head"><div><div class="logo">🏃 <span>MY RUNNING LOG</span><span class="versionTag">V18.3</span></div><small>走った記録を、次の練習につなげる</small></div><div class="v11Status"><span id="onlineStatus">● オンライン</span><button id="installBtn" class="btn secondary installBtn" hidden>ホーム画面に追加</button></div><div id="today"></div></div>
+  <div class="head"><div><div class="logo">🏃 <span>MY RUNNING LOG</span><span class="versionTag">V18.4</span></div><small>走った記録を、次の練習につなげる</small></div><div class="v11Status"><span id="onlineStatus">● オンライン</span><button id="installBtn" class="btn secondary installBtn" hidden>ホーム画面に追加</button></div><div id="today"></div></div>
   <nav>
     <button class="tab active" data-tab="dash">ダッシュボード</button>
     <button class="tab" data-tab="records">記録</button>
@@ -418,15 +418,24 @@ function trainingLoad(r){
   return Math.round(base);
 }
 function weeklyStats(){
-  const today=dayStart(new Date()), dow=today.getDay(), monday=new Date(today);
+  // 日付文字列(YYYY-MM-DD)を基準に集計。iPhone/SafariのUTC解釈による
+  // 「今週なのに0km」問題を避ける。
+  const todayStr=todayLocalStr();
+  const today=localDate(todayStr);
+  const dow=today.getDay(), monday=new Date(today);
   monday.setDate(today.getDate()-(dow===0?6:dow-1));
+  const mondayStr=localDateStr(monday);
   const next=new Date(monday);next.setDate(monday.getDate()+7);
-  const w=records.filter(r=>{const d=dayStart(r.date);return d>=monday&&d<next});
+  const nextStr=localDateStr(next);
+  const normDate=r=>String(r.date||'').slice(0,10);
+  const w=records.filter(r=>{const ds=normDate(r);return ds>=mondayStr&&ds<nextStr});
   const km=w.reduce((a,r)=>a+(+r.dist||0),0);
   const d28=new Date(today);d28.setDate(today.getDate()-27);
-  const r28=records.filter(r=>dayStart(r.date)>=d28&&dayStart(r.date)<=today);
+  const d28Str=localDateStr(d28);
+  const r28=records.filter(r=>{const ds=normDate(r);return ds>=d28Str&&ds<=todayStr});
   const d7=new Date(today);d7.setDate(today.getDate()-6);
-  const r7=records.filter(r=>dayStart(r.date)>=d7&&dayStart(r.date)<=today);
+  const d7Str=localDateStr(d7);
+  const r7=records.filter(r=>{const ds=normDate(r);return ds>=d7Str&&ds<=todayStr});
   const load=r7.reduce((a,r)=>a+trainingLoad(r),0);
   return {km,wcount:w.length,km28:r28.reduce((a,r)=>a+(+r.dist||0),0),load};
 }
@@ -1053,7 +1062,8 @@ function render(){
  avgPace.textContent=weighted.d?secToPace(weighted.t/weighted.d):'--';
  const hrs=mr.filter(r=>r.avgHr);avgHr.textContent=hrs.length?Math.round(hrs.reduce((a,r)=>a+r.avgHr,0)/hrs.length):'--';
  progressBar.style.width=Math.min(100,km/GOAL*100)+'%';progressText.textContent=`${km.toFixed(1)} / ${GOAL} km　達成率 ${Math.round(km/GOAL*100)}%`; const race=new Date('2026-11-01T00:00:00');const t0=dayStart(new Date());raceDays.textContent=Math.max(0,Math.ceil((race-t0)/86400000));longCount.textContent=mr.filter(r=>r.type==='Long').length;qualityCount.textContent=mr.filter(r=>['Interval','Threshold','Race'].includes(r.type)).length;renderCoach();renderCalendar();renderV15();
- recent.innerHTML=mr.slice(0,5).map(r=>`<div class="metric"><span>${r.date}　${r.type}</span><b>${r.dist.toFixed(2)}km　${r.pace||'--'}</b></div>`).join('')||'<div class="empty">まだ今月の記録がありません。</div>';
+ const recentMonth=sortedRecords().filter(r=>String(r.date||'').slice(0,7)===ym);
+ recent.innerHTML=recentMonth.slice(0,5).map(r=>`<div class="metric"><span>${String(r.date).slice(0,10)}　${r.type||'未分類'}</span><b>${(+r.dist||0).toFixed(2)}km　${r.pace||'--'}</b></div>`).join('')||'<div class="empty">まだ今月の記録がありません。</div>';
  const ws=weeklyStats();
  renderMarathonProgress();renderV13();renderV14();renderV15();renderV16();
  weekKm.textContent=ws.km.toFixed(1); weekCount.textContent=ws.wcount; load7.textContent=ws.load; km28.textContent=ws.km28.toFixed(1);
@@ -1197,7 +1207,7 @@ async function importFIT(e){
   </select>
 </div>${laps.length?`<h3 style="margin:12px 0 6px">ラップ解析</h3><div class="laps">${laps.map(x=>`<div class="lap">L${x.i}<b>${x.pace}</b><span class="note">${x.d?x.d.toFixed(2)+'km':''}</span></div>`).join('')}</div>`:''}<div class="actions"><button class="btn" onclick='saveFITCandidateWithType(${JSON.stringify(candidate).replace(/</g,"\u003c")},"fitTypeSelect_${candidate.id}")'>選んだタイプで記録に保存</button><button class="btn secondary" onclick='previewFITReport(${JSON.stringify(candidate).replace(/</g,"\u003c")})'>レポートを見る</button></div></div>`;
     fitStatus.textContent='解析完了。診断と解析結果を確認して保存できます。';
-  }catch(err){fitStatus.textContent='解析できませんでした：'+err.message;fitPreview.innerHTML='<div class="report"><div class="reportTitle">🔎 Garmin FIT診断</div><div class="note">V18.3 / 読み込み中にエラーが発生しました。</div><div class="metric"><span>エラー</span><b>'+String(err.message).replace(/</g,'&lt;')+'</b></div></div>'}
+  }catch(err){fitStatus.textContent='解析できませんでした：'+err.message;fitPreview.innerHTML='<div class="report"><div class="reportTitle">🔎 Garmin FIT診断</div><div class="note">V18.4 / 読み込み中にエラーが発生しました。</div><div class="metric"><span>エラー</span><b>'+String(err.message).replace(/</g,'&lt;')+'</b></div></div>'}
 }
 function saveFITCandidate(r){
   if(saveLock)return;
