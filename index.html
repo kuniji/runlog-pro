@@ -162,6 +162,10 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:9px 6px;b
 
 .raceList{display:grid;gap:8px;margin-top:10px}.raceItem{padding:10px 12px;border:1px solid #26363e;border-radius:12px;background:#0d1419;display:flex;justify-content:space-between;gap:10px;align-items:center}.raceItem b{display:block}.raceItem small{color:#9aa7b2}.raceDelete{border:0;border-radius:9px;padding:7px 9px;background:rgba(255,255,255,.08);color:inherit}.raceBadge{display:inline-block;margin-left:5px;padding:3px 7px;border-radius:999px;background:rgba(255,255,255,.08);font-size:10px}
 </style>
+
+<style>
+.reportHub{display:grid;gap:10px;margin-top:10px}.reportHub label{display:grid;gap:6px;font-weight:700}.reportHub select{width:100%;padding:11px;border-radius:10px;background:#11151a;color:var(--text);border:1px solid var(--line);font-size:15px}.reportRecentList{display:grid;gap:7px}.reportRecentItem{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 12px;border:1px solid rgba(255,255,255,.08);border-radius:12px;background:rgba(255,255,255,.03)}.reportRecentItem b{display:block}.reportRecentItem small{opacity:.7}.coachRoleGrid{display:grid;gap:10px}.coachRole{padding:14px;border:1px solid rgba(255,255,255,.08);border-radius:15px;background:rgba(255,255,255,.035);display:grid;gap:8px}.coachRole b{font-size:16px}.coachRole span{font-size:13px;line-height:1.55;opacity:.82}.coachRole .btn{justify-self:start}.reportSelectActive{border-color:rgba(45,205,255,.45)}
+</style>
 </head>
 <body>
 <div class="app">
@@ -170,8 +174,8 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:9px 6px;b
   <nav>
     <button class="tab active" data-tab="dash">ダッシュボード</button>
     <button class="tab" data-tab="records">記録</button>
-    <button class="tab" data-tab="report">練習レポート</button>
-    <button class="tab" data-tab="v12">🧠 V12 Engine</button><button class="tab" data-tab="coach">AIコーチ</button>
+    <button class="tab" data-tab="report">📝 練習レポート</button>
+    <button class="tab" data-tab="v12">🧠 状態分析</button><button class="tab" data-tab="coach">🤖 コーチ</button>
     <button class="tab" data-tab="calendar">カレンダー</button><button class="tab" data-tab="plan">練習計画</button>
     <button class="tab" data-tab="backup">バックアップ</button>
   </nav>
@@ -223,13 +227,14 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:9px 6px;b
 
 <div class="section">
   <div class="coach">
-    <div class="coachHead"><div><div class="coachTitle">🧠 AIトレーニングコーチ</div><div class="note">あなたの直近の練習履歴から次の一手を自動判断</div></div><span class="coachBadge">AUTO</span></div>
-    <div class="coachMain"><h3 id="coachTitle">次回おすすめ</h3><p id="coachMenu">記録を追加すると自動提案します。</p><p id="coachReason" class="coachReason"></p></div>
+    <div class="coachHead"><div><div class="coachTitle">🤖 今日のコーチ判断</div><div class="note">練習メニューの提案はV15に一本化。ここでは要点だけ表示します。</div></div><span class="coachBadge">V15連携</span></div>
+    <div class="coachMain"><h3 id="coachTitle">次の練習</h3><p id="coachMenu">V15で次の14日間を確認してください。</p><p id="coachReason" class="coachReason"></p></div>
     <div class="coachMeta">
       <div class="coachMini"><small>今週</small><b id="coachWeek">--</b></div>
       <div class="coachMini"><small>7日負荷</small><b id="coachLoad">--</b></div>
       <div class="coachMini"><small>Long間隔</small><b id="coachLongGap">--</b></div>
     </div>
+    <div class="actions" style="margin-top:10px"><button class="btn secondary" onclick="document.querySelector('[data-tab=\"v12\"]').click()">🧠 状態分析を見る</button><button class="btn" onclick="document.querySelector('[data-tab=\"dash\"]').scrollIntoView({behavior:'smooth'})">🧭 V15は上の計画を確認</button></div>
   </div>
 </div>
 
@@ -286,30 +291,45 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:9px 6px;b
 </section>
 
 <section id="report" class="hidden">
-  <div id="autoReport"></div>
+  <div class="section">
+    <div class="hero"><div><h1>📝 練習レポート</h1><p>走った後の振り返り。最新記録を自動表示し、過去の記録も選べます。</p></div><div class="badge"><span>REPORT</span><b id="reportCount">0件</b></div></div>
+    <div class="reportHub">
+      <label>記録を選択<select id="reportRecordSelect" onchange="renderReportHub(this.value)"></select></label>
+      <div id="reportRecentList" class="reportRecentList"></div>
+    </div>
+    <div id="autoReport"></div>
+  </div>
 </section>
 
 
 <section id="v12" class="hidden">
-  <div class="hero"><div><h1>🧠 Adaptive Training Engine V13</h1><p>実績→負荷→達成度→次週計画を連続更新</p></div><div class="badge"><span>V13</span><b id="v12RaceDays">--</b></div></div>
+  <div class="hero"><div><h1>🧠 状態分析（V12）</h1><p>実績・負荷・達成度を整理し、V15の練習計画につなげます</p></div><div class="badge"><span>V13</span><b id="v12RaceDays">--</b></div></div>
   <div class="section">
     <div class="engineTopAction"><button class="engineActionBtn" onclick="runV12Engine()">🧠 V12を実行・更新</button><span id="v12EngineStatus" class="engineStatus"></span></div>
     <div id="v12Adaptive" class="v12Dash"></div>
   </div>
-  <div class="section v13Panel"><h2>⚙️ V13 自動調整エンジン</h2><div id="v13Decision"></div></div>
-  <div class="section v14Panel"><h2>🎯 V14 個別メニュー生成</h2><div id="v14Prescription"></div></div>
+  <div class="section v13Panel"><h2>⚙️ V13 自動調整</h2><div id="v13Decision"></div></div>
+  <div class="section v14Panel"><h2>🎯 V14 明日の1メニュー</h2><div id="v14Prescription"></div></div>
 </section>
 <section id="coach" class="hidden">
-  <div class="hero"><div><h1>AIトレーニングコーチ</h1><p>過去の記録・負荷・大会日程から、今週の練習を自動作成</p></div><div class="badge"><span>COACH</span><b id="coachRaceBadge">--</b></div></div>
+  <div class="hero"><div><h1>🤖 コーチセンター</h1><p>提案を増やさず、V15を「練習計画の本体」として使います。</p></div><div class="badge"><span>COACH</span><b>V15中心</b></div></div>
 
   <div class="section">
     <div class="coach">
-      <div class="coachHead"><div><div class="coachTitle" id="coachFullTitle">今週のおすすめ</div><div class="note">無理に予定を埋めず、直近の疲労と大会までの期間を優先します。</div></div><span class="coachBadge">自動更新</span></div>
-      <div class="coachMain"><h3 id="coachFullMenu">--</h3><p id="coachFullReason" class="coachReason"></p></div>
+      <div class="coachHead"><div><div class="coachTitle">今日の判断</div><div class="note">ここでは新しいメニューを別に作らず、V12〜V15の役割を整理します。</div></div><span class="coachBadge">統合</span></div>
+      <div class="coachMain"><h3 id="coachFullTitle">V15の計画を確認</h3><p id="coachFullMenu">--</p><p id="coachFullReason" class="coachReason"></p></div>
     </div>
   </div>
 
-  <div class="section"><h2>今週の練習バランス</h2>
+  <div class="section"><h2>役割を3つに整理</h2>
+    <div class="coachRoleGrid">
+      <div class="coachRole"><b>🧠 V12｜状態分析</b><span>直近の負荷・実績・能力指標を整理する。新しい週間メニューは作りません。</span><button class="btn secondary" onclick="document.querySelector('[data-tab=\"v12\"]').click()">状態を見る</button></div>
+      <div class="coachRole"><b>🧭 V15｜練習計画の本体</b><span>今後14日間を作る。月曜＋平日1日OFF、週中ポイント、週末Longを基本にします。</span><button class="btn" onclick="document.querySelector('[data-tab=\"dash\"]').click();setTimeout(()=>document.getElementById('v15PlanSection')?.scrollIntoView({behavior:'smooth'}),100)">V15を見る</button></div>
+      <div class="coachRole"><b>🎯 V14｜明日の詳細</b><span>V15の流れを受けて、明日だけ具体的なメニューに落とし込みます。</span><button class="btn secondary" onclick="document.querySelector('[data-tab=\"v12\"]').click();setTimeout(()=>document.getElementById('v14Prescription')?.scrollIntoView({behavior:'smooth'}),100)">明日のメニューを見る</button></div>
+    </div>
+  </div>
+
+  <div class="section"><h2>今週の実績</h2>
     <div class="cards">
       <div class="card"><div class="k">Easy / Recovery</div><div class="v" id="balEasy">0</div><div class="s">回</div></div>
       <div class="card"><div class="k">ポイント</div><div class="v" id="balQuality">0</div><div class="s">回</div></div>
@@ -318,42 +338,10 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:9px 6px;b
     </div>
   </div>
 
-  <div class="section"><h2>次の7日間 自動メニュー</h2>
-    <div id="weeklyCoachPlan"></div>
-    <div class="actions"><button class="btn" onclick="applyCoachWeek()">この7日間を練習計画に追加</button><button class="btn secondary" onclick="renderCoach()">AIコーチを再計算</button></div>
-    <p class="note">既存の同日予定は残し、新しいAI提案を追加します。</p>
-  </div>
-
-  <div class="grid2">
-    <div class="section"><h2>金沢城リレー</h2><p><b>2026/9/27</b></p><p class="note" id="coachRelayText">--</p></div>
-    <div class="section"><h2>富山マラソン</h2><p><b>2026/11/1</b></p><p class="note" id="coachToyamaText">--</p></div>
-  </div>
-  <div class="section"><h2>富山マラソンまでの自動サイクル</h2>
-    <div id="cyclePlan" class="cycleGrid"></div>
-    <p class="note">記録が増えるたびに、直近4週間の負荷・ポイント練習・Long走を見て次の週を組み直します。</p>
-  </div>
-  <div class="section"><h2>トレーニング状況と自動調整</h2>
-    <div id="adaptiveStatus" class="adaptBox"></div>
-  </div>
-  <div class="section"><h2>富山マラソンまでの全期間プラン</h2>
-    <div id="fullCyclePlan" class="fullCycle"></div>
-    <div class="actions"><button class="btn" onclick="applyFullCycle()">全期間プランを練習計画に追加</button><button class="btn secondary" onclick="renderCoach()">最新データで再計算</button></div>
-    <p class="note">実績が追加されるたびに、未実施の期間は現在の疲労・練習量・ポイント練習の実績を反映して再計算します。</p>
-  </div>
-  <div class="section"><h2>📈 走力の変化</h2>
-    <div id="performanceTrend"></div>
-    <p class="note">同じ指標を継続して比較するための参考値です。記録条件が違うため、走力を確定するものではありません。</p>
-  </div>
-  <div class="section"><h2>🔄 実績連動・クローズドループ</h2>
-    <div id="closedLoopPanel"></div>
-    <div class="actions"><button class="btn" onclick="rebuildFuturePlan()">実績から今後の計画を自動再構築</button></div>
-    <p class="note">Garmin FIT/通常記録を保存すると、同日の予定評価 → 負荷・準備度更新 → 今後のAI計画再計算までを行います。既存の手動予定は残し、AIが作った未実施予定だけを更新します。</p>
-  </div>
-  <div class="section"><h2>直近の振り返り → 次週への調整</h2>
-    <div id="coachReview" class="review"></div>
-  </div>
+  <div class="section"><h2>実績連動</h2><div id="adaptiveStatus" class="adaptBox"></div><div class="actions"><button class="btn secondary" onclick="refreshPlanEvaluations()">既存記録を再評価</button></div></div>
+  <div class="section"><h2>📈 走力の変化</h2><div id="performanceTrend"></div><p class="note">同じ指標を継続して比較するための参考値です。</p></div>
+  <div class="section"><h2>🔄 クローズドループ</h2><div id="closedLoopPanel"></div><p class="note">記録 → 予定との照合 → 状態更新 → V15再計算、という流れで使います。</p></div>
 </section>
-
 <section id="calendar" class="hidden">
   <div class="section">
     <div class="hero"><div><h1 id="calTitle">2026年9月</h1><p>予定と実績を同じ画面で確認</p></div>
@@ -385,7 +373,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:9px 6px;b
 </section>
 
 <section id="backup" class="hidden">
-  <div class="section"><h2>バックアップ / 復元</h2><p class="note">記録はこのブラウザに保存されます。V18.7では重複記録を自動削除せず、削除はゴミ箱経由で復元できます。端末変更前などにJSONを書き出して保管してください。</p>
+  <div class="section"><h2>バックアップ / 復元</h2><p class="note">記録はこのブラウザに保存されます。V18.14では重複記録を自動削除せず、削除はゴミ箱経由で復元できます。端末変更前などにJSONを書き出して保管してください。</p>
   <div class="actions"><button class="btn" onclick="exportData()">JSONを書き出す</button><button class="btn secondary" onclick="exportCSV()">CSVを書き出す</button><label class="btn secondary" style="display:inline-block">JSONを復元<input id="importFile" type="file" accept=".json" style="display:none" onchange="importData(event)"></label></div></div>
 </section>
 </main>
@@ -931,10 +919,11 @@ function rebuildFuturePlan(silent=false){
   return {removed:before-plans.length+added,added,cycle};
 }
 function renderClosedLoop(){
+  const host=document.getElementById('closedLoopPanel'); if(!host)return;
   const x=loopReadiness(), p=x.ps;
   const future=buildClosedLoopCycle();
   const first=future.weeks[0], nextLoad=first?first.simulatedLoad:0;
-  closedLoopPanel.innerHTML=`<div class="closedLoop">
+  host.innerHTML=`<div class="closedLoop">
     <div class="loopStep"><b>① 実績を取り込む</b><span class="note">Garmin FITまたは通常記録を保存</span></div>
     <div class="loopArrow">↓</div>
     <div class="loopStep"><b>② 予定と照合</b><span class="note">種別・距離・ペースを評価：完了 ${p.done}件 / 一部 ${p.partial}件 / 未実施 ${p.missed}件</span></div>
@@ -964,80 +953,37 @@ function performanceTrend(){
 }
 
 function renderCoach(){
-  if(typeof performanceTrendEl!=='undefined') performanceTrendEl.innerHTML=performanceTrend();
-  renderClosedLoop();
-  const c=coachAnalysis();
-  coachTitle.textContent=c.title; coachMenu.textContent=c.menu;
-  coachWeek.textContent=c.week; coachLoad.textContent=c.load; coachLongGap.textContent=c.longGap;
-  coachReason.textContent=c.reason; coachReason.className='coachReason '+c.tone;
-  if(typeof coachFullTitle!=='undefined'){
-    coachFullTitle.textContent=c.title; coachFullMenu.textContent=c.menu; coachFullReason.textContent=c.reason;
-    coachRaceBadge.textContent=`富山まで${c.toyamaGap}日`;
-    coachRelayText.textContent=c.relayGap===0?'今日です。':`あと${c.relayGap}日。9:30切り / 約5:00/kmを目安に調整。`;
-    coachToyamaText.textContent=`あと${c.toyamaGap}日。サブ4:30 / 約6:24/kmに向けて持久力を優先。`;
-    const week=buildWeekPlan(c);
-    weeklyCoachPlan.innerHTML=week.map(x=>`<div class="coachDay"><div class="coachDate">${x.date.slice(5).replace('-','/')}<span class="tag">${['日','月','火','水','木','金','土'][new Date(x.date+'T00:00:00').getDay()]}</span></div><div><h4>${x.title}</h4><p><b>${x.target}</b><br>${x.workout}</p></div></div>`).join('');
+  // V18.14: 提案の重複を避け、V15を週間計画の本体にする。
+  try{
+    const e=typeof v15PlanEngine==='function'?v15PlanEngine():null;
+    const first=e&&e.plans&&e.plans[0];
+    const c=coachAnalysis();
+    const title=first?`${first.type}｜${first.target}`:'V15で次の計画を確認';
+    const reason=first?`${first.date}（${first.weekday?first.weekday.split('（')[1]?.replace('）',''):''}）のV15提案。${first.why}`:'記録を追加するとV15が今後14日間を再計算します。';
+    const fullTitle=document.getElementById('coachFullTitle');
+    const fullMenu=document.getElementById('coachFullMenu');
+    const fullReason=document.getElementById('coachFullReason');
+    const titleEl=document.getElementById('coachTitle'),menuEl=document.getElementById('coachMenu'),reasonEl=document.getElementById('coachReason');
+    if(titleEl)titleEl.textContent=title; if(menuEl)menuEl.textContent=first?first.target:'V15で次の14日間を確認してください。'; if(reasonEl){reasonEl.textContent=reason;reasonEl.className='coachReason '+(c.tone||'');}
+    if(fullTitle)fullTitle.textContent='現在のコーチ判断'; if(fullMenu)fullMenu.textContent=first?`${first.date}（${first.weekday?first.weekday.split('（')[1]?.replace('）',''):''}）｜${first.type} ${first.target}`:'--'; if(fullReason)fullReason.textContent=reason;
+    const cw=document.getElementById('coachWeek'),cl=document.getElementById('coachLoad'),cg=document.getElementById('coachLongGap');
+    if(cw)cw.textContent=c.week; if(cl)cl.textContent=c.load; if(cg)cg.textContent=c.longGap;
     const last7=sortedRecords().filter(r=>{const d=daysFromToday(r.date);return d>=0&&d<=6;});
-    balEasy.textContent=last7.filter(r=>['Easy','Recovery'].includes(r.type)).length;
-    balQuality.textContent=last7.filter(isQuality).length;
-    balLong.textContent=last7.filter(r=>r.type==='Long'||(+r.dist||0)>=18).length;
-    balRest.textContent=Math.max(0,7-last7.length);
-
-    const cycle=buildCyclePlan(c);
-    cyclePlan.innerHTML=cycle.map((w,i)=>{
-      const end=new Date(w.start);end.setDate(end.getDate()+6);
-      const label=`${w.start.getMonth()+1}/${w.start.getDate()}〜${end.getMonth()+1}/${end.getDate()}`;
-      const hard=w.week.filter(x=>isQuality({type:x.type})).length;
-      return `<div class="cycleWeek"><h3>第${i+1}週　${label} <span class="tag">${w.phase}</span></h3><p>Easy/Recovery ${w.counts.easy}回　・ポイント ${hard}回　・Long ${w.counts.long}回</p><p>${w.week.filter(x=>['Threshold','Interval','Long','Race'].includes(x.type)).map(x=>`${x.date.slice(5)} ${x.title}`).join(' / ')||'回復・Easy中心'}</p></div>`;
-    }).join('');
-
-    const rv=coachWeeklyReview();
-    coachReview.innerHTML=`<h3>今週 ${rv.km.toFixed(1)}km / 負荷 ${rv.load}pt</h3><ul>${rv.notes.map(n=>`<li>${n}</li>`).join('')}</ul>`;
-    const rs=readinessSnapshot(c);
-    const rr=readinessScore(c);
-    const ps=rr.planSummary;
-    const adText=rs.ad.planned?`${rs.ad.done}/${rs.ad.planned}件（${rs.ad.rate}%）`:'過去14日にAI予定なし';
-    adaptiveStatus.innerHTML=`<div class="readiness"><b>現在の判定：${rs.status}</b><br>${rs.note}</div>
-      <div class="adaptGrid">
-        <div class="adaptStat"><small>予定消化率（14日）</small><b>${adText}</b></div>
-        <div class="adaptStat"><small>直近7日負荷</small><b>${c.load}pt</b></div>
-        <div class="adaptStat"><small>ポイント練習</small><b>${c.quality7}回</b></div>
-        <div class="adaptStat"><small>Long</small><b>${c.long7}回</b></div>
-        <div class="adaptStat"><small>準備度（参考値）</small><b>${rr.score}/100・${rr.label}</b></div>
-      </div>
-      <p class="note" style="margin-top:9px">※準備度は記録から作る簡易指標で、医療的・生理学的な判定ではありません。未実施メニューを後から詰め込まず、現在の状態から先の計画を組み直します。</p>
-      <div class="adaptGrid" style="margin-top:8px">
-        <div class="adaptStat"><small>実績評価済み</small><b>${ps.evaluated.length}件</b></div>
-        <div class="adaptStat"><small>完了</small><b>${ps.done}件</b></div>
-        <div class="adaptStat"><small>一部実施</small><b>${ps.partial}件</b></div>
-        <div class="adaptStat"><small>未実施</small><b>${ps.missed}件</b></div>
-      </div>
-      <p class="note" style="margin-top:9px">Garmin FITまたは通常記録を保存すると、同日の予定に対して「種別・距離・ペース」を自動評価し、次回のAIコーチ更新に反映します。</p>
-      <div class="actions"><button class="btn secondary" onclick="refreshPlanEvaluations()">既存記録を再評価</button></div>
-      <p class="note" style="margin-top:9px">※消化できなかったメニューを後から詰め込まず、現在の状態から先の計画を組み直します。</p>`;
-    const full=buildFullRacePlan(c);
-    fullCyclePlan.innerHTML=full.map((w,i)=>{
-      const end=new Date(w.start); end.setDate(end.getDate()+6);
-      const hard=w.week.filter(x=>isQuality({type:x.type})).length;
-      const long=w.week.filter(x=>x.type==='Long').length;
-      const items=w.week.filter(x=>['Threshold','Interval','Long','Race'].includes(x.type)).map(x=>`${x.date.slice(5)} ${x.title}`).join(' / ')||'Easy・Recovery中心';
-      return `<div class="cycleWeek"><h3>第${i+1}週　${w.start.getMonth()+1}/${w.start.getDate()}〜${end.getMonth()+1}/${end.getDate()} <span class="tag">${w.phase}</span></h3><p>ポイント ${hard}回　・Long ${long}回</p><p>${items}</p></div>`;
-    }).join('');
-
-  }
+    const be=document.getElementById('balEasy'),bq=document.getElementById('balQuality'),bl=document.getElementById('balLong'),br=document.getElementById('balRest');
+    if(be)be.textContent=last7.filter(r=>['Easy','Recovery'].includes(r.type)).length; if(bq)bq.textContent=last7.filter(isQuality).length; if(bl)bl.textContent=last7.filter(r=>r.type==='Long'||(+r.dist||0)>=18).length; if(br)br.textContent=Math.max(0,7-last7.length);
+    const trend=document.getElementById('performanceTrend'); if(trend)trend.innerHTML=performanceTrend();
+    const ad=document.getElementById('adaptiveStatus'); if(ad){const rs=readinessSnapshot(c),rr=readinessScore(c),ps=rr.planSummary; const txt=rs.ad.planned?`${rs.ad.done}/${rs.ad.planned}件（${rs.ad.rate}%）`:'過去14日にAI予定なし'; ad.innerHTML=`<div class="readiness"><b>現在の判定：${rs.status}</b><br>${rs.note}</div><div class="adaptGrid"><div class="adaptStat"><small>予定消化率（14日）</small><b>${txt}</b></div><div class="adaptStat"><small>直近7日負荷</small><b>${c.load}pt</b></div><div class="adaptStat"><small>ポイント</small><b>${c.quality7}回</b></div><div class="adaptStat"><small>Long</small><b>${c.long7}回</b></div><div class="adaptStat"><small>準備度（参考値）</small><b>${rr.score}/100・${rr.label}</b></div></div><p class="note" style="margin-top:9px">予定と実績を照合し、未実施メニューを後から詰め込まず、現在の状態からV15の先の計画を組み直します。</p>`;}
+    const loop=document.getElementById('closedLoopPanel'); if(loop){renderClosedLoop();}
+  }catch(err){console.error('coach unified render error',err);}
 }
 function applyCoachWeek(){
-  const c=coachAnalysis(), week=buildWeekPlan(c);
-  let added=0;
-  week.forEach(x=>{
-    if(!plans.some(p=>p.date===x.date && p.type===x.type)){
-      plans.push({id:Date.now()+added,date:x.date,type:x.type,target:x.target,workout:x.workout,source:'AI Coach'});
-      added++;
+  const e=v15PlanEngine(); let added=0;
+  e.plans.slice(0,7).forEach(x=>{
+    if(!plans.some(p=>p.date===x.date&&p.type===x.type)){
+      plans.push({id:'v15-'+Date.now()+'-'+added,date:x.date,type:x.type,target:x.target,workout:x.workout||x.target,source:'V15'}); added++;
     }
   });
-  savePlans();
-  renderCoach();
-  alert(`${added}件のAI練習計画を追加しました。`);
+  savePlans(); renderCoach(); alert(`${added}件をV15の練習計画として追加しました。`);
 }
 function todayLocalStr(){ return localDateStr(new Date()); }
 
@@ -1447,24 +1393,12 @@ function previewFITReport(r){
   showAutoReportFromObject(r);
 }
 function showAutoReportFromObject(r){
-  const score=scoreRecord(r), adv=reportAdvice(r), pace=paceSecondsFromRecord(r);
-  const comment=r.memo||r.workout||`${r.type}として記録。`;
-  const date=new Date(r.date+'T00:00:00');
-  const dateText=isNaN(date)?r.date:date.toLocaleDateString('ja-JP',{year:'numeric',month:'numeric',day:'numeric',weekday:'short'});
-  autoReport.innerHTML=`<div class="report">
-    <div class="reportTop"><div><div class="reportTitle">AI RUN REPORT</div><div class="note">Garmin FITデータから自動生成</div></div><div class="dateBox"><b>${dateText}</b><br>${r.type}</div></div>
-    <div class="scoreRow"><div class="scoreBox"><div class="note">総合評価</div><div class="score">${score}<span>/100</span></div><div class="comment">${comment.replace(/</g,'&lt;')}</div></div>
-    <div class="metrics"><h3>ワークアウトデータ</h3>
-      <div class="metric"><span>距離</span><b>${r.dist.toFixed(2)} km</b></div><div class="metric"><span>時間</span><b>${secToPace(r.time*60)}</b></div>
-      <div class="metric"><span>平均ペース</span><b>${r.pace}/km</b></div><div class="metric"><span>平均心拍</span><b>${r.avgHr||'--'} bpm</b></div><div class="metric"><span>最大心拍</span><b>${r.maxHr||'--'} bpm</b></div><div class="metric"><span>獲得標高</span><b>${(+r.elev||0)>0?Math.round(+r.elev)+' m':'--'}</b></div>
-      <div class="metric"><span>トレーニング</span><b>${(r.workout||r.type).replace(/</g,'&lt;')}</b></div></div></div>
-    <div class="reportGrid"><div class="rbox good"><h3>👍 良かった点</h3><ul>${adv.good.map(x=>`<li>${x}</li>`).join('')}</ul></div>
-    <div class="rbox improve"><h3>🎯 改善ポイント</h3><ul>${adv.improve.map(x=>`<li>${x}</li>`).join('')}</ul></div>
-    <div class="rbox next"><h3>📈 次回への指令</h3><ul>${adv.next.map(x=>`<li>${x}</li>`).join('')}</ul></div></div>
-    <div class="linkGrid"><div class="linkbox marathon"><h3>↗ サブ4:30へのつながり</h3><div class="note">今回の${typeText(r.type)}を土台に、マラソンペース約6:24/kmを長く維持できる持久力へつなげます。</div></div>
-    <div class="linkbox relay"><h3>💡 次の目標へのつながり</h3><div class="note">金沢城リレーは1周約1.9km・<strong>9分30秒切り（約5:00/km）</strong>を第一目標にします。</div></div></div></div>`;
-  document.querySelector('[data-tab="report"]').click();
+  if(!r)return;
+  currentReportId=r.id;
+  const tab=document.querySelector('[data-tab="report"]'); if(tab)tab.click();
+  renderReportOnly(r);
 }
+
 function paceSecondsFromRecord(r){
   if(r.pace){const x=paceToSec(r.pace); if(x) return x}
   if(r.dist&&r.time) return r.time*60/r.dist;
@@ -1519,41 +1453,32 @@ function reportAdvice(r){
   if(hr>=165 || max>=175) improve.push('心拍負荷が高い日は睡眠・補給・脚の状態を優先');
   return {good,improve,next};
 }
-function showAutoReport(id){
-  const r=records.find(x=>x.id===id); if(!r) return;
+let currentReportId=null;
+function renderReportHub(selectedId){
+  const select=document.getElementById('reportRecordSelect'), list=document.getElementById('reportRecentList'), count=document.getElementById('reportCount');
+  if(!select||!list)return;
+  const rs=sortedRecords().slice(0,30);
+  if(count)count.textContent=rs.length+'件';
+  if(!rs.length){select.innerHTML='<option>記録がありません</option>';list.innerHTML='<div class="empty">ラン記録を保存すると、ここに練習レポートが表示されます。</div>';return;}
+  const wanted=String(selectedId||currentReportId||rs[0].id);
+  currentReportId=rs.some(r=>String(r.id)===wanted)?wanted:String(rs[0].id);
+  select.innerHTML=rs.map(r=>{const d=new Date(r.date+'T00:00:00');const wd=isNaN(d)?'':`（${['日','月','火','水','木','金','土'][d.getDay()]}）`;return `<option value="${r.id}" ${String(r.id)===String(currentReportId)?'selected':''}>${r.date}${wd}｜${r.type||'Run'}｜${(+r.dist||0).toFixed(2)}km｜${r.pace||'--'}</option>`}).join('');
+  list.innerHTML=rs.slice(0,5).map(r=>{const d=new Date(r.date+'T00:00:00');const wd=isNaN(d)?'':`（${['日','月','火','水','木','金','土'][d.getDay()]}）`;return `<div class="reportRecentItem"><div><b>${r.date}${wd}｜${r.type||'Run'}</b><small>${(+r.dist||0).toFixed(2)}km　${r.pace||'--'}</small></div><button class="btn secondary" style="padding:6px 9px;font-size:11px" onclick="showAutoReport(${r.id})">見る</button></div>`}).join('');
+  const r=rs.find(x=>String(x.id)===String(currentReportId)); if(r)renderReportOnly(r);
+}
+function renderReportOnly(r){
+  if(!r)return; currentReportId=r.id;
   const score=scoreRecord(r), adv=reportAdvice(r), pace=paceSecondsFromRecord(r);
-  const comment = r.memo || r.workout || `${r.type}として記録。`;
-  const paceText=r.pace || (pace?secToPace(pace):'--');
-  const date=new Date(r.date+'T00:00:00');
-  const dateText=isNaN(date)?r.date:date.toLocaleDateString('ja-JP',{year:'numeric',month:'numeric',day:'numeric',weekday:'short'});
-  autoReport.innerHTML=`
-  <div class="report">
-    <div class="reportTop"><div><div class="reportTitle">AI RUN REPORT</div><div class="note">記録データから自動生成された練習レポート</div></div>
-      <div class="dateBox"><b>${dateText}</b><br>${r.type||'Run'}</div></div>
-    <div class="scoreRow">
-      <div class="scoreBox"><div class="note">総合評価</div><div class="score">${score}<span>/100</span></div>
-        <div class="comment">${comment.replace(/</g,'&lt;')}</div></div>
-      <div class="metrics"><h3>本日のワークアウトデータ</h3>
-        <div class="metric"><span>距離</span><b>${r.dist?r.dist.toFixed(2)+' km':'--'}</b></div>
-        <div class="metric"><span>時間</span><b>${r.time?secToPace(r.time*60):'--'}</b></div>
-        <div class="metric"><span>平均ペース</span><b>${paceText}/km</b></div>
-        <div class="metric"><span>平均心拍</span><b>${r.avgHr||'--'} bpm</b></div>
-        <div class="metric"><span>最大心拍</span><b>${r.maxHr||'--'} bpm</b></div><div class="metric"><span>獲得標高</span><b>${(+r.elev||0)>0?Math.round(+r.elev)+' m':'--'}</b></div>
-        <div class="metric"><span>気温</span><b>${r.temp!==''&&r.temp!=null?r.temp+' ℃':'--'}</b></div>
-        <div class="metric"><span>トレーニング</span><b>${(r.workout||r.type||'--').replace(/</g,'&lt;')}</b></div>
-      </div>
-    </div>
-    <div class="reportGrid">
-      <div class="rbox good"><h3>👍 良かった点</h3><ul>${adv.good.map(x=>`<li>${x}</li>`).join('')}</ul></div>
-      <div class="rbox improve"><h3>🎯 改善ポイント</h3><ul>${adv.improve.map(x=>`<li>${x}</li>`).join('')}</ul></div>
-      <div class="rbox next"><h3>📈 次回への指令</h3><ul>${adv.next.map(x=>`<li>${x}</li>`).join('')}</ul></div>
-    </div>
-    <div class="linkGrid">
-      <div class="linkbox marathon"><h3>↗ サブ4:30へのつながり</h3><div class="note">マラソン本番で6:24/km前後を維持するため、${typeText(r.type)}の役割を意識。速い練習の日だけでなく、Easyとロング走を積み重ねることが重要です。</div></div>
-      <div class="linkbox relay"><h3>💡 次の目標へのつながり</h3><div class="note">金沢城リレーは1周約1.9km・<strong>9分30秒切り（約5:00/km）</strong>を第一目標。ポイント練習では速さよりも全本数を安定してまとめることを優先します。</div></div>
-    </div>
-  </div>`;
-  document.querySelector('[data-tab="report"]').click();
+  const comment=r.memo||r.workout||`${r.type}として記録。`; const date=new Date(r.date+'T00:00:00');
+  const dateText=isNaN(date)?r.date:date.toLocaleDateString('ja-JP',{year:'numeric',month:'numeric',day:'numeric',weekday:'short'}); const paceText=r.pace||(pace?secToPace(pace):'--');
+  const auto=document.getElementById('autoReport'); if(!auto)return;
+  auto.innerHTML=`<div class="report"><div class="reportTop"><div><div class="reportTitle">AI RUN REPORT</div><div class="note">記録データから自動生成された練習レポート</div></div><div class="dateBox"><b>${dateText}</b><br>${r.type||'Run'}</div></div><div class="scoreRow"><div class="scoreBox"><div class="note">総合評価</div><div class="score">${score}<span>/100</span></div><div class="comment">${comment.replace(/</g,'&lt;')}</div></div><div class="metrics"><h3>本日のワークアウトデータ</h3><div class="metric"><span>距離</span><b>${r.dist?(+r.dist).toFixed(2)+' km':'--'}</b></div><div class="metric"><span>時間</span><b>${r.time?secToPace(r.time*60):'--'}</b></div><div class="metric"><span>平均ペース</span><b>${paceText}/km</b></div><div class="metric"><span>平均心拍</span><b>${r.avgHr||'--'} bpm</b></div><div class="metric"><span>最大心拍</span><b>${r.maxHr||'--'} bpm</b></div><div class="metric"><span>獲得標高</span><b>${(+r.elev||0)>0?Math.round(+r.elev)+' m':'--'}</b></div><div class="metric"><span>気温</span><b>${r.temp!==''&&r.temp!=null?r.temp+' ℃':'--'}</b></div><div class="metric"><span>トレーニング</span><b>${(r.workout||r.type||'--').replace(/</g,'&lt;')}</b></div></div></div><div class="reportGrid"><div class="rbox good"><h3>👍 良かった点</h3><ul>${adv.good.map(x=>`<li>${x}</li>`).join('')}</ul></div><div class="rbox improve"><h3>🎯 改善ポイント</h3><ul>${adv.improve.map(x=>`<li>${x}</li>`).join('')}</ul></div><div class="rbox next"><h3>📈 次回への指令</h3><ul>${adv.next.map(x=>`<li>${x}</li>`).join('')}</ul></div></div><div class="linkGrid"><div class="linkbox marathon"><h3>↗ サブ4:30へのつながり</h3><div class="note">今回の${typeText(r.type)}を土台に、マラソンペース約6:24/kmを長く維持できる持久力へつなげます。</div></div><div class="linkbox relay"><h3>💡 次の目標へのつながり</h3><div class="note">次のポイント練習・Long走へつなげるため、今回の疲労と内容をV12〜V15の判断材料にします。</div></div></div><div class="actions"><button class="btn" onclick="document.querySelector('[data-tab=\"v12\"]').click()">🧠 状態分析へ</button><button class="btn secondary" onclick="document.querySelector('[data-tab=\"dash\"]').click();setTimeout(()=>document.getElementById('v15PlanSection')?.scrollIntoView({behavior:'smooth'}),100)">🧭 V15計画へ</button></div></div>`;
+}
+function showAutoReport(id){
+  const r=records.find(x=>String(x.id)===String(id)); if(!r)return;
+  currentReportId=r.id;
+  const tab=document.querySelector('[data-tab="report"]');
+  if(tab)tab.click(); else renderReportHub(r.id);
 }
 function typeText(t){
   return ({Easy:'Easyジョグ',Recovery:'回復走',Long:'ロング走',Threshold:'閾値走',Interval:'インターバル',Race:'レース',Trail:'トレイル'}[t]||'今回の練習');
@@ -1570,12 +1495,12 @@ function exportCSV(){
 }
 function exportData(){const b=new Blob([JSON.stringify({records,plans,trash},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='running-log-backup.json';a.click()}
 function importData(e){const f=e.target.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{try{const x=JSON.parse(rd.result);records=Array.isArray(x)?x:(x.records||[]);plans=Array.isArray(x)?plans:(x.plans||[]);trash=Array.isArray(x.trash)?x.trash:[];localStorage.setItem(KEY,JSON.stringify(records));localStorage.setItem(TRASHKEY,JSON.stringify(trash));localStorage.setItem(PLANKEY,JSON.stringify(plans));render();renderCalendar();alert('復元しました')}catch{alert('JSONを読み込めませんでした')}};rd.readAsText(f)}
-document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelectorAll('main>section').forEach(s=>s.classList.add('hidden'));const target=document.getElementById(b.dataset.tab);if(target)target.classList.remove('hidden');if(b.dataset.tab==='v12')runV12Engine();if(b.dataset.tab==='dash'){renderV15();renderV16();}});
+document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelectorAll('main>section').forEach(s=>s.classList.add('hidden'));const target=document.getElementById(b.dataset.tab);if(target)target.classList.remove('hidden');if(b.dataset.tab==='v12')runV12Engine();if(b.dataset.tab==='report')renderReportHub(currentReportId);if(b.dataset.tab==='coach')renderCoach();if(b.dataset.tab==='dash'){renderV15();renderV16();}});
 today.textContent=new Date().toLocaleDateString('ja-JP',{month:'numeric',day:'numeric'});
 render();
 renderCalendar();
 renderRaceList();
-if(records.length){ showAutoReport(records[0].id); document.querySelector('[data-tab="dash"]').click(); }
+if(records.length){ currentReportId=records[0].id; renderReportHub(currentReportId); document.querySelector('[data-tab="dash"]').click(); }
 
 // V11 PWA: offline cache + install prompt
 let deferredInstallPrompt=null;
