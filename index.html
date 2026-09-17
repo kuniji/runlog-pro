@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="apple-touch-icon" href="icon-192.svg">
 
-<title>My Running Log AI Coach V18.7</title>
+<title>My Running Log AI Coach V18.9</title>
 <style>
 :root{
   --bg:#07090c; --panel:#11151a; --panel2:#171c22; --line:#26303a;
@@ -164,7 +164,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:9px 6px;b
 <body>
 <div class="app">
 <header>
-  <div class="head"><div><div class="logo">🏃 <span>MY RUNNING LOG</span><span class="versionTag">V18.8</span></div><small>走った記録を、次の練習につなげる</small></div><div class="v11Status"><span id="onlineStatus">● オンライン</span><button id="installBtn" class="btn secondary installBtn" hidden>ホーム画面に追加</button></div><div id="today"></div></div>
+  <div class="head"><div><div class="logo">🏃 <span>MY RUNNING LOG</span><span class="versionTag">V18.9</span></div><small>走った記録を、次の練習につなげる</small></div><div class="v11Status"><span id="onlineStatus">● オンライン</span><button id="installBtn" class="btn secondary installBtn" hidden>ホーム画面に追加</button></div><div id="today"></div></div>
   <nav>
     <button class="tab active" data-tab="dash">ダッシュボード</button>
     <button class="tab" data-tab="records">記録</button>
@@ -1108,10 +1108,15 @@ function v12RoadmapScore(w){
 }
 function runV12Engine(){
   const el=document.getElementById('v12EngineStatus');
-  renderV12();
-  renderV13();
-  renderV14();
-  if(el) el.textContent='V12を実行しました：最新の走行記録からV12→V13→V14を再計算しました。';
+  try{
+    renderV12();
+    renderV13();
+    renderV14();
+    if(el) el.textContent='V12→V13→V14を再計算しました。最新の記録を反映しています。';
+  }catch(err){
+    console.error('V12/V13/V14 engine error',err);
+    if(el) el.textContent='エンジン更新中にエラーが発生しました。もう一度実行してください。';
+  }
 }
 function renderV12(){
  const el=document.getElementById('v12Adaptive'); if(!el)return;
@@ -1135,7 +1140,7 @@ function v13CapabilityProfile(){
   return {speed,threshold,mp:mpFamiliarity,durability,consistency};
 }
 function v13Decision(){
-  const c=coachAnalysis(), cap=v13CapabilityProfile();
+  const c=coachStateWithPersonalPace(coachAnalysis()), cap=v13CapabilityProfile();
   const latest=sortedRecords()[0]||null;
   let next=buildAdaptiveWeek(localDateStr(new Date(Date.now()+86400000)),c)[0];
   let reason='現在の負荷と直近の練習バランスから、次の7日間を自動調整しています。';
@@ -1150,7 +1155,7 @@ function renderV13(){
  const x=v13Decision(),cap=x.cap,n=x.next;
  const latest=x.latest?`${x.latest.date} / ${x.latest.type} / ${(+x.latest.dist||0).toFixed(1)}km / ${x.latest.pace||'--'}`:'まだ記録なし';
  const rows=[['スピード刺激',cap.speed],['閾値・持続力',cap.threshold],['目標ペース慣れ',cap.mp],['距離耐性',cap.durability],['継続性',cap.consistency]];
- el.innerHTML=`<div class="v13Hero"><div class="v13Title">次回メニュー：${n.title} <span class="v13Tag">${x.adjustment}</span></div><div class="v13Sub">${n.date} ・ ${n.target}</div><div class="v13Next"><b>自動判断理由</b><br>${x.reason}<br><span class="v13Small">${n.workout}</span></div><div class="v13Btns"><button class="btn" onclick="rebuildFuturePlan(false)">🔄 未来の計画を再構築</button><button class="btn secondary" onclick="runV12Engine()">📊 状態を再計算</button></div></div><div class="v13Rows"><div class="v13Row"><span>直近の実績</span><b>${latest}</b></div>${rows.map(r=>`<div class="v13Row"><span>${r[0]}</span><b>${r[1]}/100</b></div>`).join('')}</div><p class="note" style="margin-top:9px">※各能力値は、このアプリに保存された練習記録から作る比較用指標です。医学的な疲労・能力判定や大会結果の予測ではありません。</p>`;
+ el.innerHTML=`<div class="v13Hero"><div class="v13Title">次回メニュー：${n.title} <span class="v13Tag">${x.adjustment}</span></div><div class="v13Sub">${n.date} ・ ${n.target}</div><div class="v13Next"><b>自動判断理由</b><br>${x.reason}<br><span class="v13Small">${n.workout}</span></div><div class="v13Btns"><button class="btn" onclick="rebuildFuturePlan(false);runV12Engine()">🔄 未来の計画を再構築</button><button class="btn secondary" onclick="runV12Engine()">📊 状態を再計算</button></div></div><div class="v13Rows"><div class="v13Row"><span>直近の実績</span><b>${latest}</b></div>${rows.map(r=>`<div class="v13Row"><span>${r[0]}</span><b>${r[1]}/100</b></div>`).join('')}</div><p class="note" style="margin-top:9px">※各能力値は、このアプリに保存された練習記録から作る比較用指標です。医学的な疲労・能力判定や大会結果の予測ではありません。</p>`;
 }
 
 function v14Prescription(){
@@ -1587,14 +1592,20 @@ function v15PlanEngine(){
 }
 function v15Apply(){const e=v15PlanEngine(); let n=0; e.plans.slice(0,7).forEach(p=>{if(!plans.some(x=>x.date===p.date&&x.type===p.type)){plans.push({date:p.date,type:p.type,target:p.target,workout:p.target,memo:'V15自動生成 / '+p.why});n++;}});save();renderCalendar();alert(n+'件を練習計画へ追加しました。');}
 function runV15Engine(){
-  const el=document.getElementById('v15PlanStatus');
-  renderV15();
-  if(el) el.textContent='V15を実行しました：最新の走行記録から今後14日間を再計算しました。';
+  try{
+    renderV15();
+    const el=document.getElementById('v15PlanStatus');
+    if(el) el.textContent='V15を実行しました：最新の走行記録から今後14日間を再計算しました。';
+  }catch(err){
+    console.error('V15 engine error',err);
+    const host=document.getElementById('v15Plan');
+    if(host) host.innerHTML='<div class="v15Card"><b>V15更新エラー</b><div class="v15Small">記録データを確認して、もう一度「V15を実行・更新」を押してください。</div></div>';
+  }
 }
 function renderV15(){
  const el=document.getElementById('v15Plan');if(!el)return;
  const e=v15PlanEngine();
- const rows=e.plans.slice(0,7).map((p,i)=>`<div class="v15Card"><div class="v15Meta">${p.date}　<span class="v15Tag">${p.phase}</span></div><h3>${p.type}　${p.target}</h3><div class="v15Why"><span class="v15Focus">理由：</span>${p.why}</div></div>`).join('');
+ const rows=e.plans.map((p,i)=>`<div class="v15Card"><div class="v15Meta">${p.date}　<span class="v15Tag">${p.phase}</span></div><h3>${p.type}　${p.target}</h3><div class="v15Why"><span class="v15Focus">理由：</span>${p.why}</div></div>`).join('');
  el.innerHTML=`<div class="v15Card">
    <div class="v15Meta">残り ${e.daysLeft}日　/　直近14日負荷 ${e.load}　/　ポイント ${e.q}回　/　Long ${e.long}回</div>
    <div class="v15Why"><span class="v15Focus">現在の重点：</span>${e.focus}</div>
@@ -1610,20 +1621,26 @@ function renderV15(){
 function v16RaceEngine(){
  const now=dayStart(new Date()),race=new Date('2026-11-01T00:00:00'),days=Math.max(0,Math.ceil((race-now)/86400000));
  const rs=records.slice().sort((a,b)=>String(b.date).localeCompare(String(a.date)));const last56=rs.filter(r=>{const d=dayStart(r.date),x=new Date(now);x.setDate(x.getDate()-55);return d>=x&&d<=now});
- const mp=last56.filter(r=>r.dist>=6&&r.paceSec&&Math.abs(r.paceSec-384)<=25),longs=last56.filter(r=>r.type==='Long'||r.dist>=18),recentLong=longs[0],mpBest=mp.length?mp.slice().sort((a,b)=>a.paceSec-b.paceSec)[0]:null,mpAvg=mp.length?Math.round(mp.reduce((a,r)=>a+r.paceSec,0)/mp.length):null;
+ const withPace=last56.map(r=>({...r,_paceSec:paceSecondsFromRecord(r)}));const mp=withPace.filter(r=>r.dist>=6&&r._paceSec&&Math.abs(r._paceSec-384)<=25),longs=withPace.filter(r=>r.type==='Long'||r.dist>=18),recentLong=longs[0],mpBest=mp.length?mp.slice().sort((a,b)=>a._paceSec-b._paceSec)[0]:null,mpAvg=mp.length?Math.round(mp.reduce((a,r)=>a+r._paceSec,0)/mp.length):null;
  let opening=390,core=384,late=390;if(mpAvg){opening=Math.max(378,Math.min(396,Math.round(mpAvg+4)));core=Math.max(378,Math.min(390,Math.round(mpAvg)));late=Math.max(384,Math.min(402,Math.round(mpAvg+6)));}if(days<=14){opening=Math.min(opening,390);core=Math.min(core,390);late=Math.min(late,396);}
  const fmt=s=>{const m=Math.floor(s/60),sec=String(Math.round(s%60)).padStart(2,'0');return m+':'+sec+'/km'};const confidence=Math.max(0,Math.min(100,40+mp.length*12+Math.min(24,longs.length*8)));
  const startNote=mp.length?'目標ペース付近の実績があるため、序盤は目標よりわずかに抑えて入り、余裕を残す':'目標ペース付近の実績が少ないため、序盤は特に保守的に入り、体感と心拍を優先';const lateNote=longs.length?'30km以降はペースを無理に上げず、フォームと補給を優先':'30km以降の耐性データが少ないため、失速回避を最優先';
  const segments=[['0–5km',fmt(opening),'抑えて入る',startNote],['5–20km',fmt(core),'一定化','呼吸・心拍・フォームを安定させる'],['20–30km',fmt(core),'維持','補給を先行し、ペースを守る'],['30–35km',fmt(late),'余裕を確認',lateNote],['35–40km',fmt(late),'状況判断',lateNote],['40–42.2km','余力次第','最後に調整','ここまで余裕があれば段階的にペースアップ']];
  const fuel=[];for(let km=5;km<=40;km+=5)fuel.push(km+'km');return{days,mp,longs,recentLong,mpBest,confidence,segments,fuel};}
 function runV16Engine(){
-  const el=document.getElementById('v16RaceStatus');
-  renderV16();
-  if(el) el.textContent='V16を実行しました：最新の走行記録からレース戦略を再計算しました。';
+  try{
+    renderV16();
+    const el=document.getElementById('v16RaceStatus');
+    if(el) el.textContent='V16を実行しました：最新の走行記録からレース戦略を再計算しました。';
+  }catch(err){
+    console.error('V16 engine error',err);
+    const host=document.getElementById('v16RacePlan');
+    if(host) host.innerHTML='<div class="v16Card"><b>V16更新エラー</b><div class="v16Small">記録データを確認して、もう一度「V16を実行・更新」を押してください。</div></div>';
+  }
 }
 function renderV16(){
  const el=document.getElementById('v16RacePlan');if(!el)return;
- const e=v16RaceEngine(),best=e.mpBest?(e.mpBest.pace||'--'):'--';
+ const e=v16RaceEngine(),best=e.mpBest?(e.mpBest.pace||secToPace(e.mpBest._paceSec)):'--';
  const rows=e.segments.map(x=>`<div class="v16Seg"><div><b>${x[0]}</b><div class="v16Small">${x[2]}</div></div><div class="v16Strong">${x[1]}</div></div>`).join('');
  el.innerHTML=`<div class="v16Card">
    <div class="v16Metrics"><div class="v16Metric"><span class="v16Small">レースまで</span><b>${e.days}日</b></div><div class="v16Metric"><span class="v16Small">目標ペース</span><b>6:24/km</b></div><div class="v16Metric"><span class="v16Small">MP付近の実績</span><b>${e.mp.length}回</b></div><div class="v16Metric"><span class="v16Small">Long実績</span><b>${e.longs.length}回</b></div></div>
