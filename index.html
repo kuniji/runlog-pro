@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="apple-touch-icon" href="icon-192.svg">
 
-<title>My Running Log AI Coach V18.5</title>
+<title>My Running Log AI Coach V18.6</title>
 <style>
 :root{
   --bg:#07090c; --panel:#11151a; --panel2:#171c22; --line:#26303a;
@@ -158,7 +158,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:9px 6px;b
 <body>
 <div class="app">
 <header>
-  <div class="head"><div><div class="logo">🏃 <span>MY RUNNING LOG</span><span class="versionTag">V18.5</span></div><small>走った記録を、次の練習につなげる</small></div><div class="v11Status"><span id="onlineStatus">● オンライン</span><button id="installBtn" class="btn secondary installBtn" hidden>ホーム画面に追加</button></div><div id="today"></div></div>
+  <div class="head"><div><div class="logo">🏃 <span>MY RUNNING LOG</span><span class="versionTag">V18.6</span></div><small>走った記録を、次の練習につなげる</small></div><div class="v11Status"><span id="onlineStatus">● オンライン</span><button id="installBtn" class="btn secondary installBtn" hidden>ホーム画面に追加</button></div><div id="today"></div></div>
   <nav>
     <button class="tab active" data-tab="dash">ダッシュボード</button>
     <button class="tab" data-tab="records">記録</button>
@@ -332,7 +332,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:9px 6px;b
   <div class="section"><h2>練習計画を追加</h2>
     <div class="form">
       <label>日付<input id="pDate" type="date"></label>
-      <label>種類<select id="pType"><option>Easy</option><option>Long</option><option>Threshold</option><option>Interval</option><option>Race</option><option>Recovery</option></select></label>
+      <label>種類<select id="pType"><option>Easy</option><option>Long</option><option>Threshold</option><option>Interval</option><option>Race</option><option>Recovery</option><option>Trail</option></select></label>
       <label>目安<input id="pTarget" placeholder="例：7km @6:30/km"></label>
       <label class="wide">内容<textarea id="pWorkout" placeholder="例：20km。前半ゆっくり、後半少しペースアップ"></textarea></label>
     </div><div class="actions"><button class="btn" onclick="addPlan()">予定を保存</button></div>
@@ -370,7 +370,10 @@ function save(){localStorage.setItem(KEY,JSON.stringify(records));render();}
 function paceToSec(p){if(!p)return null; const m=p.match(/(\\d+):(\\d{1,2})/); return m?+m[1]*60+ +m[2]:null}
 function secToPace(s){if(!s)return '--';s=Math.round(s);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')}
 function calcPace(dist,timeMin){return dist&&timeMin?secToPace(timeMin*60/dist):'--'}
-function recordFingerprint(r){return [r.date,Number(r.dist||0).toFixed(2),Number(r.time||0).toFixed(2),r.pace||'',Number(r.avgHr||0),Number(r.maxHr||0),r.type||'',r.workout||'',r.memo||''].join('|')}
+function recordFingerprint(r){
+  // V18.6: 同じアクティビティを別の練習タイプで登録しても重複として判定。
+  return [String(r.date||'').slice(0,10),Number(r.dist||0).toFixed(2),Number(r.time||0).toFixed(2),Number(r.avgHr||0),Number(r.maxHr||0)].join('|');
+}
 function isDuplicateRecord(r){return records.some(x=>recordFingerprint(x)===recordFingerprint(r))}
 function removeRecord(id){
   const r=records.find(x=>String(x.id)===String(id));
@@ -383,13 +386,34 @@ function removeRecord(id){
 function removeDuplicateRecords(){
   if(records.length<2){alert('整理できる重複記録はありません。');return}
   const seen=new Set(), before=records.length;
-  // 新しい順の先頭を残し、内容が完全一致する重複だけを削除
-  records=records.filter(r=>{const k=recordFingerprint(r);if(seen.has(k))return false;seen.add(k);return true});
+  records=records.filter(r=>{
+    const k=recordFingerprint(r);
+    if(seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  });
   const removed=before-records.length;
   save();
-  alert(removed?`${removed}件の重複記録を整理しました。`:'完全一致する重複記録はありませんでした。');
+  alert(removed
+    ? `${removed}件の重複記録を削除しました。\n練習タイプが違っていても同じ実測データなら整理しました。`
+    : '重複記録は見つかりませんでした。');
 }
 
+function editRecordType(id){
+  const r=records.find(x=>String(x.id)===String(id));
+  if(!r)return;
+  const types=['Easy','Recovery','Threshold','Interval','Long','Trail','Race'];
+  const answer=prompt(
+    `練習タイプを変更します。番号を入力してください。\n${types.map((t,i)=>`${i+1}: ${t}`).join('\n')}`,
+    String(Math.max(1,types.indexOf(r.type)+1))
+  );
+  if(answer===null)return;
+  const n=parseInt(answer,10);
+  if(!Number.isInteger(n)||n<1||n>types.length){alert('1〜7の番号を入力してください。');return}
+  r.type=types[n-1];
+  save();
+  alert(`練習タイプを「${r.type}」に変更しました。`);
+}
 let saveLock=false;
 function addRecord(){
  if(saveLock)return;
@@ -413,6 +437,7 @@ function trainingLoad(r){
   else if(type==='Threshold') base*=1.30;
   else if(type==='Race') base*=1.50;
   else if(type==='Long') base*=1.10;
+  else if(type==='Trail') base*=1.15;
   else if(type==='Recovery') base*=0.75;
   if(hr>=165) base*=1.10;
   return Math.round(base);
@@ -1050,7 +1075,7 @@ function renderV14(){
 }
 
 function render(){
-  // V18.5: Safari/iPhoneでHTML idをwindow変数として参照すると
+  // V18.6: Safari/iPhoneでHTML idをwindow変数として参照すると
   // 「月間集計は更新されるのに最近の記録・週次集計が0/空欄」になる
   // ケースがあるため、ダッシュボード要素は必ずgetElementByIdで取得する。
   const $=id=>document.getElementById(id);
@@ -1106,8 +1131,8 @@ function render(){
 
   if(elRecordTable){
     elRecordTable.innerHTML=records.length?
-      `<table><thead><tr><th>日付</th><th>距離</th><th>ペース</th><th>種類</th><th>トレーニング内容</th><th>レポート</th><th>管理</th></tr></thead><tbody>${
-        records.map(r=>`<tr><td>${r.date}</td><td>${(+r.dist||0).toFixed(2)} km</td><td>${r.pace||calcPace(+r.dist||0,+r.time||0)}</td><td>${r.type}</td><td>${(r.workout||'').replace(/</g,'&lt;')}</td><td><button class="btn secondary" style="padding:6px 8px;font-size:11px" onclick="showAutoReport(${r.id})">レポート</button></td><td><button class="btn secondary" style="padding:6px 8px;font-size:11px" onclick="removeRecord(${r.id})">削除</button></td></tr>`).join('')
+      `<table><thead><tr><th>日付</th><th>距離</th><th>ペース</th><th>獲得標高</th><th>種類</th><th>トレーニング内容</th><th>レポート</th><th>管理</th></tr></thead><tbody>${
+        records.map(r=>`<tr><td>${r.date}</td><td>${(+r.dist||0).toFixed(2)} km</td><td>${r.pace||calcPace(+r.dist||0,+r.time||0)}</td><td>${(+r.elev||0)>0?Math.round(+r.elev)+' m':'--'}</td><td>${r.type}</td><td>${(r.workout||'').replace(/</g,'&lt;')}</td><td><button class="btn secondary" style="padding:6px 8px;font-size:11px" onclick="showAutoReport(${r.id})">レポート</button></td><td><button class="btn secondary" style="padding:6px 8px;font-size:11px" onclick="editRecordType(${r.id})">種類変更</button><button class="btn secondary" style="padding:6px 8px;font-size:11px" onclick="removeRecord(${r.id})">削除</button></td></tr>`).join('')
       }</tbody></table>`:'<div class="empty">記録を追加するとここに表示されます。</div>';
   }
 }
@@ -1238,16 +1263,16 @@ async function importFIT(e){
     const type=fitClassify(a),laps=fitLapSummary(a),date=a.date?new Date(a.date):new Date(file.lastModified),dateStr=localDateStr(date),timeMin=a.timeMs/60000,pace=a.avgSpeed?secToPace(1000/a.avgSpeed):calcPace(a.dist,timeMin);
     const workout=`Garmin FIT自動取込（${type}）。${laps.length?`自動ラップ${laps.length}本を解析。`:''}`,memo=`FITファイル：${file.name}。${a.laps.length?'自動ラップ情報を解析しました。':''}`;
     const candidate={id:Date.now(),date:dateStr,dist:+a.dist.toFixed(2),time:+timeMin.toFixed(2),pace,avgHr:Math.round(a.avgHr||0),maxHr:Math.round(a.maxHr||0),temp:'',elev:Math.round(a.ascent||0),type,workout,memo};
-    fitPreview.innerHTML+=`<div class="report" style="margin-top:10px"><div class="reportTop"><div><div class="reportTitle">FIT解析結果</div><div class="note">${file.name.replace(/</g,'&lt;')}</div></div><div class="dateBox"><b>${dateStr}</b><br>${type}</div></div><div class="metrics" style="margin-top:10px"><div class="metric"><span>距離</span><b>${candidate.dist.toFixed(2)} km</b></div><div class="metric"><span>時間</span><b>${secToPace(candidate.time*60)}</b></div><div class="metric"><span>平均ペース</span><b>${candidate.pace}/km</b></div><div class="metric"><span>平均/最大心拍</span><b>${candidate.avgHr||'--'} / ${candidate.maxHr||'--'} bpm</b></div><div class="metric"><span>自動判定</span><b>${type}</b></div></div>
+    fitPreview.innerHTML+=`<div class="report" style="margin-top:10px"><div class="reportTop"><div><div class="reportTitle">FIT解析結果</div><div class="note">${file.name.replace(/</g,'&lt;')}</div></div><div class="dateBox"><b>${dateStr}</b><br>${type}</div></div><div class="metrics" style="margin-top:10px"><div class="metric"><span>距離</span><b>${candidate.dist.toFixed(2)} km</b></div><div class="metric"><span>時間</span><b>${secToPace(candidate.time*60)}</b></div><div class="metric"><span>平均ペース</span><b>${candidate.pace}/km</b></div><div class="metric"><span>平均/最大心拍</span><b>${candidate.avgHr||'--'} / ${candidate.maxHr||'--'} bpm</b></div><div class="metric"><span>獲得標高</span><b>${candidate.elev>0?candidate.elev+' m':'--'}</b></div><div class="metric"><span>自動判定</span><b>${type}</b></div></div>
 <div style="margin-top:10px;padding:12px;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.02)">
   <div style="font-weight:800;margin-bottom:7px">練習タイプを確認・変更</div>
   <div class="note" style="margin-bottom:8px">Garminの自動判定は参考値です。実際に行った練習内容を選んでから保存できます。</div>
   <select id="fitTypeSelect_${candidate.id}" style="width:100%;padding:12px;border-radius:10px;background:#11151a;color:var(--text);border:1px solid var(--line);font-size:16px">
-    ${['Easy','Recovery','Threshold','Interval','Long','Race'].map(t=>`<option value="${t}" ${t===type?'selected':''}>${t}</option>`).join('')}
+    ${['Easy','Recovery','Threshold','Interval','Long','Trail','Race'].map(t=>`<option value="${t}" ${t===type?'selected':''}>${t}</option>`).join('')}
   </select>
 </div>${laps.length?`<h3 style="margin:12px 0 6px">ラップ解析</h3><div class="laps">${laps.map(x=>`<div class="lap">L${x.i}<b>${x.pace}</b><span class="note">${x.d?x.d.toFixed(2)+'km':''}</span></div>`).join('')}</div>`:''}<div class="actions"><button class="btn" onclick='saveFITCandidateWithType(${JSON.stringify(candidate).replace(/</g,"\u003c")},"fitTypeSelect_${candidate.id}")'>選んだタイプで記録に保存</button><button class="btn secondary" onclick='previewFITReport(${JSON.stringify(candidate).replace(/</g,"\u003c")})'>レポートを見る</button></div></div>`;
     fitStatus.textContent='解析完了。診断と解析結果を確認して保存できます。';
-  }catch(err){fitStatus.textContent='解析できませんでした：'+err.message;fitPreview.innerHTML='<div class="report"><div class="reportTitle">🔎 Garmin FIT診断</div><div class="note">V18.5 / 読み込み中にエラーが発生しました。</div><div class="metric"><span>エラー</span><b>'+String(err.message).replace(/</g,'&lt;')+'</b></div></div>'}
+  }catch(err){fitStatus.textContent='解析できませんでした：'+err.message;fitPreview.innerHTML='<div class="report"><div class="reportTitle">🔎 Garmin FIT診断</div><div class="note">V18.6 / 読み込み中にエラーが発生しました。</div><div class="metric"><span>エラー</span><b>'+String(err.message).replace(/</g,'&lt;')+'</b></div></div>'}
 }
 function saveFITCandidate(r){
   if(saveLock)return;
@@ -1276,7 +1301,7 @@ function showAutoReportFromObject(r){
     <div class="scoreRow"><div class="scoreBox"><div class="note">総合評価</div><div class="score">${score}<span>/100</span></div><div class="comment">${comment.replace(/</g,'&lt;')}</div></div>
     <div class="metrics"><h3>ワークアウトデータ</h3>
       <div class="metric"><span>距離</span><b>${r.dist.toFixed(2)} km</b></div><div class="metric"><span>時間</span><b>${secToPace(r.time*60)}</b></div>
-      <div class="metric"><span>平均ペース</span><b>${r.pace}/km</b></div><div class="metric"><span>平均心拍</span><b>${r.avgHr||'--'} bpm</b></div><div class="metric"><span>最大心拍</span><b>${r.maxHr||'--'} bpm</b></div>
+      <div class="metric"><span>平均ペース</span><b>${r.pace}/km</b></div><div class="metric"><span>平均心拍</span><b>${r.avgHr||'--'} bpm</b></div><div class="metric"><span>最大心拍</span><b>${r.maxHr||'--'} bpm</b></div><div class="metric"><span>獲得標高</span><b>${(+r.elev||0)>0?Math.round(+r.elev)+' m':'--'}</b></div>
       <div class="metric"><span>トレーニング</span><b>${(r.workout||r.type).replace(/</g,'&lt;')}</b></div></div></div>
     <div class="reportGrid"><div class="rbox good"><h3>👍 良かった点</h3><ul>${adv.good.map(x=>`<li>${x}</li>`).join('')}</ul></div>
     <div class="rbox improve"><h3>🎯 改善ポイント</h3><ul>${adv.improve.map(x=>`<li>${x}</li>`).join('')}</ul></div>
@@ -1358,7 +1383,7 @@ function showAutoReport(id){
         <div class="metric"><span>時間</span><b>${r.time?secToPace(r.time*60):'--'}</b></div>
         <div class="metric"><span>平均ペース</span><b>${paceText}/km</b></div>
         <div class="metric"><span>平均心拍</span><b>${r.avgHr||'--'} bpm</b></div>
-        <div class="metric"><span>最大心拍</span><b>${r.maxHr||'--'} bpm</b></div>
+        <div class="metric"><span>最大心拍</span><b>${r.maxHr||'--'} bpm</b></div><div class="metric"><span>獲得標高</span><b>${(+r.elev||0)>0?Math.round(+r.elev)+' m':'--'}</b></div>
         <div class="metric"><span>気温</span><b>${r.temp!==''&&r.temp!=null?r.temp+' ℃':'--'}</b></div>
         <div class="metric"><span>トレーニング</span><b>${(r.workout||r.type||'--').replace(/</g,'&lt;')}</b></div>
       </div>
