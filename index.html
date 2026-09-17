@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="apple-touch-icon" href="icon-192.svg">
 
-<title>My Running Log AI Coach V18.20</title>
+<title>My Running Log AI Coach V18.21</title>
 <style>
 :root{
   --bg:#07090c; --panel:#11151a; --panel2:#171c22; --line:#26303a;
@@ -172,7 +172,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:9px 6px;b
 <body>
 <div class="app">
 <header>
-  <div class="head"><div><div class="logo">🏃 <span>MY RUNNING LOG</span><span class="versionTag">V18.20</span></div><small>走った記録を、次の練習につなげる</small></div><div class="v11Status"><span id="onlineStatus">● オンライン</span><button id="installBtn" class="btn secondary installBtn" hidden>ホーム画面に追加</button></div><div id="today"></div></div>
+  <div class="head"><div><div class="logo">🏃 <span>MY RUNNING LOG</span><span class="versionTag">V18.21</span></div><small>走った記録を、次の練習につなげる</small></div><div class="v11Status"><span id="onlineStatus">● オンライン</span><button id="installBtn" class="btn secondary installBtn" hidden>ホーム画面に追加</button></div><div id="today"></div></div>
   <nav>
     <button class="tab active" data-tab="dash">ダッシュボード</button>
     <button class="tab" data-tab="records">記録</button>
@@ -374,7 +374,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:9px 6px;b
 </section>
 
 <section id="backup" class="hidden">
-  <div class="section"><h2>バックアップ / 復元</h2><p class="note">記録はこのブラウザに保存されます。V18.20では重複記録を自動削除せず、削除はゴミ箱経由で復元できます。端末変更前などにJSONを書き出して保管してください。</p>
+  <div class="section"><h2>バックアップ / 復元</h2><p class="note">記録はこのブラウザに保存されます。V18.21では重複記録を自動削除せず、削除はゴミ箱経由で復元できます。端末変更前などにJSONを書き出して保管してください。</p>
   <div class="actions"><button class="btn" onclick="exportData()">JSONを書き出す</button><button class="btn secondary" onclick="exportCSV()">CSVを書き出す</button><label class="btn secondary" style="display:inline-block">JSONを復元<input id="importFile" type="file" accept=".json" style="display:none" onchange="importData(event)"></label></div></div>
 </section>
 </main>
@@ -984,7 +984,7 @@ function renderTodayMenu(){
   }catch(e){console.error('today menu render error',e);el.innerHTML='<div class="todayMenuType">🏃 今日のメニュー</div><div class="todayMenuReason">V15の計画を確認してください。</div>';}
 }
 function renderCoach(){
-  // V18.20: 提案の重複を避け、V15を週間計画の本体にする。
+  // V18.21: 提案の重複を避け、V15を週間計画の本体にする。
   try{
     const e=typeof v15PlanEngine==='function'?v15PlanEngine():null;
     const first=e&&e.plans&&e.plans[0];
@@ -1323,7 +1323,7 @@ function fitParse(buf){
   while(pos<dataEnd){
     const recordHeaderPos=pos,hb=view.getUint8(pos++),compressed=!!(hb&0x80),local=compressed?((hb>>5)&0x03):(hb&0x0f);
     // FITの圧縮タイムスタンプレコードは「タイムスタンプだけのレコード」ではなく、
-    // 直前に定義された同じlocal messageのデータ本体を持つ。V18.20ではここをcontinueして
+    // 直前に定義された同じlocal messageのデータ本体を持つ。V18.21ではここをcontinueして
     // しまい、圧縮Record/Lap等を丸ごと捨てていたため、Lap=0になりやすかった。
     let compressedTimestamp=null;
     if(compressed){
@@ -1445,7 +1445,7 @@ async function importFIT(e){
   try{
     const buf=await file.arrayBuffer(),view=new DataView(buf),headerSize=view.getUint8(0),sig=String.fromCharCode(...new Uint8Array(buf,8,4));
     const parsed=fitParse(buf),msgs=parsed.messages,a=fitAggregate(parsed),counts={};msgs.forEach(m=>counts[m.global]=(counts[m.global]||0)+1);
-    const diagnostics=`<div class="report" style="margin-top:10px"><div class="reportTitle" style="font-size:18px">🔎 Garmin FIT診断</div><div class="metrics" style="margin-top:8px"><div class="metric"><span>アプリ版</span><b>V18.20</b></div><div class="metric"><span>FIT署名</span><b>${sig==='.FIT'?'OK':'NG'}</b></div><div class="metric"><span>ヘッダー</span><b>${headerSize} bytes</b></div><div class="metric"><span>定義メッセージ</span><b>${a.meta.definitionCount}件</b></div><div class="metric"><span>圧縮タイムスタンプ</span><b>${a.meta.compressedCount}件</b></div><div class="metric"><span>解析メッセージ</span><b>${msgs.length}件</b></div><div class="metric"><span>Session</span><b>${a.sess?'あり':'なし'}${counts[18]?` (${counts[18]}件)`:''}</b></div><div class="metric"><span>Lap</span><b>${a.laps.length}件</b></div><div class="metric"><span>Record</span><b>${a.rec.length}件</b></div><div class="metric"><span>取得距離</span><b>${a.dist?a.dist.toFixed(2)+' km':'未取得'}</b></div></div></div>`;
+    const diagnostics=`<div class="report" style="margin-top:10px"><div class="reportTitle" style="font-size:18px">🔎 Garmin FIT診断</div><div class="metrics" style="margin-top:8px"><div class="metric"><span>アプリ版</span><b>V18.21</b></div><div class="metric"><span>FIT署名</span><b>${sig==='.FIT'?'OK':'NG'}</b></div><div class="metric"><span>ヘッダー</span><b>${headerSize} bytes</b></div><div class="metric"><span>定義メッセージ</span><b>${a.meta.definitionCount}件</b></div><div class="metric"><span>圧縮タイムスタンプ</span><b>${a.meta.compressedCount}件</b></div><div class="metric"><span>解析メッセージ</span><b>${msgs.length}件</b></div><div class="metric"><span>Session</span><b>${a.sess?'あり':'なし'}${counts[18]?` (${counts[18]}件)`:''}</b></div><div class="metric"><span>Lap</span><b>${a.laps.length}件</b></div><div class="metric"><span>Record</span><b>${a.rec.length}件</b></div><div class="metric"><span>取得距離</span><b>${a.dist?a.dist.toFixed(2)+' km':'未取得'}</b></div></div></div>`;
     fitPreview.innerHTML=diagnostics;
     if(!a.dist&&!a.laps.length){fitStatus.textContent='FITは読み込めましたが、ランニングデータを取得できませんでした。診断結果を確認してください。';return}
     const type=fitClassify(a),laps=fitLapSummary(a),date=a.date?new Date(a.date):new Date(file.lastModified),dateStr=localDateStr(date),timeMin=a.timeMs/60000,pace=a.avgSpeed?secToPace(1000/a.avgSpeed):calcPace(a.dist,timeMin);
@@ -1460,7 +1460,40 @@ async function importFIT(e){
   </select>
 </div>${laps.length?`<h3 style="margin:12px 0 6px">ラップ解析</h3><div class="laps">${laps.map(x=>`<div class="lap"><small>L${x.i}</small><b>${x.duration||'--'}</b><span class="note">${x.d?x.d.toFixed(2)+'km':''}${x.pace&&x.pace!=='--'?` / ${x.pace}/km`:''}${x.hr?` / ${x.hr}bpm`:''}${x.phase&&x.phase!=='判定外'?`<br>${x.phase}`:''}</span></div>`).join('')}</div>`:''}<div class="actions"><button class="btn" onclick='saveFITCandidateWithType(${JSON.stringify(candidate).replace(/</g,"\u003c")},"fitTypeSelect_${candidate.id}")'>選んだタイプで記録に保存</button><button class="btn secondary" onclick='previewFITReport(${JSON.stringify(candidate).replace(/</g,"\u003c")})'>レポートを見る</button></div></div>`;
     fitStatus.textContent='解析完了。診断と解析結果を確認して保存できます。';
-  }catch(err){fitStatus.textContent='解析できませんでした：'+err.message;fitPreview.innerHTML='<div class="report"><div class="reportTitle">🔎 Garmin FIT診断</div><div class="note">V18.20 / 読み込み中にエラーが発生しました。</div><div class="metric"><span>エラー</span><b>'+String(err.message).replace(/</g,'&lt;')+'</b></div></div>'}
+  }catch(err){fitStatus.textContent='解析できませんでした：'+err.message;fitPreview.innerHTML='<div class="report"><div class="reportTitle">🔎 Garmin FIT診断</div><div class="note">V18.21 / 読み込み中にエラーが発生しました。</div><div class="metric"><span>エラー</span><b>'+String(err.message).replace(/</g,'&lt;')+'</b></div></div>'}
+}
+function saveFITCandidateWithType(candidate, selectId){
+  if(!candidate || !candidate.date || !(+candidate.dist)){
+    alert('保存できるFIT記録がありません。もう一度FITを読み込んでください。');
+    return;
+  }
+  const sel=document.getElementById(selectId);
+  const type=sel&&sel.value?sel.value:(candidate.type||'Easy');
+  const r={
+    id:Date.now(),
+    date:candidate.date,
+    dist:+candidate.dist||0,
+    time:+candidate.time||0,
+    pace:candidate.pace||calcPace(+candidate.dist||0,+candidate.time||0),
+    avgHr:+candidate.avgHr||0,
+    maxHr:+candidate.maxHr||0,
+    temp:candidate.temp||'',
+    elev:+candidate.elev||0,
+    type,
+    workout:candidate.workout||'Garmin FIT自動取込',
+    memo:candidate.memo||'',
+    lapSummary:Array.isArray(candidate.lapSummary)?candidate.lapSummary:[]
+  };
+  if(isDuplicateRecord(r) && !confirm('同じ内容の記録がすでにあります。\nそれでも別の記録として保存しますか？'))return;
+  if(saveLock)return;
+  saveLock=true;setTimeout(()=>saveLock=false,1200);
+  records.unshift(r);
+  save();
+  evaluatePlansForRecord(r);
+  rebuildFuturePlan(true);
+  render();
+  showAutoReport(r.id);
+  alert(`FIT記録を保存しました。\n${r.date} / ${r.dist.toFixed(2)}km / ${r.type}`);
 }
 function qualityReportDetail(r){
   const type=r.type||'';
