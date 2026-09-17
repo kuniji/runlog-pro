@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="apple-touch-icon" href="icon-192.svg">
 
-<title>My Running Log AI Coach V18.6</title>
+<title>My Running Log AI Coach V18.7</title>
 <style>
 :root{
   --bg:#07090c; --panel:#11151a; --panel2:#171c22; --line:#26303a;
@@ -158,7 +158,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:9px 6px;b
 <body>
 <div class="app">
 <header>
-  <div class="head"><div><div class="logo">🏃 <span>MY RUNNING LOG</span><span class="versionTag">V18.6</span></div><small>走った記録を、次の練習につなげる</small></div><div class="v11Status"><span id="onlineStatus">● オンライン</span><button id="installBtn" class="btn secondary installBtn" hidden>ホーム画面に追加</button></div><div id="today"></div></div>
+  <div class="head"><div><div class="logo">🏃 <span>MY RUNNING LOG</span><span class="versionTag">V18.7</span></div><small>走った記録を、次の練習につなげる</small></div><div class="v11Status"><span id="onlineStatus">● オンライン</span><button id="installBtn" class="btn secondary installBtn" hidden>ホーム画面に追加</button></div><div id="today"></div></div>
   <nav>
     <button class="tab active" data-tab="dash">ダッシュボード</button>
     <button class="tab" data-tab="records">記録</button>
@@ -250,8 +250,28 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:9px 6px;b
     <div id="fitStatus" class="note" style="margin-top:9px"></div>
   </div>
   <div class="section"><h2>ランニング履歴</h2>
-    <div class="actions"><button class="btn secondary" onclick="removeDuplicateRecords()">重複した記録を整理</button></div>
-    <div id="recordTable"></div></div>
+    <div class="actions">
+      <label class="btn secondary" style="display:inline-block">月
+        <select id="historyMonth" onchange="renderHistory()" style="margin-left:5px;padding:5px">
+          <option value="all">すべて</option>
+        </select>
+      </label>
+      <label class="btn secondary" style="display:inline-block">種類
+        <select id="historyType" onchange="renderHistory()" style="margin-left:5px;padding:5px">
+          <option value="all">すべて</option><option>Easy</option><option>Recovery</option><option>Threshold</option><option>Interval</option><option>Long</option><option>Trail</option><option>Race</option>
+        </select>
+      </label>
+    </div>
+    <div id="historyStatus" class="note"></div>
+    <div id="recordTable"></div>
+    <div class="section" style="margin-top:10px"><h3>重複候補チェック</h3>
+      <div class="actions"><button class="btn secondary" onclick="reviewDuplicateRecords()">重複候補を確認</button></div>
+      <div id="duplicateReview"></div>
+    </div>
+    <div class="section" style="margin-top:10px"><h3>ゴミ箱</h3>
+      <div id="trashPanel"></div>
+    </div>
+  </div>
   <div class="section"><h2>Garmin FIT自動解析</h2>
     <div id="fitPreview" class="empty">FITファイルを読み込むと、セッション・ラップ・心拍・ペースなどを解析して記録候補を作成します。</div>
   </div>
@@ -353,7 +373,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:9px 6px;b
 </section>
 
 <section id="backup" class="hidden">
-  <div class="section"><h2>バックアップ / 復元</h2><p class="note">記録はこのブラウザに保存されます。端末変更前などにJSONを書き出して保管してください。</p>
+  <div class="section"><h2>バックアップ / 復元</h2><p class="note">記録はこのブラウザに保存されます。V18.7では重複記録を自動削除せず、削除はゴミ箱経由で復元できます。端末変更前などにJSONを書き出して保管してください。</p>
   <div class="actions"><button class="btn" onclick="exportData()">JSONを書き出す</button><button class="btn secondary" onclick="exportCSV()">CSVを書き出す</button><label class="btn secondary" style="display:inline-block">JSONを復元<input id="importFile" type="file" accept=".json" style="display:none" onchange="importData(event)"></label></div></div>
 </section>
 </main>
@@ -361,42 +381,111 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:9px 6px;b
 
 <script>
 const KEY='my_running_log_v2';
+const TRASHKEY='my_running_log_trash_v1';
 const GOAL=150;
 let records=JSON.parse(localStorage.getItem(KEY)||'[]');
+let trash=JSON.parse(localStorage.getItem(TRASHKEY)||'[]');
 const PLANKEY='my_running_plan_v1';
 let plans=JSON.parse(localStorage.getItem(PLANKEY)||'[]');
 let calMonth=new Date(2026,8,1);
-function save(){localStorage.setItem(KEY,JSON.stringify(records));render();}
+function save(){localStorage.setItem(KEY,JSON.stringify(records));localStorage.setItem(TRASHKEY,JSON.stringify(trash));render();}
 function paceToSec(p){if(!p)return null; const m=p.match(/(\\d+):(\\d{1,2})/); return m?+m[1]*60+ +m[2]:null}
 function secToPace(s){if(!s)return '--';s=Math.round(s);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')}
 function calcPace(dist,timeMin){return dist&&timeMin?secToPace(timeMin*60/dist):'--'}
 function recordFingerprint(r){
-  // V18.6: 同じアクティビティを別の練習タイプで登録しても重複として判定。
-  return [String(r.date||'').slice(0,10),Number(r.dist||0).toFixed(2),Number(r.time||0).toFixed(2),Number(r.avgHr||0),Number(r.maxHr||0)].join('|');
+  // V18.7: 重複判定は「同じ実測データ」だけでなく、種類・内容・メモも含める。
+  // 異なる練習を同じものとして自動削除しない。
+  return [
+    String(r.date||'').slice(0,10),
+    Number(r.dist||0).toFixed(2),
+    Number(r.time||0).toFixed(2),
+    Number(r.avgHr||0),
+    Number(r.maxHr||0),
+    Number(r.elev||0),
+    String(r.type||''),
+    String(r.workout||''),
+    String(r.memo||'')
+  ].join('|');
+}
+function measuredFingerprint(r){
+  return [
+    String(r.date||'').slice(0,10),
+    Number(r.dist||0).toFixed(2),
+    Number(r.time||0).toFixed(2),
+    Number(r.avgHr||0),
+    Number(r.maxHr||0),
+    Number(r.elev||0)
+  ].join('|');
 }
 function isDuplicateRecord(r){return records.some(x=>recordFingerprint(x)===recordFingerprint(r))}
-function removeRecord(id){
+function moveToTrash(id){
   const r=records.find(x=>String(x.id)===String(id));
   if(!r)return;
-  if(!confirm(`${r.date} / ${Number(r.dist||0).toFixed(2)}km の記録を削除しますか？`))return;
+  if(!confirm(`${r.date} / ${Number(r.dist||0).toFixed(2)}km / ${r.type||'未分類'} をゴミ箱へ移動しますか？\nあとから復元できます。`))return;
   records=records.filter(x=>String(x.id)!==String(id));
+  trash.unshift({...r, deletedAt:new Date().toISOString()});
   save();
-  alert('記録を削除しました。');
+  localStorage.setItem(TRASHKEY,JSON.stringify(trash));
+  alert('ゴミ箱へ移動しました。いつでも復元できます。');
+}
+function restoreRecord(id){
+  const r=trash.find(x=>String(x.id)===String(id));
+  if(!r)return;
+  const restored={...r}; delete restored.deletedAt;
+  if(records.some(x=>String(x.id)===String(restored.id))){
+    restored.id=Date.now()+Math.floor(Math.random()*1000);
+  }
+  records.unshift(restored);
+  trash=trash.filter(x=>String(x.id)!==String(id));
+  localStorage.setItem(TRASHKEY,JSON.stringify(trash));
+  save();
+  alert('記録を復元しました。');
+}
+function emptyTrash(){
+  if(!trash.length){alert('ゴミ箱は空です。');return}
+  if(!confirm(`ゴミ箱の${trash.length}件を完全に削除しますか？\nこの操作は元に戻せません。`))return;
+  trash=[]; localStorage.setItem(TRASHKEY,JSON.stringify(trash)); render();
+  alert('ゴミ箱を空にしました。');
+}
+function renderTrash(){
+  const el=document.getElementById('trashPanel');
+  if(!el)return;
+  if(!trash.length){
+    el.innerHTML='<div class="empty">ゴミ箱は空です。</div>';
+    return;
+  }
+  const rows=trash.slice().sort((a,b)=>String(b.deletedAt||'').localeCompare(String(a.deletedAt||''))).map(r=>
+    `<div class="metric"><span>${r.date||'--'}　${r.type||'未分類'}　${(+r.dist||0).toFixed(2)}km</span><button class="btn secondary" style="padding:6px 8px;font-size:11px" onclick="restoreRecord(${r.id})">復元</button></div>`
+  ).join('');
+  el.innerHTML=`<div class="note" style="margin-bottom:8px">削除ではなくゴミ箱へ移動しています。復元できます。</div>${rows}<div class="actions" style="margin-top:8px"><button class="btn secondary" onclick="emptyTrash()">ゴミ箱を空にする</button></div>`;
+}
+function removeRecord(id){ moveToTrash(id); }
+
+function duplicateCandidates(){
+  const groups=new Map();
+  records.forEach(r=>{
+    const k=measuredFingerprint(r);
+    if(!groups.has(k))groups.set(k,[]);
+    groups.get(k).push(r);
+  });
+  return [...groups.values()].filter(g=>g.length>1);
+}
+function reviewDuplicateRecords(){
+  const groups=duplicateCandidates();
+  const el=document.getElementById('duplicateReview');
+  if(!el)return;
+  if(!groups.length){
+    el.innerHTML='<div class="empty">重複候補は見つかりませんでした。自動削除は行っていません。</div>';
+    return;
+  }
+  el.innerHTML=`<div class="note">同じ日付・距離・時間・心拍・獲得標高の組み合わせを候補として表示しています。<b>削除は自動では行いません。</b>種類や内容が違う練習は別記録として残せます。</div>`+
+    groups.map((g,i)=>`<div class="section" style="margin-top:8px"><h3>候補 ${i+1}（${g.length}件）</h3>`+
+      g.map(r=>`<div class="metric"><span>${r.date} / ${r.type||'未分類'} / ${(+r.dist||0).toFixed(2)}km / ${r.pace||calcPace(+r.dist||0,+r.time||0)}<br><small>${(r.workout||r.memo||'内容なし').replace(/</g,'&lt;')}</small></span><button class="btn secondary" style="padding:6px 8px;font-size:11px" onclick="moveToTrash(${r.id})">ゴミ箱</button></div>`).join('')+
+      `</div>`).join('');
 }
 function removeDuplicateRecords(){
-  if(records.length<2){alert('整理できる重複記録はありません。');return}
-  const seen=new Set(), before=records.length;
-  records=records.filter(r=>{
-    const k=recordFingerprint(r);
-    if(seen.has(k)) return false;
-    seen.add(k);
-    return true;
-  });
-  const removed=before-records.length;
-  save();
-  alert(removed
-    ? `${removed}件の重複記録を削除しました。\n練習タイプが違っていても同じ実測データなら整理しました。`
-    : '重複記録は見つかりませんでした。');
+  reviewDuplicateRecords();
+  alert('重複候補を表示しました。自動削除はしません。');
 }
 
 function editRecordType(id){
@@ -419,7 +508,7 @@ function addRecord(){
  if(saveLock)return;
  const r={id:Date.now(),date:fDate.value,dist:+fDist.value||0,time:+fTime.value||0,pace:fPace.value||calcPace(+fDist.value,+fTime.value),avgHr:+fAvgHr.value||0,maxHr:+fMaxHr.value||0,temp:fTemp.value,elev:fElev.value,type:fType.value,workout:fWorkout.value,memo:fMemo.value};
  if(!r.date||!r.dist){alert('日付と距離を入力してください');return}
- if(isDuplicateRecord(r)){alert('同じ内容の記録がすでにあります。重複保存はしません。');return}
+ if(isDuplicateRecord(r) && !confirm('同じ内容の記録がすでにあります。\nそれでも別の記録として保存しますか？'))return
  saveLock=true;setTimeout(()=>saveLock=false,1200);
  records.unshift(r);save();evaluatePlansForRecord(r);rebuildFuturePlan(true);alert('保存しました。予定との実績評価→AI計画の再構築まで更新しました。');showAutoReport(r.id);render();
 }
@@ -1074,8 +1163,36 @@ function renderV14(){
  el.innerHTML=`<div class="v14Hero"><div class="v14Title">明日の推奨：${x.title}</div><div class="v14Sub">${x.tomorrow} ・ ${x.type}</div><div class="v14Plan"><b>🎯 ${x.target}</b><br>${x.workout}<br><span style="color:#9aa7b2">今回の重点：${x.focus}</span></div><div class="v14Grid">${rows.map(r=>`<div class="v14Card"><small>${r[0]}</small><b>${r[1]}/100</b></div>`).join('')}</div><div class="v14Steps"><div class="v14Step"><span class="v14Num">1</span><span>直近負荷 ${x.c.load}pt とポイント練習 ${x.c.quality7}回を確認</span></div><div class="v14Step"><span class="v14Num">2</span><span>不足している能力を1つだけ優先して刺激</span></div><div class="v14Step"><span class="v14Num">3</span><span>次の記録が入ったら、V14が再評価して次のメニューを更新</span></div></div><div class="v14Btns"><button class="btn" onclick="applyV14Prescription()">📅 このメニューを明日の計画へ追加</button><button class="btn secondary" onclick="renderV14();alert('最新記録からV14を再計算しました。')">🔄 再計算</button></div></div><p class="note" style="margin-top:9px">※これは記録データから作るトレーニング補助ロジックです。医療的な疲労判定や大会結果の予測ではありません。</p>`;
 }
 
+function populateHistoryFilters(){
+  const m=document.getElementById('historyMonth');
+  if(!m)return;
+  const current=m.value||'all';
+  const months=[...new Set(records.map(r=>String(r.date||'').slice(0,7)).filter(Boolean))].sort().reverse();
+  m.innerHTML='<option value="all">すべて</option>'+months.map(x=>`<option value="${x}">${x.replace('-','年')}月</option>`).join('');
+  if(months.includes(current)||current==='all')m.value=current; else m.value='all';
+}
+function renderHistory(){
+  const m=document.getElementById('historyMonth'), t=document.getElementById('historyType');
+  const ym=m?m.value:'all', type=t?t.value:'all';
+  const filtered=sortedRecords().filter(r=>(ym==='all'||String(r.date||'').slice(0,7)===ym)&&(type==='all'||r.type===type));
+  const status=document.getElementById('historyStatus');
+  if(status){
+    const dates=records.map(r=>String(r.date||'').slice(0,10)).filter(Boolean).sort();
+    status.textContent=records.length
+      ? `保存中：${records.length}件　表示：${filtered.length}件　期間：${dates[0]||'--'} ～ ${dates[dates.length-1]||'--'}　※削除した記録はゴミ箱から復元できます。`
+      : '保存中の記録はありません。';
+  }
+  const el=document.getElementById('recordTable');
+  if(!el)return;
+  el.innerHTML=filtered.length?
+    `<table><thead><tr><th>日付</th><th>距離</th><th>ペース</th><th>獲得標高</th><th>種類</th><th>トレーニング内容</th><th>レポート</th><th>管理</th></tr></thead><tbody>${
+      filtered.map(r=>`<tr><td>${r.date}</td><td>${(+r.dist||0).toFixed(2)} km</td><td>${r.pace||calcPace(+r.dist||0,+r.time||0)}</td><td>${(+r.elev||0)>0?Math.round(+r.elev)+' m':'--'}</td><td>${r.type||'未分類'}</td><td>${(r.workout||'').replace(/</g,'&lt;')}</td><td><button class="btn secondary" style="padding:6px 8px;font-size:11px" onclick="showAutoReport(${r.id})">レポート</button></td><td><button class="btn secondary" style="padding:6px 8px;font-size:11px" onclick="editRecordType(${r.id})">種類変更</button><button class="btn secondary" style="padding:6px 8px;font-size:11px" onclick="moveToTrash(${r.id})">ゴミ箱</button></td></tr>`).join('')
+    }</tbody></table>`:'<div class="empty">条件に一致する記録がありません。</div>';
+  renderTrash();
+}
+
 function render(){
-  // V18.6: Safari/iPhoneでHTML idをwindow変数として参照すると
+  // V18.7: Safari/iPhoneでHTML idをwindow変数として参照すると
   // 「月間集計は更新されるのに最近の記録・週次集計が0/空欄」になる
   // ケースがあるため、ダッシュボード要素は必ずgetElementByIdで取得する。
   const $=id=>document.getElementById(id);
@@ -1129,12 +1246,8 @@ function render(){
   renderCoach(); renderCalendar(); renderV15();
   renderMarathonProgress(); renderV13(); renderV14(); renderV15(); renderV16();
 
-  if(elRecordTable){
-    elRecordTable.innerHTML=records.length?
-      `<table><thead><tr><th>日付</th><th>距離</th><th>ペース</th><th>獲得標高</th><th>種類</th><th>トレーニング内容</th><th>レポート</th><th>管理</th></tr></thead><tbody>${
-        records.map(r=>`<tr><td>${r.date}</td><td>${(+r.dist||0).toFixed(2)} km</td><td>${r.pace||calcPace(+r.dist||0,+r.time||0)}</td><td>${(+r.elev||0)>0?Math.round(+r.elev)+' m':'--'}</td><td>${r.type}</td><td>${(r.workout||'').replace(/</g,'&lt;')}</td><td><button class="btn secondary" style="padding:6px 8px;font-size:11px" onclick="showAutoReport(${r.id})">レポート</button></td><td><button class="btn secondary" style="padding:6px 8px;font-size:11px" onclick="editRecordType(${r.id})">種類変更</button><button class="btn secondary" style="padding:6px 8px;font-size:11px" onclick="removeRecord(${r.id})">削除</button></td></tr>`).join('')
-      }</tbody></table>`:'<div class="empty">記録を追加するとここに表示されます。</div>';
-  }
+  populateHistoryFilters();
+  renderHistory();
 }
 
 /* ---------- Garmin FIT import (browser-side) ---------- */
@@ -1272,11 +1385,11 @@ async function importFIT(e){
   </select>
 </div>${laps.length?`<h3 style="margin:12px 0 6px">ラップ解析</h3><div class="laps">${laps.map(x=>`<div class="lap">L${x.i}<b>${x.pace}</b><span class="note">${x.d?x.d.toFixed(2)+'km':''}</span></div>`).join('')}</div>`:''}<div class="actions"><button class="btn" onclick='saveFITCandidateWithType(${JSON.stringify(candidate).replace(/</g,"\u003c")},"fitTypeSelect_${candidate.id}")'>選んだタイプで記録に保存</button><button class="btn secondary" onclick='previewFITReport(${JSON.stringify(candidate).replace(/</g,"\u003c")})'>レポートを見る</button></div></div>`;
     fitStatus.textContent='解析完了。診断と解析結果を確認して保存できます。';
-  }catch(err){fitStatus.textContent='解析できませんでした：'+err.message;fitPreview.innerHTML='<div class="report"><div class="reportTitle">🔎 Garmin FIT診断</div><div class="note">V18.6 / 読み込み中にエラーが発生しました。</div><div class="metric"><span>エラー</span><b>'+String(err.message).replace(/</g,'&lt;')+'</b></div></div>'}
+  }catch(err){fitStatus.textContent='解析できませんでした：'+err.message;fitPreview.innerHTML='<div class="report"><div class="reportTitle">🔎 Garmin FIT診断</div><div class="note">V18.7 / 読み込み中にエラーが発生しました。</div><div class="metric"><span>エラー</span><b>'+String(err.message).replace(/</g,'&lt;')+'</b></div></div>'}
 }
 function saveFITCandidate(r){
   if(saveLock)return;
-  if(isDuplicateRecord(r)){alert('このFITと同じ内容の記録がすでにあります。重複保存しません。');return}
+  if(isDuplicateRecord(r) && !confirm('このFITと同じ内容の記録がすでにあります。\n別の記録として保存しますか？'))return
   saveLock=true;setTimeout(()=>saveLock=false,1200);
   records.unshift(r);save();evaluatePlansForRecord(r);rebuildFuturePlan(true);showAutoReport(r.id);render();
 }
@@ -1413,8 +1526,8 @@ function exportCSV(){
   const blob=new Blob(['\ufeff'+headers.join(',')+'\n'+rows.join('\n')],{type:'text/csv;charset=utf-8'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='running_log.csv';a.click();URL.revokeObjectURL(a.href);
 }
-function exportData(){const b=new Blob([JSON.stringify({records,plans},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='running-log-backup.json';a.click()}
-function importData(e){const f=e.target.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{try{const x=JSON.parse(rd.result);records=Array.isArray(x)?x:(x.records||[]);plans=Array.isArray(x)?plans:(x.plans||[]);localStorage.setItem(KEY,JSON.stringify(records));localStorage.setItem(PLANKEY,JSON.stringify(plans));render();renderCalendar();alert('復元しました')}catch{alert('JSONを読み込めませんでした')}};rd.readAsText(f)}
+function exportData(){const b=new Blob([JSON.stringify({records,plans,trash},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='running-log-backup.json';a.click()}
+function importData(e){const f=e.target.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{try{const x=JSON.parse(rd.result);records=Array.isArray(x)?x:(x.records||[]);plans=Array.isArray(x)?plans:(x.plans||[]);trash=Array.isArray(x.trash)?x.trash:[];localStorage.setItem(KEY,JSON.stringify(records));localStorage.setItem(TRASHKEY,JSON.stringify(trash));localStorage.setItem(PLANKEY,JSON.stringify(plans));render();renderCalendar();alert('復元しました')}catch{alert('JSONを読み込めませんでした')}};rd.readAsText(f)}
 document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelectorAll('main>section').forEach(s=>s.classList.add('hidden'));document.getElementById(b.dataset.tab).classList.remove('hidden')});
 today.textContent=new Date().toLocaleDateString('ja-JP',{month:'numeric',day:'numeric'});
 render();
