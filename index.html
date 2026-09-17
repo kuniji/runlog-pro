@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="apple-touch-icon" href="icon-192.svg">
 
-<title>My Running Log AI Coach V18.21</title>
+<title>My Running Log AI Coach V18.22</title>
 <style>
 :root{
   --bg:#07090c; --panel:#11151a; --panel2:#171c22; --line:#26303a;
@@ -172,7 +172,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:9px 6px;b
 <body>
 <div class="app">
 <header>
-  <div class="head"><div><div class="logo">🏃 <span>MY RUNNING LOG</span><span class="versionTag">V18.21</span></div><small>走った記録を、次の練習につなげる</small></div><div class="v11Status"><span id="onlineStatus">● オンライン</span><button id="installBtn" class="btn secondary installBtn" hidden>ホーム画面に追加</button></div><div id="today"></div></div>
+  <div class="head"><div><div class="logo">🏃 <span>MY RUNNING LOG</span><span class="versionTag">V18.22</span></div><small>走った記録を、次の練習につなげる</small></div><div class="v11Status"><span id="onlineStatus">● オンライン</span><button id="installBtn" class="btn secondary installBtn" hidden>ホーム画面に追加</button></div><div id="today"></div></div>
   <nav>
     <button class="tab active" data-tab="dash">ダッシュボード</button>
     <button class="tab" data-tab="records">記録</button>
@@ -374,7 +374,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:9px 6px;b
 </section>
 
 <section id="backup" class="hidden">
-  <div class="section"><h2>バックアップ / 復元</h2><p class="note">記録はこのブラウザに保存されます。V18.21では重複記録を自動削除せず、削除はゴミ箱経由で復元できます。端末変更前などにJSONを書き出して保管してください。</p>
+  <div class="section"><h2>バックアップ / 復元</h2><p class="note">記録はこのブラウザに保存されます。V18.22では重複記録を自動削除せず、削除はゴミ箱経由で復元できます。端末変更前などにJSONを書き出して保管してください。</p>
   <div class="actions"><button class="btn" onclick="exportData()">JSONを書き出す</button><button class="btn secondary" onclick="exportCSV()">CSVを書き出す</button><label class="btn secondary" style="display:inline-block">JSONを復元<input id="importFile" type="file" accept=".json" style="display:none" onchange="importData(event)"></label></div></div>
 </section>
 </main>
@@ -984,7 +984,7 @@ function renderTodayMenu(){
   }catch(e){console.error('today menu render error',e);el.innerHTML='<div class="todayMenuType">🏃 今日のメニュー</div><div class="todayMenuReason">V15の計画を確認してください。</div>';}
 }
 function renderCoach(){
-  // V18.21: 提案の重複を避け、V15を週間計画の本体にする。
+  // V18.22: 提案の重複を避け、V15を週間計画の本体にする。
   try{
     const e=typeof v15PlanEngine==='function'?v15PlanEngine():null;
     const first=e&&e.plans&&e.plans[0];
@@ -1323,7 +1323,7 @@ function fitParse(buf){
   while(pos<dataEnd){
     const recordHeaderPos=pos,hb=view.getUint8(pos++),compressed=!!(hb&0x80),local=compressed?((hb>>5)&0x03):(hb&0x0f);
     // FITの圧縮タイムスタンプレコードは「タイムスタンプだけのレコード」ではなく、
-    // 直前に定義された同じlocal messageのデータ本体を持つ。V18.21ではここをcontinueして
+    // 直前に定義された同じlocal messageのデータ本体を持つ。V18.22ではここをcontinueして
     // しまい、圧縮Record/Lap等を丸ごと捨てていたため、Lap=0になりやすかった。
     let compressedTimestamp=null;
     if(compressed){
@@ -1445,7 +1445,7 @@ async function importFIT(e){
   try{
     const buf=await file.arrayBuffer(),view=new DataView(buf),headerSize=view.getUint8(0),sig=String.fromCharCode(...new Uint8Array(buf,8,4));
     const parsed=fitParse(buf),msgs=parsed.messages,a=fitAggregate(parsed),counts={};msgs.forEach(m=>counts[m.global]=(counts[m.global]||0)+1);
-    const diagnostics=`<div class="report" style="margin-top:10px"><div class="reportTitle" style="font-size:18px">🔎 Garmin FIT診断</div><div class="metrics" style="margin-top:8px"><div class="metric"><span>アプリ版</span><b>V18.21</b></div><div class="metric"><span>FIT署名</span><b>${sig==='.FIT'?'OK':'NG'}</b></div><div class="metric"><span>ヘッダー</span><b>${headerSize} bytes</b></div><div class="metric"><span>定義メッセージ</span><b>${a.meta.definitionCount}件</b></div><div class="metric"><span>圧縮タイムスタンプ</span><b>${a.meta.compressedCount}件</b></div><div class="metric"><span>解析メッセージ</span><b>${msgs.length}件</b></div><div class="metric"><span>Session</span><b>${a.sess?'あり':'なし'}${counts[18]?` (${counts[18]}件)`:''}</b></div><div class="metric"><span>Lap</span><b>${a.laps.length}件</b></div><div class="metric"><span>Record</span><b>${a.rec.length}件</b></div><div class="metric"><span>取得距離</span><b>${a.dist?a.dist.toFixed(2)+' km':'未取得'}</b></div></div></div>`;
+    const diagnostics=`<div class="report" style="margin-top:10px"><div class="reportTitle" style="font-size:18px">🔎 Garmin FIT診断</div><div class="metrics" style="margin-top:8px"><div class="metric"><span>アプリ版</span><b>V18.22</b></div><div class="metric"><span>FIT署名</span><b>${sig==='.FIT'?'OK':'NG'}</b></div><div class="metric"><span>ヘッダー</span><b>${headerSize} bytes</b></div><div class="metric"><span>定義メッセージ</span><b>${a.meta.definitionCount}件</b></div><div class="metric"><span>圧縮タイムスタンプ</span><b>${a.meta.compressedCount}件</b></div><div class="metric"><span>解析メッセージ</span><b>${msgs.length}件</b></div><div class="metric"><span>Session</span><b>${a.sess?'あり':'なし'}${counts[18]?` (${counts[18]}件)`:''}</b></div><div class="metric"><span>Lap</span><b>${a.laps.length}件</b></div><div class="metric"><span>Record</span><b>${a.rec.length}件</b></div><div class="metric"><span>取得距離</span><b>${a.dist?a.dist.toFixed(2)+' km':'未取得'}</b></div></div></div>`;
     fitPreview.innerHTML=diagnostics;
     if(!a.dist&&!a.laps.length){fitStatus.textContent='FITは読み込めましたが、ランニングデータを取得できませんでした。診断結果を確認してください。';return}
     const type=fitClassify(a),laps=fitLapSummary(a),date=a.date?new Date(a.date):new Date(file.lastModified),dateStr=localDateStr(date),timeMin=a.timeMs/60000,pace=a.avgSpeed?secToPace(1000/a.avgSpeed):calcPace(a.dist,timeMin);
@@ -1460,7 +1460,7 @@ async function importFIT(e){
   </select>
 </div>${laps.length?`<h3 style="margin:12px 0 6px">ラップ解析</h3><div class="laps">${laps.map(x=>`<div class="lap"><small>L${x.i}</small><b>${x.duration||'--'}</b><span class="note">${x.d?x.d.toFixed(2)+'km':''}${x.pace&&x.pace!=='--'?` / ${x.pace}/km`:''}${x.hr?` / ${x.hr}bpm`:''}${x.phase&&x.phase!=='判定外'?`<br>${x.phase}`:''}</span></div>`).join('')}</div>`:''}<div class="actions"><button class="btn" onclick='saveFITCandidateWithType(${JSON.stringify(candidate).replace(/</g,"\u003c")},"fitTypeSelect_${candidate.id}")'>選んだタイプで記録に保存</button><button class="btn secondary" onclick='previewFITReport(${JSON.stringify(candidate).replace(/</g,"\u003c")})'>レポートを見る</button></div></div>`;
     fitStatus.textContent='解析完了。診断と解析結果を確認して保存できます。';
-  }catch(err){fitStatus.textContent='解析できませんでした：'+err.message;fitPreview.innerHTML='<div class="report"><div class="reportTitle">🔎 Garmin FIT診断</div><div class="note">V18.21 / 読み込み中にエラーが発生しました。</div><div class="metric"><span>エラー</span><b>'+String(err.message).replace(/</g,'&lt;')+'</b></div></div>'}
+  }catch(err){fitStatus.textContent='解析できませんでした：'+err.message;fitPreview.innerHTML='<div class="report"><div class="reportTitle">🔎 Garmin FIT診断</div><div class="note">V18.22 / 読み込み中にエラーが発生しました。</div><div class="metric"><span>エラー</span><b>'+String(err.message).replace(/</g,'&lt;')+'</b></div></div>'}
 }
 function saveFITCandidateWithType(candidate, selectId){
   if(!candidate || !candidate.date || !(+candidate.dist)){
@@ -1526,6 +1526,30 @@ function qualityReportDetail(r){
     ? (laps.length?`まず「疾走候補」のペースが揃っているかを確認し、回復区間は無理に速くしないことを重視します。`:`FITにラップ情報がないため、今回は全体のペース・心拍を中心に評価します。`)
     : (laps.length?`閾値走では各ラップのペースと心拍の推移を確認し、最初に上げすぎず後半まで一定リズムを保てたかを見ます。`:`区間ラップがないため、全体の平均ペース・心拍から結果を確認します。`);
   return `<div class="qualityDetail" style="margin-top:10px;padding:14px;border:1px solid rgba(45,205,255,.28);border-radius:14px;background:rgba(45,205,255,.035)"><h3 style="margin:0 0 8px">${title}</h3><div class="metrics">${summary.map(x=>`<div class="metric"><span>${x.split(' ')[0]}</span><b>${x.substring(x.indexOf(' ')+1)}</b></div>`).join('')}</div>${lapHtml}<div class="note" style="margin-top:10px">${interpretation}</div></div>`;
+}
+function renderReportHub(id){
+  const select=document.getElementById('reportRecordSelect');
+  const recent=document.getElementById('reportRecentList');
+  const count=document.getElementById('reportCount');
+  const auto=document.getElementById('autoReport');
+  const list=sortedRecords();
+  if(count) count.textContent=`${list.length}件`;
+  if(!select||!recent||!auto)return;
+  if(!list.length){
+    select.innerHTML='<option value="">記録がありません</option>';
+    recent.innerHTML='<div class="note">保存した記録がここに表示されます。</div>';
+    auto.innerHTML='<div class="report" style="margin-top:10px"><div class="reportTitle">レポートはまだありません</div><div class="note" style="margin-top:6px">「記録」からランニング記録を保存すると、自動でレポートを作成できます。</div></div>';
+    currentReportId=null;
+    return;
+  }
+  const wanted=(id!=null&&String(id)!=='')?list.find(r=>String(r.id)===String(id)):null;
+  const current=wanted||list[0];
+  currentReportId=current.id;
+  const esc=v=>String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  const dateLabel=r=>{const d=new Date(String(r.date||'')+'T00:00:00');return isNaN(d)?String(r.date||''):d.toLocaleDateString('ja-JP',{month:'numeric',day:'numeric',weekday:'short'});};
+  select.innerHTML=list.map(r=>`<option value="${esc(r.id)}" ${String(r.id)===String(current.id)?'selected':''}>${esc(r.date||'')}　${esc(typeText(r.type))}　${(+r.dist||0).toFixed(2)}km</option>`).join('');
+  recent.innerHTML=list.slice(0,5).map(r=>`<button class="reportRecentItem" type="button" onclick="renderReportHub('${esc(r.id)}')"><span><b>${esc(dateLabel(r))}　${esc(typeText(r.type))}</b><small>${(+r.dist||0).toFixed(2)}km / ${esc(r.pace||'--')}/km</small></span><span>›</span></button>`).join('');
+  renderReportOnly(current);
 }
 function renderReportOnly(r){
   if(!r)return; currentReportId=r.id;
