@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="apple-touch-icon" href="icon-192.svg">
 
-<title>My Running Log AI Coach V18.16</title>
+<title>My Running Log AI Coach V18.17</title>
 <style>
 :root{
   --bg:#07090c; --panel:#11151a; --panel2:#171c22; --line:#26303a;
@@ -172,7 +172,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:9px 6px;b
 <body>
 <div class="app">
 <header>
-  <div class="head"><div><div class="logo">🏃 <span>MY RUNNING LOG</span><span class="versionTag">V18.16</span></div><small>走った記録を、次の練習につなげる</small></div><div class="v11Status"><span id="onlineStatus">● オンライン</span><button id="installBtn" class="btn secondary installBtn" hidden>ホーム画面に追加</button></div><div id="today"></div></div>
+  <div class="head"><div><div class="logo">🏃 <span>MY RUNNING LOG</span><span class="versionTag">V18.17</span></div><small>走った記録を、次の練習につなげる</small></div><div class="v11Status"><span id="onlineStatus">● オンライン</span><button id="installBtn" class="btn secondary installBtn" hidden>ホーム画面に追加</button></div><div id="today"></div></div>
   <nav>
     <button class="tab active" data-tab="dash">ダッシュボード</button>
     <button class="tab" data-tab="records">記録</button>
@@ -374,7 +374,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:9px 6px;b
 </section>
 
 <section id="backup" class="hidden">
-  <div class="section"><h2>バックアップ / 復元</h2><p class="note">記録はこのブラウザに保存されます。V18.16では重複記録を自動削除せず、削除はゴミ箱経由で復元できます。端末変更前などにJSONを書き出して保管してください。</p>
+  <div class="section"><h2>バックアップ / 復元</h2><p class="note">記録はこのブラウザに保存されます。V18.17では重複記録を自動削除せず、削除はゴミ箱経由で復元できます。端末変更前などにJSONを書き出して保管してください。</p>
   <div class="actions"><button class="btn" onclick="exportData()">JSONを書き出す</button><button class="btn secondary" onclick="exportCSV()">CSVを書き出す</button><label class="btn secondary" style="display:inline-block">JSONを復元<input id="importFile" type="file" accept=".json" style="display:none" onchange="importData(event)"></label></div></div>
 </section>
 </main>
@@ -984,7 +984,7 @@ function renderTodayMenu(){
   }catch(e){console.error('today menu render error',e);el.innerHTML='<div class="todayMenuType">🏃 今日のメニュー</div><div class="todayMenuReason">V15の計画を確認してください。</div>';}
 }
 function renderCoach(){
-  // V18.16: 提案の重複を避け、V15を週間計画の本体にする。
+  // V18.17: 提案の重複を避け、V15を週間計画の本体にする。
   try{
     const e=typeof v15PlanEngine==='function'?v15PlanEngine():null;
     const first=e&&e.plans&&e.plans[0];
@@ -1322,12 +1322,16 @@ function fitParse(buf){
   let pos=dataStart,defs={},messages=[],lastTimestamp=0,lastTsByLocal={},definitionCount=0,compressedCount=0;
   while(pos<dataEnd){
     const recordHeaderPos=pos,hb=view.getUint8(pos++),compressed=!!(hb&0x80),local=compressed?((hb>>5)&0x03):(hb&0x0f);
+    // FITの圧縮タイムスタンプレコードは「タイムスタンプだけのレコード」ではなく、
+    // 直前に定義された同じlocal messageのデータ本体を持つ。V18.17ではここをcontinueして
+    // しまい、圧縮Record/Lap等を丸ごと捨てていたため、Lap=0になりやすかった。
+    let compressedTimestamp=null;
     if(compressed){
       compressedCount++;
       const timeOffset=hb&0x1f,base=lastTsByLocal[local]??lastTimestamp;
-      let ts=(base&~0x1f)+timeOffset;if(ts<base)ts+=32;lastTimestamp=ts;continue;
+      if(base){let ts=(base&~0x1f)+timeOffset;if(ts<base)ts+=32;compressedTimestamp=ts;}
     }
-    if(hb&0x40){
+    if(!compressed && (hb&0x40)){
       if(pos+5>dataEnd)throw new Error('定義メッセージが途中で切れています');
       const reserved=view.getUint8(pos++),archByte=view.getUint8(pos++),le=archByte===0;
       const global=view.getUint16(pos,le);pos+=2;
@@ -1345,7 +1349,8 @@ function fitParse(buf){
     const values={};
     for(const f of def.fields){values[f.num]=fitFieldValue(view,pos,fitBaseType(f.type),f.size,def.le);pos+=f.size}
     for(const f of def.devFields){pos+=f.size;if(pos>dataEnd)throw new Error('Developer Fieldデータが途中で切れています')}
-    if(def.global===20&&values[253]!=null){lastTimestamp=Number(values[253]);lastTsByLocal[local]=Number(values[253])}
+    if(compressedTimestamp!=null){values[253]=compressedTimestamp;lastTimestamp=compressedTimestamp;lastTsByLocal[local]=compressedTimestamp}
+    else if(def.global===20&&values[253]!=null){lastTimestamp=Number(values[253]);lastTsByLocal[local]=Number(values[253])}
     messages.push({global:def.global,name:FIT_GLOBAL[def.global]||String(def.global),values});
   }
   return {messages,meta:{protocol,definitionCount,compressedCount,dataSize,headerSize}};
@@ -1382,7 +1387,17 @@ function fitClassify(a){
   return 'Easy';
 }
 function fitLapSummary(a){
-  return a.laps.map((m,i)=>{const d=Number(fitField(m,9)||0)/100000,t=Number(fitField(m,8)||fitField(m,7)||0),sp=Number(fitField(m,13)||0)/1000;const pace=sp>0?secToPace(1000/sp):(d&&t?secToPace(t/d):'--');return {i:i+1,d,t,pace,hr:Number(fitField(m,15)||0)}});
+  // FIT Lap: total_elapsed_time=7(ms), total_timer_time=8(ms), total_distance=9(m/100),
+  // avg_speed=10(m/s*1000), avg_heart_rate=12(bpm), max_heart_rate=13(bpm).
+  return a.laps.map((m,i)=>{
+    const dRaw=fitField(m,9), elapsedRaw=fitField(m,7), timerRaw=fitField(m,8), speedRaw=fitField(m,10);
+    const d=Number(dRaw||0)/100000;
+    const tMs=Number(timerRaw!=null?timerRaw:(elapsedRaw||0));
+    const t=tMs/1000;
+    const sp=Number(speedRaw||0)/1000;
+    const pace=sp>0?secToPace(1000/sp):(d&&t?secToPace(t/d):'--');
+    return {i:i+1,d,t,pace,hr:Number(fitField(m,12)||0),maxHr:Number(fitField(m,13)||0)};
+  });
 }
 async function importFIT(e){
   const file=e.target.files[0];if(!file)return;fitStatus.textContent='FITを解析しています…';fitPreview.innerHTML='';
