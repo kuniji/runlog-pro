@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="apple-touch-icon" href="icon-192.svg">
 
-<title>My Running Log AI Coach V18.1</title>
+<title>My Running Log AI Coach V18.2</title>
 <style>
 :root{
   --bg:#07090c; --panel:#11151a; --panel2:#171c22; --line:#26303a;
@@ -158,7 +158,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:9px 6px;b
 <body>
 <div class="app">
 <header>
-  <div class="head"><div><div class="logo">🏃 <span>MY RUNNING LOG</span><span class="versionTag">V18.1</span></div><small>走った記録を、次の練習につなげる</small></div><div class="v11Status"><span id="onlineStatus">● オンライン</span><button id="installBtn" class="btn secondary installBtn" hidden>ホーム画面に追加</button></div><div id="today"></div></div>
+  <div class="head"><div><div class="logo">🏃 <span>MY RUNNING LOG</span><span class="versionTag">V18.2</span></div><small>走った記録を、次の練習につなげる</small></div><div class="v11Status"><span id="onlineStatus">● オンライン</span><button id="installBtn" class="btn secondary installBtn" hidden>ホーム画面に追加</button></div><div id="today"></div></div>
   <nav>
     <button class="tab active" data-tab="dash">ダッシュボード</button>
     <button class="tab" data-tab="records">記録</button>
@@ -249,7 +249,9 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:9px 6px;b
     </div>
     <div id="fitStatus" class="note" style="margin-top:9px"></div>
   </div>
-  <div class="section"><h2>ランニング履歴</h2><div id="recordTable"></div></div>
+  <div class="section"><h2>ランニング履歴</h2>
+    <div class="actions"><button class="btn secondary" onclick="removeDuplicateRecords()">重複した記録を整理</button></div>
+    <div id="recordTable"></div></div>
   <div class="section"><h2>Garmin FIT自動解析</h2>
     <div id="fitPreview" class="empty">FITファイルを読み込むと、セッション・ラップ・心拍・ペースなどを解析して記録候補を作成します。</div>
   </div>
@@ -368,9 +370,33 @@ function save(){localStorage.setItem(KEY,JSON.stringify(records));render();}
 function paceToSec(p){if(!p)return null; const m=p.match(/(\\d+):(\\d{1,2})/); return m?+m[1]*60+ +m[2]:null}
 function secToPace(s){if(!s)return '--';s=Math.round(s);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')}
 function calcPace(dist,timeMin){return dist&&timeMin?secToPace(timeMin*60/dist):'--'}
+function recordFingerprint(r){return [r.date,Number(r.dist||0).toFixed(2),Number(r.time||0).toFixed(2),r.pace||'',Number(r.avgHr||0),Number(r.maxHr||0),r.type||'',r.workout||'',r.memo||''].join('|')}
+function isDuplicateRecord(r){return records.some(x=>recordFingerprint(x)===recordFingerprint(r))}
+function removeRecord(id){
+  const r=records.find(x=>String(x.id)===String(id));
+  if(!r)return;
+  if(!confirm(`${r.date} / ${Number(r.dist||0).toFixed(2)}km の記録を削除しますか？`))return;
+  records=records.filter(x=>String(x.id)!==String(id));
+  save();
+  alert('記録を削除しました。');
+}
+function removeDuplicateRecords(){
+  if(records.length<2){alert('整理できる重複記録はありません。');return}
+  const seen=new Set(), before=records.length;
+  // 新しい順の先頭を残し、内容が完全一致する重複だけを削除
+  records=records.filter(r=>{const k=recordFingerprint(r);if(seen.has(k))return false;seen.add(k);return true});
+  const removed=before-records.length;
+  save();
+  alert(removed?`${removed}件の重複記録を整理しました。`:'完全一致する重複記録はありませんでした。');
+}
+
+let saveLock=false;
 function addRecord(){
+ if(saveLock)return;
  const r={id:Date.now(),date:fDate.value,dist:+fDist.value||0,time:+fTime.value||0,pace:fPace.value||calcPace(+fDist.value,+fTime.value),avgHr:+fAvgHr.value||0,maxHr:+fMaxHr.value||0,temp:fTemp.value,elev:fElev.value,type:fType.value,workout:fWorkout.value,memo:fMemo.value};
  if(!r.date||!r.dist){alert('日付と距離を入力してください');return}
+ if(isDuplicateRecord(r)){alert('同じ内容の記録がすでにあります。重複保存はしません。');return}
+ saveLock=true;setTimeout(()=>saveLock=false,1200);
  records.unshift(r);save();evaluatePlansForRecord(r);rebuildFuturePlan(true);alert('保存しました。予定との実績評価→AI計画の再構築まで更新しました。');showAutoReport(r.id);render();
 }
 function loadInterval(){
@@ -1032,7 +1058,7 @@ function render(){
  renderMarathonProgress();renderV13();renderV14();renderV15();renderV16();
  weekKm.textContent=ws.km.toFixed(1); weekCount.textContent=ws.wcount; load7.textContent=ws.load; km28.textContent=ws.km28.toFixed(1);
  loadMessage.textContent=loadText(ws.load,ws.km);
- recordTable.innerHTML=records.length?`<table><thead><tr><th>日付</th><th>距離</th><th>ペース</th><th>種類</th><th>トレーニング内容</th><th>レポート</th></tr></thead><tbody>${records.map(r=>`<tr><td>${r.date}</td><td>${r.dist.toFixed(2)} km</td><td>${r.pace||calcPace(r.dist,r.time)}</td><td>${r.type}</td><td>${(r.workout||'').replace(/</g,'&lt;')}</td><td><button class="btn secondary" style="padding:6px 8px;font-size:11px" onclick="showAutoReport(${r.id})">レポート</button></td></tr>`).join('')}</tbody></table>`:'<div class="empty">記録を追加するとここに表示されます。</div>';
+ recordTable.innerHTML=records.length?`<table><thead><tr><th>日付</th><th>距離</th><th>ペース</th><th>種類</th><th>トレーニング内容</th><th>レポート</th><th>管理</th></tr></thead><tbody>${records.map(r=>`<tr><td>${r.date}</td><td>${r.dist.toFixed(2)} km</td><td>${r.pace||calcPace(r.dist,r.time)}</td><td>${r.type}</td><td>${(r.workout||'').replace(/</g,'&lt;')}</td><td><button class="btn secondary" style="padding:6px 8px;font-size:11px" onclick="showAutoReport(${r.id})">レポート</button></td><td><button class="btn secondary" style="padding:6px 8px;font-size:11px" onclick="removeRecord(${r.id})">削除</button></td></tr>`).join('')}</tbody></table>`:'<div class="empty">記録を追加するとここに表示されます。</div>';
 }
 
 
@@ -1156,7 +1182,7 @@ async function importFIT(e){
   try{
     const buf=await file.arrayBuffer(),view=new DataView(buf),headerSize=view.getUint8(0),sig=String.fromCharCode(...new Uint8Array(buf,8,4));
     const parsed=fitParse(buf),msgs=parsed.messages,a=fitAggregate(parsed),counts={};msgs.forEach(m=>counts[m.global]=(counts[m.global]||0)+1);
-    const diagnostics=`<div class="report" style="margin-top:10px"><div class="reportTitle" style="font-size:18px">🔎 Garmin FIT診断</div><div class="metrics" style="margin-top:8px"><div class="metric"><span>アプリ版</span><b>V18.1</b></div><div class="metric"><span>FIT署名</span><b>${sig==='.FIT'?'OK':'NG'}</b></div><div class="metric"><span>ヘッダー</span><b>${headerSize} bytes</b></div><div class="metric"><span>定義メッセージ</span><b>${a.meta.definitionCount}件</b></div><div class="metric"><span>圧縮タイムスタンプ</span><b>${a.meta.compressedCount}件</b></div><div class="metric"><span>解析メッセージ</span><b>${msgs.length}件</b></div><div class="metric"><span>Session</span><b>${a.sess?'あり':'なし'}${counts[18]?` (${counts[18]}件)`:''}</b></div><div class="metric"><span>Lap</span><b>${a.laps.length}件</b></div><div class="metric"><span>Record</span><b>${a.rec.length}件</b></div><div class="metric"><span>取得距離</span><b>${a.dist?a.dist.toFixed(2)+' km':'未取得'}</b></div></div></div>`;
+    const diagnostics=`<div class="report" style="margin-top:10px"><div class="reportTitle" style="font-size:18px">🔎 Garmin FIT診断</div><div class="metrics" style="margin-top:8px"><div class="metric"><span>アプリ版</span><b>V18.2</b></div><div class="metric"><span>FIT署名</span><b>${sig==='.FIT'?'OK':'NG'}</b></div><div class="metric"><span>ヘッダー</span><b>${headerSize} bytes</b></div><div class="metric"><span>定義メッセージ</span><b>${a.meta.definitionCount}件</b></div><div class="metric"><span>圧縮タイムスタンプ</span><b>${a.meta.compressedCount}件</b></div><div class="metric"><span>解析メッセージ</span><b>${msgs.length}件</b></div><div class="metric"><span>Session</span><b>${a.sess?'あり':'なし'}${counts[18]?` (${counts[18]}件)`:''}</b></div><div class="metric"><span>Lap</span><b>${a.laps.length}件</b></div><div class="metric"><span>Record</span><b>${a.rec.length}件</b></div><div class="metric"><span>取得距離</span><b>${a.dist?a.dist.toFixed(2)+' km':'未取得'}</b></div></div></div>`;
     fitPreview.innerHTML=diagnostics;
     if(!a.dist&&!a.laps.length){fitStatus.textContent='FITは読み込めましたが、ランニングデータを取得できませんでした。診断結果を確認してください。';return}
     const type=fitClassify(a),laps=fitLapSummary(a),date=a.date?new Date(a.date):new Date(file.lastModified),dateStr=localDateStr(date),timeMin=a.timeMs/60000,pace=a.avgSpeed?secToPace(1000/a.avgSpeed):calcPace(a.dist,timeMin);
@@ -1164,9 +1190,12 @@ async function importFIT(e){
     const candidate={id:Date.now(),date:dateStr,dist:+a.dist.toFixed(2),time:+timeMin.toFixed(2),pace,avgHr:Math.round(a.avgHr||0),maxHr:Math.round(a.maxHr||0),temp:'',elev:Math.round(a.ascent||0),type,workout,memo};
     fitPreview.innerHTML+=`<div class="report" style="margin-top:10px"><div class="reportTop"><div><div class="reportTitle">FIT解析結果</div><div class="note">${file.name.replace(/</g,'&lt;')}</div></div><div class="dateBox"><b>${dateStr}</b><br>${type}</div></div><div class="metrics" style="margin-top:10px"><div class="metric"><span>距離</span><b>${candidate.dist.toFixed(2)} km</b></div><div class="metric"><span>時間</span><b>${secToPace(candidate.time*60)}</b></div><div class="metric"><span>平均ペース</span><b>${candidate.pace}/km</b></div><div class="metric"><span>平均/最大心拍</span><b>${candidate.avgHr||'--'} / ${candidate.maxHr||'--'} bpm</b></div><div class="metric"><span>判定</span><b>${type}</b></div></div>${laps.length?`<h3 style="margin:12px 0 6px">ラップ解析</h3><div class="laps">${laps.map(x=>`<div class="lap">L${x.i}<b>${x.pace}</b><span class="note">${x.d?x.d.toFixed(2)+'km':''}</span></div>`).join('')}</div>`:''}<div class="actions"><button class="btn" onclick='saveFITCandidate(${JSON.stringify(candidate).replace(/</g,"\\u003c")})'>このFITを記録に保存</button><button class="btn secondary" onclick='previewFITReport(${JSON.stringify(candidate).replace(/</g,"\\u003c")})'>レポートを見る</button></div></div>`;
     fitStatus.textContent='解析完了。診断と解析結果を確認して保存できます。';
-  }catch(err){fitStatus.textContent='解析できませんでした：'+err.message;fitPreview.innerHTML='<div class="report"><div class="reportTitle">🔎 Garmin FIT診断</div><div class="note">V18.1 / 読み込み中にエラーが発生しました。</div><div class="metric"><span>エラー</span><b>'+String(err.message).replace(/</g,'&lt;')+'</b></div></div>'}
+  }catch(err){fitStatus.textContent='解析できませんでした：'+err.message;fitPreview.innerHTML='<div class="report"><div class="reportTitle">🔎 Garmin FIT診断</div><div class="note">V18.2 / 読み込み中にエラーが発生しました。</div><div class="metric"><span>エラー</span><b>'+String(err.message).replace(/</g,'&lt;')+'</b></div></div>'}
 }
 function saveFITCandidate(r){
+  if(saveLock)return;
+  if(isDuplicateRecord(r)){alert('このFITと同じ内容の記録がすでにあります。重複保存しません。');return}
+  saveLock=true;setTimeout(()=>saveLock=false,1200);
   records.unshift(r);save();evaluatePlansForRecord(r);rebuildFuturePlan(true);showAutoReport(r.id);render();
 }
 function previewFITReport(r){
