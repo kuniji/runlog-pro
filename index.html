@@ -159,6 +159,8 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:9px 6px;b
 .engineActionBtn{border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:10px 13px;background:rgba(255,255,255,.08);color:inherit;font-weight:800;cursor:pointer}
 .engineActionBtn:active{transform:scale(.98)}
 .engineStatus{font-size:12px;opacity:.75;margin-top:8px;min-height:18px}
+
+.raceList{display:grid;gap:8px;margin-top:10px}.raceItem{padding:10px 12px;border:1px solid #26363e;border-radius:12px;background:#0d1419;display:flex;justify-content:space-between;gap:10px;align-items:center}.raceItem b{display:block}.raceItem small{color:#9aa7b2}.raceDelete{border:0;border-radius:9px;padding:7px 9px;background:rgba(255,255,255,.08);color:inherit}.raceBadge{display:inline-block;margin-left:5px;padding:3px 7px;border-radius:999px;background:rgba(255,255,255,.08);font-size:10px}
 </style>
 </head>
 <body>
@@ -378,6 +380,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:9px 6px;b
   <div class="grid2">
     <div class="section"><h2>富山マラソン</h2><p><b>サブ4:30</b></p><p class="note">目標ペース：約6:24/km。スピードよりもロング走・閾値走・回復のバランスを重視。</p></div>
     <div class="section"><h2>金沢城リレーマラソン</h2><p><b>9分30秒切り</b></p><p class="note">1周約1.9km → 約5:00/km。余裕があれば2・3本目で上げる。</p></div>
+    <div class="section"><h2>🏁 大会を追加・管理</h2><p class="note">大会を登録すると、V15が大会日を避けずに週間計画へ反映します。</p><div class="form"><label>大会名<input id="raceName" placeholder="例：加賀温泉郷マラソン"></label><label>開催日<input id="raceDate" type="date"></label><label>種目・距離<input id="raceDistance" placeholder="例：フル / 42.2km"></label><label>目標<input id="raceGoal" placeholder="例：サブ4:30 / 10km 50分"></label></div><div class="actions"><button class="btn" onclick="addRaceEvent()">大会を保存</button></div><div id="raceList" class="raceList"></div></div>
   </div>
 </section>
 
@@ -396,6 +399,12 @@ let records=JSON.parse(localStorage.getItem(KEY)||'[]');
 let trash=JSON.parse(localStorage.getItem(TRASHKEY)||'[]');
 const PLANKEY='my_running_plan_v1';
 let plans=JSON.parse(localStorage.getItem(PLANKEY)||'[]');
+const RACEKEY='my_running_races_v1';
+let races=JSON.parse(localStorage.getItem(RACEKEY)||'[]');
+if(!Array.isArray(races))races=[];
+if(!races.some(r=>r&&r.date==='2026-09-27'))races.push({id:'builtin-kanazawa',name:'金沢城リレーマラソン',date:'2026-09-27',distance:'1.9km',goal:'1周9:30切り'});
+if(!races.some(r=>r&&r.date==='2026-11-01'))races.push({id:'builtin-toyama',name:'富山マラソン',date:'2026-11-01',distance:'42.2km',goal:'サブ4:30'});
+localStorage.setItem(RACEKEY,JSON.stringify(races));
 let calMonth=new Date(2026,8,1);
 function save(){localStorage.setItem(KEY,JSON.stringify(records));localStorage.setItem(TRASHKEY,JSON.stringify(trash));render();}
 function paceToSec(p){if(!p)return null; const m=p.match(/(\\d+):(\\d{1,2})/); return m?+m[1]*60+ +m[2]:null}
@@ -564,6 +573,18 @@ function loadText(load,km){
   if(load>=90)return '🟡 しっかり走れています。Easy日は本当にEasyにして疲労を抜きましょう。';
   return '🟢 現時点では負荷に余裕があります。ロング走・閾値走を計画的に積み上げられます。';
 }
+function saveRaces(){localStorage.setItem(RACEKEY,JSON.stringify(races));renderRaceList();}
+function addRaceEvent(){
+  const name=(document.getElementById('raceName')?.value||'').trim(), date=document.getElementById('raceDate')?.value||'', distance=(document.getElementById('raceDistance')?.value||'').trim(), goal=(document.getElementById('raceGoal')?.value||'').trim();
+  if(!name||!date){alert('大会名と開催日を入力してください');return;}
+  races.push({id:'race-'+Date.now(),name,date,distance,goal}); saveRaces();
+  ['raceName','raceDate','raceDistance','raceGoal'].forEach(id=>{const e=document.getElementById(id);if(e)e.value=''});
+  renderV15(); alert('大会を登録しました。V15にも反映されます。');
+}
+function deleteRaceEvent(id){if(String(id).startsWith('builtin-')){alert('標準登録の大会は削除できません。');return;} races=races.filter(r=>String(r.id)!==String(id));saveRaces();renderV15();}
+function renderRaceList(){const el=document.getElementById('raceList');if(!el)return; const jp=['日','月','火','水','木','金','土']; const rows=races.filter(Boolean).slice().sort((a,b)=>String(a.date).localeCompare(String(b.date))).map(r=>{const d=new Date(r.date+'T00:00:00');const wd=isNaN(d)?'':`（${jp[d.getDay()]}）`;return `<div class="raceItem"><div><b>${r.name}<span class="raceBadge">${r.distance||'種目未設定'}</span></b><small>${r.date}${wd}${r.goal?' ・ '+r.goal:''}</small></div>${String(r.id).startsWith('builtin-')?'':'<button class="raceDelete" onclick="deleteRaceEvent(\''+String(r.id).replace(/'/g,'')+'\')">削除</button>'}</div>`}).join(''); el.innerHTML=rows||'<div class="note">登録された大会はありません。</div>'; }
+function raceForDate(date){return races.filter(r=>r&&r.date===date).sort((a,b)=>String(a.id).localeCompare(String(b.id)))[0]||null;}
+function daysToRace(date,race){return Math.round((dayStart(race.date)-dayStart(date))/86400000);}
 function savePlans(){localStorage.setItem(PLANKEY,JSON.stringify(plans));renderCalendar()}
 function addPlan(){const r={id:Date.now(),date:pDate.value,type:pType.value,target:pTarget.value,workout:pWorkout.value};if(!r.date){alert('日付を入力してください');return}plans.push(r);savePlans();alert('練習予定を保存しました')}
 function changeMonth(n){calMonth=new Date(calMonth.getFullYear(),calMonth.getMonth()+n,1);renderCalendar()}
@@ -1553,6 +1574,7 @@ document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelect
 today.textContent=new Date().toLocaleDateString('ja-JP',{month:'numeric',day:'numeric'});
 render();
 renderCalendar();
+renderRaceList();
 if(records.length){ showAutoReport(records[0].id); document.querySelector('[data-tab="dash"]').click(); }
 
 // V11 PWA: offline cache + install prompt
@@ -1566,7 +1588,7 @@ window.addEventListener('online',updateOnlineStatus);window.addEventListener('of
 if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));}
 
 function v15DateAdd(base,n){const d=new Date(base);d.setDate(d.getDate()+n);return localDateStr(d)}
-function v15Phase(date){const d=Math.ceil((new Date('2026-11-01T00:00:00')-dayStart(date))/86400000); if(d<=7)return 'テーパリング'; if(d<=35)return '富山マラソン特化'; if(d<=50)return '持久力強化'; return 'リレー・基礎調整'}
+function v15Phase(date){const upcoming=races.filter(r=>r&&r.date>=date).sort((a,b)=>String(a.date).localeCompare(String(b.date)))[0]; if(upcoming){const d=daysToRace(date,upcoming); if(d===0)return '大会'; if(d>=1&&d<=2)return '大会前調整'; if(d>=3&&d<=7)return '大会前';} const d=Math.ceil((new Date('2026-11-01T00:00:00')-dayStart(date))/86400000); if(d<=7)return 'テーパリング'; if(d<=35)return '富山マラソン特化'; if(d<=50)return '持久力強化'; return '基礎・調整'}
 function v15PaceText(sec){if(!Number.isFinite(sec)||sec<=0)return '--';return secToPace(Math.round(sec))+'/km'}
 function v15SafePace(r){try{return paceSecondsFromRecord(r)}catch(e){return null}}
 function v15PlanEngine(){
@@ -1602,14 +1624,15 @@ function v15PlanEngine(){
     const dow=d.getDay();
     const weekday=`${date}（${jpWeek[dow]}）`;
     const phase=v15Phase(date);
-    const raceDay=date==='2026-09-27';
+    const raceEvent=raceForDate(date);
+    const raceDay=!!raceEvent;
     const weekId=`${d.getFullYear()}-${d.getMonth()+1}-${Math.floor((d.getDate()-1)/7)}`;
     if(weekId!==weekKey)weekKey=weekId;
     let type='Easy',target='Easy 6〜9km',why='有酸素ベースを維持しながら疲労を抑える';
 
     // V15基本週間コンセプト：月曜OFF／平日もう1日OFF／週中ポイント／週末は距離。
     if(raceDay){
-      type='Race';target='金沢城リレー 1.9km × 1〜2周 / 9:30切り目安';why='週中のポイント練習に代わる実戦刺激。レース前後は距離より回復を優先';
+      type='Race';target=`${raceEvent.name}${raceEvent.distance?' '+raceEvent.distance:''}${raceEvent.goal?' / '+raceEvent.goal:''}`;why='登録した大会日。週中のポイント練習に代わる実戦刺激として扱い、前後は回復を優先';
     }else if(dow===1){
       type='Rest';target='ランオフ';why='月曜固定のランオフ。週末の距離走から回復して次の1週間へつなげる';
     }else if(dow===3){
@@ -1647,12 +1670,15 @@ function v15PlanEngine(){
   return {plans,load,q,long,daysLeft,last,focus,thrText:`${secToPace(thrMin)}〜${secToPace(thrMax)}/km`,sampleCount:recent.length,todayStr};
 }
 function v15Apply(){
+  const el=document.getElementById('v15PlanStatus');
   try{
-    const e=v15PlanEngine();let n=0;
-    e.plans.slice(0,7).forEach(p=>{if(!plans.some(x=>x.date===p.date&&x.type===p.type)){plans.push({date:p.date,type:p.type,target:p.target,workout:p.target,memo:'V15自動生成 / '+p.why,source:'V15'});n++;}});
-    save();renderCalendar();renderV15();
-    const el=document.getElementById('v15PlanStatus');if(el)el.textContent=`V15：${n}件を練習計画へ追加しました。`;
-  }catch(err){console.error('V15 apply error',err);const el=document.getElementById('v15PlanStatus');if(el)el.textContent='V15：計画への追加でエラーが発生しました。';}
+    const e=v15PlanEngine(), current=Array.isArray(plans)?plans:[], additions=[];
+    e.plans.slice(0,7).forEach(p=>{if(!current.some(x=>x&&x.date===p.date&&x.type===p.type)) additions.push({id:'v15-'+Date.now()+'-'+additions.length,date:p.date,type:p.type,target:p.target,workout:p.target,memo:'V15自動生成 / '+p.why,source:'V15'});});
+    plans=current.concat(additions);
+    localStorage.setItem(PLANKEY,JSON.stringify(plans));
+    renderCalendar(); renderV15();
+    if(el)el.textContent=`V15：${additions.length}件を練習計画へ追加しました。`;
+  }catch(err){console.error('V15 apply error',err);if(el)el.textContent='V15：計画への追加でエラーが発生しました。もう一度お試しください。';}
 }
 function runV15Engine(){
   const host=document.getElementById('v15Plan');
