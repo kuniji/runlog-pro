@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="apple-touch-icon" href="icon-192.svg">
 
-<title>My Running Log AI Coach V18.10</title>
+<title>My Running Log AI Coach V18.11</title>
 <style>
 :root{
   --bg:#07090c; --panel:#11151a; --panel2:#171c22; --line:#26303a;
@@ -164,7 +164,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:9px 6px;b
 <body>
 <div class="app">
 <header>
-  <div class="head"><div><div class="logo">🏃 <span>MY RUNNING LOG</span><span class="versionTag">V18.10</span></div><small>走った記録を、次の練習につなげる</small></div><div class="v11Status"><span id="onlineStatus">● オンライン</span><button id="installBtn" class="btn secondary installBtn" hidden>ホーム画面に追加</button></div><div id="today"></div></div>
+  <div class="head"><div><div class="logo">🏃 <span>MY RUNNING LOG</span><span class="versionTag">V18.11</span></div><small>走った記録を、次の練習につなげる</small></div><div class="v11Status"><span id="onlineStatus">● オンライン</span><button id="installBtn" class="btn secondary installBtn" hidden>ホーム画面に追加</button></div><div id="today"></div></div>
   <nav>
     <button class="tab active" data-tab="dash">ダッシュボード</button>
     <button class="tab" data-tab="records">記録</button>
@@ -1592,32 +1592,57 @@ function v15PlanEngine(){
   const thrMin=Math.max(270,Math.round(thrSec-4));
   const thrMax=Math.min(330,Math.round(thrSec+7));
   const last=all.filter(r=>r&&r.date).slice().sort((a,b)=>String(b.date).localeCompare(String(a.date)))[0]||null;
-  const focus=load>=120||q>=2?'回復優先 → その後に質':'持久力＋目標ペース耐性';
+  const focus=load>=120||q>=2?'月曜＋平日1日のランオフを確保し、週中は負荷を見てポイント、週末は距離を確保':'月曜＋平日1日のランオフを確保、水〜木にポイント、週末に距離';
+  const jpWeek=['日','月','火','水','木','金','土'];
   const plans=[];
+  let weekKey='';
   for(let i=1;i<=14;i++){
     const date=v15DateAdd(now,i);
+    const d=new Date(date+'T00:00:00');
+    const dow=d.getDay();
+    const weekday=`${date}（${jpWeek[dow]}）`;
     const phase=v15Phase(date);
+    const raceDay=date==='2026-09-27';
+    const weekId=`${d.getFullYear()}-${d.getMonth()+1}-${Math.floor((d.getDate()-1)/7)}`;
+    if(weekId!==weekKey)weekKey=weekId;
     let type='Easy',target='Easy 6〜9km',why='有酸素ベースを維持しながら疲労を抑える';
-    if(daysLeft<=7){
-      type=i===1?'Easy':'Recovery';
-      target=i===1?'6〜8km Easy':'4〜6km Recovery';
-      why='レース前の疲労を抜き、フレッシュさを優先';
-    }else if(i===1&&(load>=120||q>=2)){
-      type='Recovery';target='Recovery 5〜7km';why='直近14日の負荷・ポイント練習が重なっているため回復を優先';
-    }else if(i===2&&q===0){
-      type='Threshold';target=`15〜20分 @${v15PaceText(thrMin)}〜${v15PaceText(thrMax)}`;why='直近14日にポイント練習がないため、短時間の閾値刺激を追加';
-    }else if(i===3){
-      type='Recovery';target='Recovery 5〜7km';why='ポイント練習後の吸収日';
-    }else if(i===5){
-      type='Long';target=long===0?'18〜20km':'20〜22km';why='距離耐性を積み上げ、後半の持久力を確認';
-    }else if(i===7&&daysLeft>21){
-      type='Marathon Pace';target='10〜12km（中盤4〜6km @6:20〜6:30/km）';why='サブ4:30目標ペースへの慣れを高める';
-    }else if(i===9&&q===0){
-      type='Threshold';target=`20分 @${v15PaceText(thrMin)}〜${v15PaceText(thrMax)}`;why='持続力を維持するためのポイント練習';
-    }else if(i===12){
-      type='Long';target='18〜22km';why='次のLongで距離耐性を確認';
+
+    // V15基本週間コンセプト：月曜OFF／平日もう1日OFF／週中ポイント／週末は距離。
+    if(raceDay){
+      type='Race';target='金沢城リレー 1.9km × 1〜2周 / 9:30切り目安';why='週中のポイント練習に代わる実戦刺激。レース前後は距離より回復を優先';
+    }else if(dow===1){
+      type='Rest';target='ランオフ';why='月曜固定のランオフ。週末の距離走から回復して次の1週間へつなげる';
+    }else if(dow===3){
+      // 水曜を週中のポイント枠に固定。ただし直近負荷が高い週は回復へ自動調整。
+      if(daysLeft<=7){
+        type='Easy';target='5〜7km Easy';why='レース直前のためポイントを抑え、フレッシュさを優先';
+      }else if(load>=140 || q>=4){
+        type='Recovery';target='Recovery 5〜7km';why='直近14日の負荷・ポイント回数が多いため、週中ポイントを回復走へ自動調整';
+      }else{
+        type='Threshold';target=`15〜20分 @${v15PaceText(thrMin)}〜${v15PaceText(thrMax)}`;why='週なかばのポイント練習。短時間の閾値刺激で質を確保';
+      }
+    }else if(dow===4){
+      type='Rest';target='ランオフ';why='平日の2回目のランオフ。週中ポイントの吸収と週末の距離走に備える';
+    }else if(dow===2){
+      type='Easy';target='Easy 6〜8km';why='月曜OFF後のつなぎ。水曜ポイントに疲労を残さない';
+    }else if(dow===5){
+      type='Easy';target='Easy 6〜8km';why='週末の距離走に向けて脚を整える。疲労時は短縮';
+    }else if(dow===6){
+      if(daysLeft<=7){
+        type='Easy';target='5〜7km Easy / 流しなし';why='レース前日のため距離を追わず、脚を軽く保つ';
+      }else{
+        type='Long';target=long===0?'18〜20km':'20〜22km';why='週末のメイン距離走。距離耐性を積み上げ、後半の持久力を確認';
+      }
+    }else if(dow===0){
+      if(raceDay){
+        type='Race';target='金沢城リレー 1.9km × 1〜2周 / 9:30切り目安';why='実戦ポイント。ウォームアップとレース後の回復を重視';
+      }else if(daysLeft<=7){
+        type='Recovery';target='Recovery 4〜6km / OFF可';why='レース前週末は疲労を残さない';
+      }else{
+        type='Easy';target='Easy 10〜14km';why='土曜Longの翌日は強度を落として週末の総距離を確保';
+      }
     }
-    plans.push({date,phase,type,target,why});
+    plans.push({date,weekday,phase,type,target,why});
   }
   return {plans,load,q,long,daysLeft,last,focus,thrText:`${secToPace(thrMin)}〜${secToPace(thrMax)}/km`,sampleCount:recent.length,todayStr};
 }
@@ -1644,7 +1669,7 @@ function runV15Engine(){
 function renderV15(){
   const el=document.getElementById('v15Plan');if(!el)return;
   const e=v15PlanEngine();
-  const rows=e.plans.map(p=>`<div class="v15Card"><div class="v15Meta">${p.date}　<span class="v15Tag">${p.phase}</span></div><h3>${p.type}　${p.target}</h3><div class="v15Why"><span class="v15Focus">理由：</span>${p.why}</div></div>`).join('');
+  const rows=e.plans.map(p=>`<div class="v15Card"><div class="v15Meta">${p.weekday||p.date}　<span class="v15Tag">${p.phase}</span></div><h3>${p.type}　${p.target}</h3><div class="v15Why"><span class="v15Focus">理由：</span>${p.why}</div></div>`).join('');
   el.innerHTML=`<div class="v15Card">
     <div class="v15Meta">残り ${e.daysLeft}日　/　直近14日負荷 ${e.load}pt　/　ポイント ${e.q}回　/　Long ${e.long}回</div>
     <div class="v15Why"><span class="v15Focus">現在の重点：</span>${e.focus}</div>
