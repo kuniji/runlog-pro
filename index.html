@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="apple-touch-icon" href="icon-192.svg">
 
-<title>My Running Log AI Coach V18.17</title>
+<title>My Running Log AI Coach V18.19</title>
 <style>
 :root{
   --bg:#07090c; --panel:#11151a; --panel2:#171c22; --line:#26303a;
@@ -168,11 +168,11 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:9px 6px;b
 .todayMenuCard{border:1px solid #2a5360;background:linear-gradient(135deg,#08151b,#10161b);border-radius:16px;padding:16px;margin-top:10px}.todayMenuHead{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}.todayMenuTitle{font-size:20px;font-weight:950}.todayMenuBadge{font-size:11px;padding:6px 9px;border-radius:999px;background:rgba(45,205,255,.12);border:1px solid rgba(45,205,255,.35);color:#9feaff}.todayMenuMain{margin-top:12px;padding:13px;border-radius:13px;background:#070b0e;border:1px solid #21343b}.todayMenuType{font-size:24px;font-weight:950;color:#fff}.todayMenuTarget{font-size:17px;font-weight:800;margin-top:5px;color:var(--cyan)}.todayMenuReason{margin-top:8px;line-height:1.55;color:#cbd5da}.todayMenuActual{margin-top:9px;padding:9px 11px;border-radius:10px;background:rgba(255,255,255,.045);font-size:12px}.todayMenuFoot{margin-top:10px;font-size:11px;color:var(--muted)}
 
 </style>
-</head>
+<style>.lap b{font-size:20px}.lap small{display:block;opacity:.75;margin-bottom:2px}.lap .note{display:block;margin-top:3px}</style></head>
 <body>
 <div class="app">
 <header>
-  <div class="head"><div><div class="logo">🏃 <span>MY RUNNING LOG</span><span class="versionTag">V18.17</span></div><small>走った記録を、次の練習につなげる</small></div><div class="v11Status"><span id="onlineStatus">● オンライン</span><button id="installBtn" class="btn secondary installBtn" hidden>ホーム画面に追加</button></div><div id="today"></div></div>
+  <div class="head"><div><div class="logo">🏃 <span>MY RUNNING LOG</span><span class="versionTag">V18.19</span></div><small>走った記録を、次の練習につなげる</small></div><div class="v11Status"><span id="onlineStatus">● オンライン</span><button id="installBtn" class="btn secondary installBtn" hidden>ホーム画面に追加</button></div><div id="today"></div></div>
   <nav>
     <button class="tab active" data-tab="dash">ダッシュボード</button>
     <button class="tab" data-tab="records">記録</button>
@@ -374,7 +374,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:9px 6px;b
 </section>
 
 <section id="backup" class="hidden">
-  <div class="section"><h2>バックアップ / 復元</h2><p class="note">記録はこのブラウザに保存されます。V18.17では重複記録を自動削除せず、削除はゴミ箱経由で復元できます。端末変更前などにJSONを書き出して保管してください。</p>
+  <div class="section"><h2>バックアップ / 復元</h2><p class="note">記録はこのブラウザに保存されます。V18.19では重複記録を自動削除せず、削除はゴミ箱経由で復元できます。端末変更前などにJSONを書き出して保管してください。</p>
   <div class="actions"><button class="btn" onclick="exportData()">JSONを書き出す</button><button class="btn secondary" onclick="exportCSV()">CSVを書き出す</button><label class="btn secondary" style="display:inline-block">JSONを復元<input id="importFile" type="file" accept=".json" style="display:none" onchange="importData(event)"></label></div></div>
 </section>
 </main>
@@ -984,7 +984,7 @@ function renderTodayMenu(){
   }catch(e){console.error('today menu render error',e);el.innerHTML='<div class="todayMenuType">🏃 今日のメニュー</div><div class="todayMenuReason">V15の計画を確認してください。</div>';}
 }
 function renderCoach(){
-  // V18.17: 提案の重複を避け、V15を週間計画の本体にする。
+  // V18.19: 提案の重複を避け、V15を週間計画の本体にする。
   try{
     const e=typeof v15PlanEngine==='function'?v15PlanEngine():null;
     const first=e&&e.plans&&e.plans[0];
@@ -1323,7 +1323,7 @@ function fitParse(buf){
   while(pos<dataEnd){
     const recordHeaderPos=pos,hb=view.getUint8(pos++),compressed=!!(hb&0x80),local=compressed?((hb>>5)&0x03):(hb&0x0f);
     // FITの圧縮タイムスタンプレコードは「タイムスタンプだけのレコード」ではなく、
-    // 直前に定義された同じlocal messageのデータ本体を持つ。V18.17ではここをcontinueして
+    // 直前に定義された同じlocal messageのデータ本体を持つ。V18.19ではここをcontinueして
     // しまい、圧縮Record/Lap等を丸ごと捨てていたため、Lap=0になりやすかった。
     let compressedTimestamp=null;
     if(compressed){
@@ -1386,143 +1386,77 @@ function fitClassify(a){
   if(d<6)return 'Recovery';
   return 'Easy';
 }
+function formatDurationSec(sec){
+  if(!Number.isFinite(sec)||sec<0)return '--';
+  sec=Math.round(sec);
+  const h=Math.floor(sec/3600), m=Math.floor((sec%3600)/60), s=sec%60;
+  return h>0?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`;
+}
 function fitLapSummary(a){
-  // FIT Lap: total_elapsed_time=7(ms), total_timer_time=8(ms), total_distance=9(m/100),
-  // avg_speed=10(m/s*1000), avg_heart_rate=12(bpm), max_heart_rate=13(bpm).
-  return a.laps.map((m,i)=>{
-    const dRaw=fitField(m,9), elapsedRaw=fitField(m,7), timerRaw=fitField(m,8), speedRaw=fitField(m,10);
+  // Garmin FIT Lap message (profile):
+  // field 2=start_time, 7=total_elapsed_time(ms), 8=total_timer_time(ms),
+  // 9=total_distance(cm), 13=avg_speed(mm/s), 14=max_speed(mm/s),
+  // 15=avg_heart_rate, 16=max_heart_rate, 253=timestamp.
+  // まずFITに保存された「各Lapそのものの経過時間」を使い、壊れた値だけを時刻差で補完します。
+  const rawLaps=a.laps.map((m,i)=>{
+    const dRaw=fitField(m,9), elapsedRaw=fitField(m,7), timerRaw=fitField(m,8);
+    const avgSpeedRaw=fitField(m,13), maxSpeedRaw=fitField(m,14);
+    const start=Number(fitField(m,2)||0), end=Number(fitField(m,253)||0);
     const d=Number(dRaw||0)/100000;
-    const tMs=Number(timerRaw!=null?timerRaw:(elapsedRaw||0));
-    const t=tMs/1000;
-    const sp=Number(speedRaw||0)/1000;
-    const pace=sp>0?secToPace(1000/sp):(d&&t?secToPace(t/d):'--');
-    return {i:i+1,d,t,pace,hr:Number(fitField(m,12)||0),maxHr:Number(fitField(m,13)||0)};
+    let t=Number(elapsedRaw||timerRaw||0)/1000;
+    // 異常値はLap timestampの差分で補完
+    if(!(t>0&&t<21600) && start>0&&end>0&&end>start){
+      const delta=end-start;
+      if(delta>0&&delta<21600)t=delta;
+    }
+    const sp=Number(avgSpeedRaw||0)/1000;
+    const maxSp=Number(maxSpeedRaw||0)/1000;
+    const pace=sp>0?secToPace(1000/sp):(t>0&&d>0?secToPace(t/d):'--');
+    const maxPace=maxSp>0?secToPace(1000/maxSp):'--';
+    return {
+      i:i+1,d,t,pace,maxPace,
+      hr:Number(fitField(m,15)||0),
+      maxHr:Number(fitField(m,16)||0),
+      start,end,
+      duration:formatDurationSec(t)
+    };
   });
-}
-async function importFIT(e){
-  const file=e.target.files[0];if(!file)return;fitStatus.textContent='FITを解析しています…';fitPreview.innerHTML='';
-  try{
-    const buf=await file.arrayBuffer(),view=new DataView(buf),headerSize=view.getUint8(0),sig=String.fromCharCode(...new Uint8Array(buf,8,4));
-    const parsed=fitParse(buf),msgs=parsed.messages,a=fitAggregate(parsed),counts={};msgs.forEach(m=>counts[m.global]=(counts[m.global]||0)+1);
-    const diagnostics=`<div class="report" style="margin-top:10px"><div class="reportTitle" style="font-size:18px">🔎 Garmin FIT診断</div><div class="metrics" style="margin-top:8px"><div class="metric"><span>アプリ版</span><b>V18.2</b></div><div class="metric"><span>FIT署名</span><b>${sig==='.FIT'?'OK':'NG'}</b></div><div class="metric"><span>ヘッダー</span><b>${headerSize} bytes</b></div><div class="metric"><span>定義メッセージ</span><b>${a.meta.definitionCount}件</b></div><div class="metric"><span>圧縮タイムスタンプ</span><b>${a.meta.compressedCount}件</b></div><div class="metric"><span>解析メッセージ</span><b>${msgs.length}件</b></div><div class="metric"><span>Session</span><b>${a.sess?'あり':'なし'}${counts[18]?` (${counts[18]}件)`:''}</b></div><div class="metric"><span>Lap</span><b>${a.laps.length}件</b></div><div class="metric"><span>Record</span><b>${a.rec.length}件</b></div><div class="metric"><span>取得距離</span><b>${a.dist?a.dist.toFixed(2)+' km':'未取得'}</b></div></div></div>`;
-    fitPreview.innerHTML=diagnostics;
-    if(!a.dist&&!a.laps.length){fitStatus.textContent='FITは読み込めましたが、ランニングデータを取得できませんでした。診断結果を確認してください。';return}
-    const type=fitClassify(a),laps=fitLapSummary(a),date=a.date?new Date(a.date):new Date(file.lastModified),dateStr=localDateStr(date),timeMin=a.timeMs/60000,pace=a.avgSpeed?secToPace(1000/a.avgSpeed):calcPace(a.dist,timeMin);
-    const workout=`Garmin FIT自動取込（${type}）。${laps.length?`自動ラップ${laps.length}本を解析。`:''}`,memo=`FITファイル：${file.name}。${a.laps.length?'自動ラップ情報を解析しました。':''}`;
-    const candidate={id:Date.now(),date:dateStr,dist:+a.dist.toFixed(2),time:+timeMin.toFixed(2),pace,avgHr:Math.round(a.avgHr||0),maxHr:Math.round(a.maxHr||0),temp:'',elev:Math.round(a.ascent||0),type,workout,memo,lapSummary:laps};
-    fitPreview.innerHTML+=`<div class="report" style="margin-top:10px"><div class="reportTop"><div><div class="reportTitle">FIT解析結果</div><div class="note">${file.name.replace(/</g,'&lt;')}</div></div><div class="dateBox"><b>${dateStr}</b><br>${type}</div></div><div class="metrics" style="margin-top:10px"><div class="metric"><span>距離</span><b>${candidate.dist.toFixed(2)} km</b></div><div class="metric"><span>時間</span><b>${secToPace(candidate.time*60)}</b></div><div class="metric"><span>平均ペース</span><b>${candidate.pace}/km</b></div><div class="metric"><span>平均/最大心拍</span><b>${candidate.avgHr||'--'} / ${candidate.maxHr||'--'} bpm</b></div><div class="metric"><span>獲得標高</span><b>${candidate.elev>0?candidate.elev+' m':'--'}</b></div><div class="metric"><span>自動判定</span><b>${type}</b></div></div>
-<div style="margin-top:10px;padding:12px;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.02)">
-  <div style="font-weight:800;margin-bottom:7px">練習タイプを確認・変更</div>
-  <div class="note" style="margin-bottom:8px">Garminの自動判定は参考値です。実際に行った練習内容を選んでから保存できます。</div>
-  <select id="fitTypeSelect_${candidate.id}" style="width:100%;padding:12px;border-radius:10px;background:#11151a;color:var(--text);border:1px solid var(--line);font-size:16px">
-    ${['Easy','Recovery','Threshold','Interval','Long','Trail','Race'].map(t=>`<option value="${t}" ${t===type?'selected':''}>${t}</option>`).join('')}
-  </select>
-</div>${laps.length?`<h3 style="margin:12px 0 6px">ラップ解析</h3><div class="laps">${laps.map(x=>`<div class="lap">L${x.i}<b>${x.pace}</b><span class="note">${x.d?x.d.toFixed(2)+'km':''}</span></div>`).join('')}</div>`:''}<div class="actions"><button class="btn" onclick='saveFITCandidateWithType(${JSON.stringify(candidate).replace(/</g,"\u003c")},"fitTypeSelect_${candidate.id}")'>選んだタイプで記録に保存</button><button class="btn secondary" onclick='previewFITReport(${JSON.stringify(candidate).replace(/</g,"\u003c")})'>レポートを見る</button></div></div>`;
-    fitStatus.textContent='解析完了。診断と解析結果を確認して保存できます。';
-  }catch(err){fitStatus.textContent='解析できませんでした：'+err.message;fitPreview.innerHTML='<div class="report"><div class="reportTitle">🔎 Garmin FIT診断</div><div class="note">V18.7 / 読み込み中にエラーが発生しました。</div><div class="metric"><span>エラー</span><b>'+String(err.message).replace(/</g,'&lt;')+'</b></div></div>'}
-}
-function saveFITCandidate(r){
-  if(saveLock)return;
-  if(isDuplicateRecord(r) && !confirm('このFITと同じ内容の記録がすでにあります。\n別の記録として保存しますか？'))return
-  saveLock=true;setTimeout(()=>saveLock=false,1200);
-  records.unshift(r);save();evaluatePlansForRecord(r);rebuildFuturePlan(true);showAutoReport(r.id);render();
-}
-function saveFITCandidateWithType(r, selectId){
-  const sel=document.getElementById(selectId);
-  const type=sel?sel.value:r.type;
-  const copy={...r,type};
-  const lapText=(r.workout||'').match(/自動ラップ\\d+本を解析。/)?.[0]||'';
-  copy.workout=`Garmin FIT自動取込（${type}）。${lapText}`;
-  saveFITCandidate(copy);
-}
-function previewFITReport(r){
-  showAutoReportFromObject(r);
-}
-function showAutoReportFromObject(r){
-  if(!r)return;
-  currentReportId=r.id;
-  const tab=document.querySelector('[data-tab="report"]'); if(tab)tab.click();
-  renderReportOnly(r);
-}
 
-function paceSecondsFromRecord(r){
-  if(r.pace){const x=paceToSec(r.pace); if(x) return x}
-  if(r.dist&&r.time) return r.time*60/r.dist;
-  return null;
-}
-function scoreRecord(r){
-  let score=80;
-  const type=r.type||'Easy', pace=paceSecondsFromRecord(r), hr=+r.avgHr||0;
-  if(type==='Easy'||type==='Recovery'){
-    if(hr&&hr<=145) score+=8;
-    if(pace&&pace>=360) score+=5;
-    if(hr&&hr>=160) score-=8;
-  } else if(type==='Long'){
-    if(r.dist>=18) score+=8;
-    if(hr&&hr<=150) score+=5;
-  } else if(type==='Threshold'){
-    if(pace&&pace<=315) score+=7;
-    if(hr&&hr>=145) score+=3;
-  } else if(type==='Interval'){
-    score+=8;
-    if(hr>=155) score+=3;
-    if(r.dist>=4) score+=2;
-  } else if(type==='Race'){
-    score+=8;
-  }
-  return Math.max(70,Math.min(98,Math.round(score)));
-}
-function reportAdvice(r){
-  const type=r.type||'Easy', hr=+r.avgHr||0, max=+r.maxHr||0, dist=+r.dist||0;
-  let good=[], improve=[], next=[];
-  if(type==='Easy'||type==='Recovery'){
-    good=['設定した距離を無理なく消化できた','有酸素の土台づくりとして継続しやすい負荷','ポイント練習の合間の回復走として機能'];
-    improve=['ペースを上げたくなっても終盤まで余裕を残す','脚の左右差や張りを確認しながら走る'];
-    next=['次のポイント練習に疲労を残さない','必要なら最後に20秒程度の流しを3〜4本'];
-  } else if(type==='Long'){
-    good=[`${dist.toFixed(1)}kmの距離を確保できた`,'長時間動き続けるマラソン向けの刺激','後半までフォームとリズムを維持する練習になった'];
-    improve=['序盤を抑えて後半の余力を残す','補給・給水を実戦に近づける'];
-    next=['次回も18〜22kmを基本に継続','余裕があれば最後の3〜5kmだけ少しペースアップ'];
-  } else if(type==='Threshold'){
-    good=['狙った強度で一定時間走る練習ができた','マラソンより速い有酸素強度を刺激できた','ペースと呼吸のコントロールを意識できた'];
-    improve=['最初の数分を飛ばさず一定ペースへ','心拍だけでなく脚の感覚も確認'];
-    next=['次回は10〜20分の範囲で安定を優先','前後のEasyを十分に確保'];
-  } else if(type==='Interval'){
-    good=['設定したインターバルを完遂','速い動きへの刺激を入れられた','後半までフォームを維持できた'];
-    improve=['1本目から飛ばしすぎず全本数を揃える','回復区間ではしっかり呼吸を整える'];
-    next=['同じ本数ならペースのばらつきを小さくする','次のポイント練習まで48時間程度を目安に回復'];
-  } else {
-    good=['レース強度の刺激を実戦形式で入れられた','ペース感覚を確認できた'];
-    improve=['序盤の入りを管理する','翌日の疲労を確認する'];
-    next=['次の数日は回復優先','練習全体の中で高強度を詰め込みすぎない'];
-  }
-  if(hr>=165 || max>=175) improve.push('心拍負荷が高い日は睡眠・補給・脚の状態を優先');
-  return {good,improve,next};
-}
-let currentReportId=null;
-function renderReportHub(selectedId){
-  const select=document.getElementById('reportRecordSelect'), list=document.getElementById('reportRecentList'), count=document.getElementById('reportCount');
-  if(!select||!list)return;
-  const rs=sortedRecords().slice(0,30);
-  if(count)count.textContent=rs.length+'件';
-  if(!rs.length){select.innerHTML='<option>記録がありません</option>';list.innerHTML='<div class="empty">ラン記録を保存すると、ここに練習レポートが表示されます。</div>';return;}
-  const wanted=String(selectedId||currentReportId||rs[0].id);
-  currentReportId=rs.some(r=>String(r.id)===wanted)?wanted:String(rs[0].id);
-  select.innerHTML=rs.map(r=>{const d=new Date(r.date+'T00:00:00');const wd=isNaN(d)?'':`（${['日','月','火','水','木','金','土'][d.getDay()]}）`;return `<option value="${r.id}" ${String(r.id)===String(currentReportId)?'selected':''}>${r.date}${wd}｜${r.type||'Run'}｜${(+r.dist||0).toFixed(2)}km｜${r.pace||'--'}</option>`}).join('');
-  list.innerHTML=rs.slice(0,5).map(r=>{const d=new Date(r.date+'T00:00:00');const wd=isNaN(d)?'':`（${['日','月','火','水','木','金','土'][d.getDay()]}）`;return `<div class="reportRecentItem"><div><b>${r.date}${wd}｜${r.type||'Run'}</b><small>${(+r.dist||0).toFixed(2)}km　${r.pace||'--'}</small></div><button class="btn secondary" style="padding:6px 9px;font-size:11px" onclick="showAutoReport(${r.id})">見る</button></div>`}).join('');
-  const r=rs.find(x=>String(x.id)===String(currentReportId)); if(r)renderReportOnly(r);
+  // インターバル時の補助判定。FITには「これは疾走」「これはつなぎ」という意味情報が
+  // 必ずしも入らないため、断定せず「推定区分」として表示します。
+  const valid=rawLaps.filter(x=>x.d>0&&x.t>0&&x.pace!=='--');
+  if(valid.length>=3){
+    const ps=valid.map(x=>paceToSec(x.pace)).filter(Number.isFinite).sort((a,b)=>a-b);
+    const median=ps[Math.floor(ps.length/2)]||0;
+    const fastCut=Math.min(345, median*0.90); // 5:45/kmを上限に、全体より明確に速い区間を候補化
+    rawLaps.forEach(x=>{
+      const p=paceToSec(x.pace);
+      if(!p){x.phase='判定外';return}
+      if(x.d>=0.5 && p<=fastCut) x.phase='疾走候補';
+      else if(x.d<=0.4 && p>fastCut) x.phase='回復・つなぎ候補';
+      else if(x.d>=0.6) x.phase='WU/CD候補';
+      else x.phase='その他';
+    });
+  }else rawLaps.forEach(x=>x.phase='判定外');
+  return rawLaps;
 }
 function qualityReportDetail(r){
   const type=r.type||'';
   if(type!=='Interval'&&type!=='Threshold') return '';
-  const laps=Array.isArray(r.lapSummary)?r.lapSummary.filter(x=>x&&x.pace&&x.pace!=='--'):[];
+  const laps=Array.isArray(r.lapSummary)?r.lapSummary.filter(x=>x&&x.pace&&x.pace!=='--'):[ ];
   const p=paceSecondsFromRecord(r), hr=+r.avgHr||0, max=+r.maxHr||0, dist=+r.dist||0, time=+r.time||0;
   let title=type==='Interval'?'⚡ インターバル詳細':'🎯 閾値走詳細';
   let summary=[];
+  let phaseSummary='';
   if(type==='Interval'){
     if(laps.length){
-      const ps=laps.map(x=>paceToSec(x.pace)).filter(Number.isFinite), fastest=Math.min(...ps), slowest=Math.max(...ps), avg=ps.reduce((a,b)=>a+b,0)/ps.length, spread=slowest-fastest;
-      summary=[`解析ラップ ${laps.length}本`,`平均ペース ${secToPace(avg)}/km`,`最速 ${secToPace(fastest)}/km`,`最遅 ${secToPace(slowest)}/km`,`ばらつき ${spread}秒/km`];
+      const ps=laps.map(x=>paceToSec(x.pace)).filter(Number.isFinite);
+      const fastest=Math.min(...ps), slowest=Math.max(...ps), avg=ps.reduce((a,b)=>a+b,0)/ps.length, spread=slowest-fastest;
+      const fast=laps.filter(x=>x.phase==='疾走候補');
+      const rec=laps.filter(x=>x.phase==='回復・つなぎ候補');
+      const wucd=laps.filter(x=>x.phase==='WU/CD候補');
+      summary=[`解析ラップ ${laps.length}本`,`平均ペース ${secToPace(avg)}/km`,`最速 ${secToPace(fastest)}/km`,`最遅 ${secToPace(slowest)}/km`,`ばらつき ${Math.round(spread)}秒/km`];
+      phaseSummary=`<div class="note" style="margin-top:9px">推定区分：<b>疾走候補 ${fast.length}本</b> ／ 回復・つなぎ候補 ${rec.length}本 ／ WU・CD候補 ${wucd.length}本</div>`;
     }else summary=[`総距離 ${dist.toFixed(2)}km`,`平均ペース ${r.pace||'--'}/km`,`平均心拍 ${hr||'--'} bpm`,`最大心拍 ${max||'--'} bpm`];
   }else{
     summary=[`実施距離 ${dist.toFixed(2)}km`,`平均ペース ${r.pace||'--'}/km`,`時間 ${time?secToPace(time*60):'--'}`,`平均心拍 ${hr||'--'} bpm`,`最大心拍 ${max||'--'} bpm`];
@@ -1531,10 +1465,11 @@ function qualityReportDetail(r){
       summary.push(`ラップ ${laps.length}本｜最速 ${secToPace(fastest)} / 最遅 ${secToPace(slowest)}`);
     }
   }
-  const lapHtml=laps.length?`<div style="margin-top:10px"><div style="font-weight:800;margin-bottom:7px">ラップ別結果</div><div class="laps">${laps.map(x=>`<div class="lap"><small>L${x.i}</small><b>${x.pace}</b><span class="note">${x.d?x.d.toFixed(2)+'km':''}${x.hr?` / ${x.hr}bpm`:''}</span></div>`).join('')}</div><div class="note" style="margin-top:7px">※GarminのFITに保存されたラップ情報を表示しています。自動1kmラップの場合は、インターバル本数そのものとは限りません。</div></div>`:'';
+  const phaseLabel=x=>x.phase&&x.phase!=='判定外'?`<span class="note" style="display:block;margin-top:4px">${x.phase}</span>`:'';
+  const lapHtml=laps.length?`<div style="margin-top:10px"><div style="font-weight:800;margin-bottom:7px">ラップ別結果</div><div class="laps">${laps.map(x=>`<div class="lap"><small>L${x.i}</small><b>${x.duration||'--'}</b><span class="note">${x.d?x.d.toFixed(2)+'km':''}${x.pace&&x.pace!=='--'?` / ${x.pace}/km`:''}${x.hr?` / ${x.hr}bpm`:''}</span>${phaseLabel(x)}</div>`).join('')}</div>${phaseSummary}<div class="note" style="margin-top:7px">※上段はラップ実時間（分:秒）。「疾走／回復・つなぎ／WU・CD」はFITに区間種別が保存されていない場合の推定表示です。Garminの自動1kmラップと実際のインターバル本数は一致しないことがあります。</div></div>`:'';
   const interpretation=type==='Interval'
-    ? (laps.length?`各ラップのペース差を確認できます。ばらつきが小さいほど、設定したペースを揃えて走れたかを振り返りやすくなります。`:`FITにラップ情報がないため、今回は全体のペース・心拍を中心に評価します。`)
-    : (laps.length?`閾値区間のペースと心拍の推移を確認できます。最初に上げすぎず、後半まで一定リズムを保てたかを見ます。`:`区間ラップがないため、全体の平均ペース・心拍から結果を確認します。`);
+    ? (laps.length?`まず「疾走候補」のペースが揃っているかを確認し、回復区間は無理に速くしないことを重視します。`:`FITにラップ情報がないため、今回は全体のペース・心拍を中心に評価します。`)
+    : (laps.length?`閾値走では各ラップのペースと心拍の推移を確認し、最初に上げすぎず後半まで一定リズムを保てたかを見ます。`:`区間ラップがないため、全体の平均ペース・心拍から結果を確認します。`);
   return `<div class="qualityDetail" style="margin-top:10px;padding:14px;border:1px solid rgba(45,205,255,.28);border-radius:14px;background:rgba(45,205,255,.035)"><h3 style="margin:0 0 8px">${title}</h3><div class="metrics">${summary.map(x=>`<div class="metric"><span>${x.split(' ')[0]}</span><b>${x.substring(x.indexOf(' ')+1)}</b></div>`).join('')}</div>${lapHtml}<div class="note" style="margin-top:10px">${interpretation}</div></div>`;
 }
 function renderReportOnly(r){
