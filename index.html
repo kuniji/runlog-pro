@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="apple-touch-icon" href="icon-192.svg">
 
-<title>My Running Log AI Coach V18.4</title>
+<title>My Running Log AI Coach V18.5</title>
 <style>
 :root{
   --bg:#07090c; --panel:#11151a; --panel2:#171c22; --line:#26303a;
@@ -158,7 +158,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:9px 6px;b
 <body>
 <div class="app">
 <header>
-  <div class="head"><div><div class="logo">🏃 <span>MY RUNNING LOG</span><span class="versionTag">V18.4</span></div><small>走った記録を、次の練習につなげる</small></div><div class="v11Status"><span id="onlineStatus">● オンライン</span><button id="installBtn" class="btn secondary installBtn" hidden>ホーム画面に追加</button></div><div id="today"></div></div>
+  <div class="head"><div><div class="logo">🏃 <span>MY RUNNING LOG</span><span class="versionTag">V18.5</span></div><small>走った記録を、次の練習につなげる</small></div><div class="v11Status"><span id="onlineStatus">● オンライン</span><button id="installBtn" class="btn secondary installBtn" hidden>ホーム画面に追加</button></div><div id="today"></div></div>
   <nav>
     <button class="tab active" data-tab="dash">ダッシュボード</button>
     <button class="tab" data-tab="records">記録</button>
@@ -197,7 +197,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:9px 6px;b
     <div class="card"><div class="k">直近7日負荷</div><div class="v" id="load7">0</div><div class="s">負荷ポイント</div></div>
     <div class="card"><div class="k">直近28日距離</div><div class="v" id="km28">0.0</div><div class="s">km</div></div>
   </div>
-  <div id="loadMessage" class="note"></div>
+  <div id="loadMessage" class="note"></div><div class="actions" style="margin-top:8px"><button class="btn secondary" onclick="render();alert('最新の記録からダッシュボードを再計算しました。')">🔄 週次集計を再計算</button></div>
 </div>
 <div class="section"><h2>富山マラソンまで</h2>
   <div class="cards">
@@ -418,24 +418,21 @@ function trainingLoad(r){
   return Math.round(base);
 }
 function weeklyStats(){
-  // 日付文字列(YYYY-MM-DD)を基準に集計。iPhone/SafariのUTC解釈による
-  // 「今週なのに0km」問題を避ける。
   const todayStr=todayLocalStr();
   const today=localDate(todayStr);
-  const dow=today.getDay(), monday=new Date(today);
-  monday.setDate(today.getDate()-(dow===0?6:dow-1));
-  const mondayStr=localDateStr(monday);
-  const next=new Date(monday);next.setDate(monday.getDate()+7);
-  const nextStr=localDateStr(next);
+  const shift=(base,n)=>{const d=new Date(base);d.setDate(d.getDate()+n);return localDateStr(d)};
+  const dow=today.getDay();
+  const mondayOffset=dow===0?-6:1-dow;
+  const mondayStr=shift(today,mondayOffset);
+  const nextStr=shift(today,mondayOffset+7);
+  const d28Str=shift(today,-27);
+  const d7Str=shift(today,-6);
   const normDate=r=>String(r.date||'').slice(0,10);
-  const w=records.filter(r=>{const ds=normDate(r);return ds>=mondayStr&&ds<nextStr});
-  const km=w.reduce((a,r)=>a+(+r.dist||0),0);
-  const d28=new Date(today);d28.setDate(today.getDate()-27);
-  const d28Str=localDateStr(d28);
+  const inRange=(ds,a,b)=>ds>=a&&ds<b;
+  const w=records.filter(r=>inRange(normDate(r),mondayStr,nextStr));
   const r28=records.filter(r=>{const ds=normDate(r);return ds>=d28Str&&ds<=todayStr});
-  const d7=new Date(today);d7.setDate(today.getDate()-6);
-  const d7Str=localDateStr(d7);
   const r7=records.filter(r=>{const ds=normDate(r);return ds>=d7Str&&ds<=todayStr});
+  const km=w.reduce((a,r)=>a+(+r.dist||0),0);
   const load=r7.reduce((a,r)=>a+trainingLoad(r),0);
   return {km,wcount:w.length,km28:r28.reduce((a,r)=>a+(+r.dist||0),0),load};
 }
@@ -1053,24 +1050,67 @@ function renderV14(){
 }
 
 function render(){
- const now=new Date(), ym=localDateStr(now).slice(0,7);
- monthLabel.textContent=ym.replace('-','年')+'月';
- const mr=records.filter(r=>r.date&&r.date.startsWith(ym));
- const km=mr.reduce((a,r)=>a+r.dist,0);
- monthKm.textContent=km.toFixed(1);runCount.textContent=mr.length;
- const weighted=mr.filter(r=>r.dist&&r.time).reduce((a,r)=>{a.t+=r.time*60;a.d+=r.dist;return a},{t:0,d:0});
- avgPace.textContent=weighted.d?secToPace(weighted.t/weighted.d):'--';
- const hrs=mr.filter(r=>r.avgHr);avgHr.textContent=hrs.length?Math.round(hrs.reduce((a,r)=>a+r.avgHr,0)/hrs.length):'--';
- progressBar.style.width=Math.min(100,km/GOAL*100)+'%';progressText.textContent=`${km.toFixed(1)} / ${GOAL} km　達成率 ${Math.round(km/GOAL*100)}%`; const race=new Date('2026-11-01T00:00:00');const t0=dayStart(new Date());raceDays.textContent=Math.max(0,Math.ceil((race-t0)/86400000));longCount.textContent=mr.filter(r=>r.type==='Long').length;qualityCount.textContent=mr.filter(r=>['Interval','Threshold','Race'].includes(r.type)).length;renderCoach();renderCalendar();renderV15();
- const recentMonth=sortedRecords().filter(r=>String(r.date||'').slice(0,7)===ym);
- recent.innerHTML=recentMonth.slice(0,5).map(r=>`<div class="metric"><span>${String(r.date).slice(0,10)}　${r.type||'未分類'}</span><b>${(+r.dist||0).toFixed(2)}km　${r.pace||'--'}</b></div>`).join('')||'<div class="empty">まだ今月の記録がありません。</div>';
- const ws=weeklyStats();
- renderMarathonProgress();renderV13();renderV14();renderV15();renderV16();
- weekKm.textContent=ws.km.toFixed(1); weekCount.textContent=ws.wcount; load7.textContent=ws.load; km28.textContent=ws.km28.toFixed(1);
- loadMessage.textContent=loadText(ws.load,ws.km);
- recordTable.innerHTML=records.length?`<table><thead><tr><th>日付</th><th>距離</th><th>ペース</th><th>種類</th><th>トレーニング内容</th><th>レポート</th><th>管理</th></tr></thead><tbody>${records.map(r=>`<tr><td>${r.date}</td><td>${r.dist.toFixed(2)} km</td><td>${r.pace||calcPace(r.dist,r.time)}</td><td>${r.type}</td><td>${(r.workout||'').replace(/</g,'&lt;')}</td><td><button class="btn secondary" style="padding:6px 8px;font-size:11px" onclick="showAutoReport(${r.id})">レポート</button></td><td><button class="btn secondary" style="padding:6px 8px;font-size:11px" onclick="removeRecord(${r.id})">削除</button></td></tr>`).join('')}</tbody></table>`:'<div class="empty">記録を追加するとここに表示されます。</div>';
-}
+  // V18.5: Safari/iPhoneでHTML idをwindow変数として参照すると
+  // 「月間集計は更新されるのに最近の記録・週次集計が0/空欄」になる
+  // ケースがあるため、ダッシュボード要素は必ずgetElementByIdで取得する。
+  const $=id=>document.getElementById(id);
+  const now=new Date(), ym=localDateStr(now).slice(0,7);
+  const elMonthLabel=$('monthLabel'), elMonthKm=$('monthKm'), elRunCount=$('runCount'),
+        elAvgPace=$('avgPace'), elAvgHr=$('avgHr'), elProgressBar=$('progressBar'),
+        elProgressText=$('progressText'), elRaceDays=$('raceDays'),
+        elLongCount=$('longCount'), elQualityCount=$('qualityCount'),
+        elRecent=$('recent'), elWeekKm=$('weekKm'), elWeekCount=$('weekCount'),
+        elLoad7=$('load7'), elKm28=$('km28'), elLoadMessage=$('loadMessage'),
+        elRecordTable=$('recordTable');
 
+  const mr=records.filter(r=>String(r.date||'').slice(0,7)===ym);
+  const km=mr.reduce((a,r)=>a+(+r.dist||0),0);
+
+  if(elMonthLabel) elMonthLabel.textContent=ym.replace('-','年')+'月';
+  if(elMonthKm) elMonthKm.textContent=km.toFixed(1);
+  if(elRunCount) elRunCount.textContent=mr.length;
+
+  const weighted=mr.filter(r=>+r.dist>0&&+r.time>0)
+    .reduce((a,r)=>{a.t+=(+r.time)*60;a.d+=(+r.dist);return a},{t:0,d:0});
+  if(elAvgPace) elAvgPace.textContent=weighted.d?secToPace(weighted.t/weighted.d):'--';
+
+  const hrs=mr.filter(r=>+r.avgHr>0);
+  if(elAvgHr) elAvgHr.textContent=hrs.length
+    ?Math.round(hrs.reduce((a,r)=>a+(+r.avgHr),0)/hrs.length):'--';
+
+  if(elProgressBar) elProgressBar.style.width=Math.min(100,km/GOAL*100)+'%';
+  if(elProgressText) elProgressText.textContent=`${km.toFixed(1)} / ${GOAL} km　達成率 ${Math.round(km/GOAL*100)}%`;
+
+  const race=localDate('2026-11-01');
+  const t0=localDate(todayLocalStr());
+  if(elRaceDays) elRaceDays.textContent=Math.max(0,Math.ceil((race-t0)/86400000));
+  if(elLongCount) elLongCount.textContent=mr.filter(r=>r.type==='Long'||(+r.dist||0)>=18).length;
+  if(elQualityCount) elQualityCount.textContent=mr.filter(r=>['Interval','Threshold','Race'].includes(r.type)).length;
+
+  if(elRecent){
+    const recentMonth=sortedRecords().filter(r=>String(r.date||'').slice(0,7)===ym);
+    elRecent.innerHTML=recentMonth.slice(0,5).map(r=>
+      `<div class="metric"><span>${String(r.date).slice(0,10)}　${r.type||'未分類'}</span><b>${(+r.dist||0).toFixed(2)}km　${r.pace||'--'}</b></div>`
+    ).join('')||'<div class="empty">まだ今月の記録がありません。</div>';
+  }
+
+  const ws=weeklyStats();
+  if(elWeekKm) elWeekKm.textContent=ws.km.toFixed(1);
+  if(elWeekCount) elWeekCount.textContent=ws.wcount;
+  if(elLoad7) elLoad7.textContent=ws.load;
+  if(elKm28) elKm28.textContent=ws.km28.toFixed(1);
+  if(elLoadMessage) elLoadMessage.textContent=loadText(ws.load,ws.km);
+
+  renderCoach(); renderCalendar(); renderV15();
+  renderMarathonProgress(); renderV13(); renderV14(); renderV15(); renderV16();
+
+  if(elRecordTable){
+    elRecordTable.innerHTML=records.length?
+      `<table><thead><tr><th>日付</th><th>距離</th><th>ペース</th><th>種類</th><th>トレーニング内容</th><th>レポート</th><th>管理</th></tr></thead><tbody>${
+        records.map(r=>`<tr><td>${r.date}</td><td>${(+r.dist||0).toFixed(2)} km</td><td>${r.pace||calcPace(+r.dist||0,+r.time||0)}</td><td>${r.type}</td><td>${(r.workout||'').replace(/</g,'&lt;')}</td><td><button class="btn secondary" style="padding:6px 8px;font-size:11px" onclick="showAutoReport(${r.id})">レポート</button></td><td><button class="btn secondary" style="padding:6px 8px;font-size:11px" onclick="removeRecord(${r.id})">削除</button></td></tr>`).join('')
+      }</tbody></table>`:'<div class="empty">記録を追加するとここに表示されます。</div>';
+  }
+}
 
 /* ---------- Garmin FIT import (browser-side) ---------- */
 const FIT_GLOBAL = {
@@ -1207,7 +1247,7 @@ async function importFIT(e){
   </select>
 </div>${laps.length?`<h3 style="margin:12px 0 6px">ラップ解析</h3><div class="laps">${laps.map(x=>`<div class="lap">L${x.i}<b>${x.pace}</b><span class="note">${x.d?x.d.toFixed(2)+'km':''}</span></div>`).join('')}</div>`:''}<div class="actions"><button class="btn" onclick='saveFITCandidateWithType(${JSON.stringify(candidate).replace(/</g,"\u003c")},"fitTypeSelect_${candidate.id}")'>選んだタイプで記録に保存</button><button class="btn secondary" onclick='previewFITReport(${JSON.stringify(candidate).replace(/</g,"\u003c")})'>レポートを見る</button></div></div>`;
     fitStatus.textContent='解析完了。診断と解析結果を確認して保存できます。';
-  }catch(err){fitStatus.textContent='解析できませんでした：'+err.message;fitPreview.innerHTML='<div class="report"><div class="reportTitle">🔎 Garmin FIT診断</div><div class="note">V18.4 / 読み込み中にエラーが発生しました。</div><div class="metric"><span>エラー</span><b>'+String(err.message).replace(/</g,'&lt;')+'</b></div></div>'}
+  }catch(err){fitStatus.textContent='解析できませんでした：'+err.message;fitPreview.innerHTML='<div class="report"><div class="reportTitle">🔎 Garmin FIT診断</div><div class="note">V18.5 / 読み込み中にエラーが発生しました。</div><div class="metric"><span>エラー</span><b>'+String(err.message).replace(/</g,'&lt;')+'</b></div></div>'}
 }
 function saveFITCandidate(r){
   if(saveLock)return;
