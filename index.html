@@ -154,7 +154,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:9px 6px;b
 <style>
 .v15Hero{display:flex;justify-content:space-between;align-items:center;gap:12px}.v15Hero h2{margin:0}.v15Badge,.v15Tag{padding:5px 9px;border-radius:999px;background:rgba(255,255,255,.09);font-size:11px;font-weight:800}.v15Grid{display:grid;gap:10px;margin-top:12px}.v15Card{padding:14px;border:1px solid rgba(255,255,255,.08);border-radius:16px;background:rgba(255,255,255,.035)}.v15Card h3{margin:0 0 7px;font-size:16px}.v15Meta{font-size:12px;opacity:.75;margin-bottom:8px}.v15Why{font-size:13px;line-height:1.55}.v15Bar{height:7px;border-radius:99px;background:rgba(255,255,255,.08);overflow:hidden;margin:8px 0}.v15Bar i{display:block;height:100%;width:0;background:currentColor}.v15Actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.v15Actions button{border:0;border-radius:10px;padding:9px 11px;background:rgba(255,255,255,.1);color:inherit}.v15Focus{font-weight:800}.v15Small{font-size:11px;opacity:.7}
 
-.v15Hero,.v16Hero{cursor:pointer}
+.v15Hero,.v16Hero{cursor:pointer}.engineTopAction{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px}.engineStatus{font-size:11px;opacity:.75;line-height:1.5}.engineActionBtn{border:0;border-radius:10px;padding:9px 11px;background:rgba(255,255,255,.1);color:inherit;font-weight:700}
 .engineActionRow{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
 .engineActionBtn{border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:10px 13px;background:rgba(255,255,255,.08);color:inherit;font-weight:800;cursor:pointer}
 .engineActionBtn:active{transform:scale(.98)}
@@ -164,7 +164,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:9px 6px;b
 <body>
 <div class="app">
 <header>
-  <div class="head"><div><div class="logo">🏃 <span>MY RUNNING LOG</span><span class="versionTag">V18.7</span></div><small>走った記録を、次の練習につなげる</small></div><div class="v11Status"><span id="onlineStatus">● オンライン</span><button id="installBtn" class="btn secondary installBtn" hidden>ホーム画面に追加</button></div><div id="today"></div></div>
+  <div class="head"><div><div class="logo">🏃 <span>MY RUNNING LOG</span><span class="versionTag">V18.8</span></div><small>走った記録を、次の練習につなげる</small></div><div class="v11Status"><span id="onlineStatus">● オンライン</span><button id="installBtn" class="btn secondary installBtn" hidden>ホーム画面に追加</button></div><div id="today"></div></div>
   <nav>
     <button class="tab active" data-tab="dash">ダッシュボード</button>
     <button class="tab" data-tab="records">記録</button>
@@ -290,7 +290,10 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:9px 6px;b
 
 <section id="v12" class="hidden">
   <div class="hero"><div><h1>🧠 Adaptive Training Engine V13</h1><p>実績→負荷→達成度→次週計画を連続更新</p></div><div class="badge"><span>V13</span><b id="v12RaceDays">--</b></div></div>
-  <div class="section"><div id="v12Adaptive" class="v12Dash"></div></div>
+  <div class="section">
+    <div class="engineTopAction"><button class="engineActionBtn" onclick="runV12Engine()">🧠 V12を実行・更新</button><span id="v12EngineStatus" class="engineStatus"></span></div>
+    <div id="v12Adaptive" class="v12Dash"></div>
+  </div>
   <div class="section v13Panel"><h2>⚙️ V13 自動調整エンジン</h2><div id="v13Decision"></div></div>
   <div class="section v14Panel"><h2>🎯 V14 個別メニュー生成</h2><div id="v14Prescription"></div></div>
 </section>
@@ -1103,11 +1106,18 @@ function v12RoadmapScore(w){
  const completion=Math.min(100,Math.round((w.actual.km/Math.max(1,w.planned*.78))*100));
  return Math.max(0,Math.min(100,completion));
 }
+function runV12Engine(){
+  const el=document.getElementById('v12EngineStatus');
+  renderV12();
+  renderV13();
+  renderV14();
+  if(el) el.textContent='V12を実行しました：最新の走行記録からV12→V13→V14を再計算しました。';
+}
 function renderV12(){
  const el=document.getElementById('v12Adaptive'); if(!el)return;
  const x=v12Roadmap(); const days=Math.max(0,dateDiffDays(localDateStr(localDate(todayLocalStr())),'2026-11-01')); document.getElementById('v12RaceDays').textContent='あと'+days+'日';
  const cur=x.weeks[0], ad=x.base.ad, next=cur?cur.planned:0;
- let html=`<div class="v12Hero"><div class="v12Title">現在の判断：${readinessSnapshot(x.base.c).status}</div><div class="v12Note">${readinessSnapshot(x.base.c).note}</div><div class="v12Grid"><div class="v12Card"><small>簡易準備度</small><b>${x.base.score}/100</b></div><div class="v12Card"><small>直近7日負荷</small><b>${x.base.c.load}pt</b></div><div class="v12Card"><small>次週予定負荷</small><b>${next}pt</b></div><div class="v12Card"><small>予定消化率</small><b>${ad.rate===null?'--':ad.rate+'%'}</b></div></div><div class="v12Actions"><button class="v12Btn" onclick="rebuildFuturePlan(false)">🔄 今後のAI計画を再構築</button><button class="v12Btn" onclick="renderV12();alert('最新の実績から再計算しました。')">📊 再計算</button></div></div><div class="v12Road">`;
+ let html=`<div class="v12Hero"><div class="v12Title">現在の判断：${readinessSnapshot(x.base.c).status}</div><div class="v12Note">${readinessSnapshot(x.base.c).note}</div><div class="v12Grid"><div class="v12Card"><small>簡易準備度</small><b>${x.base.score}/100</b></div><div class="v12Card"><small>直近7日負荷</small><b>${x.base.c.load}pt</b></div><div class="v12Card"><small>次週予定負荷</small><b>${next}pt</b></div><div class="v12Card"><small>予定消化率</small><b>${ad.rate===null?'--':ad.rate+'%'}</b></div></div><div class="v12Actions"><button class="v12Btn" onclick="rebuildFuturePlan(false);runV12Engine()">🔄 今後のAI計画を再構築</button><button class="v12Btn" onclick="runV12Engine()">📊 再計算</button></div></div><div class="v12Road">`;
  x.weeks.forEach((w,i)=>{const score=v12RoadmapScore(w), label=i===0?'次の7日間':`${w.start.getMonth()+1}/${w.start.getDate()}〜`; const q=w.week.filter(z=>isQuality({type:z.type})).length,l=w.week.filter(z=>z.type==='Long').length; html+=`<div class="v12Week"><div class="v12WeekHead"><span>${label} <span class="v12Tag">${w.phase}</span></span><span>${score===null?'実績待ち':score+'%'}</span></div><div class="v12Note">予定 ${w.planned}pt / 実績 ${w.actual.load}pt ・ ${w.actual.km.toFixed(1)}km</div><div class="v12Bar"><i style="width:${score===null?0:score}%"></i></div><div class="v12Note">ポイント ${q}回 ・ Long ${l}回 ・ ${w.week.map(z=>z.title).join(' / ')}</div></div>`;});
  html+='</div><div class="v12Note">※スコアと負荷は、この記録アプリ内の簡易ヒューリスティックです。医療的な疲労判定や大会結果の予測ではありません。</div>'; el.innerHTML=html;
 }
@@ -1140,7 +1150,7 @@ function renderV13(){
  const x=v13Decision(),cap=x.cap,n=x.next;
  const latest=x.latest?`${x.latest.date} / ${x.latest.type} / ${(+x.latest.dist||0).toFixed(1)}km / ${x.latest.pace||'--'}`:'まだ記録なし';
  const rows=[['スピード刺激',cap.speed],['閾値・持続力',cap.threshold],['目標ペース慣れ',cap.mp],['距離耐性',cap.durability],['継続性',cap.consistency]];
- el.innerHTML=`<div class="v13Hero"><div class="v13Title">次回メニュー：${n.title} <span class="v13Tag">${x.adjustment}</span></div><div class="v13Sub">${n.date} ・ ${n.target}</div><div class="v13Next"><b>自動判断理由</b><br>${x.reason}<br><span class="v13Small">${n.workout}</span></div><div class="v13Btns"><button class="btn" onclick="rebuildFuturePlan(false)">🔄 未来の計画を再構築</button><button class="btn secondary" onclick="renderV13();alert('V13を最新記録から再計算しました。')">📊 状態を再計算</button></div></div><div class="v13Rows"><div class="v13Row"><span>直近の実績</span><b>${latest}</b></div>${rows.map(r=>`<div class="v13Row"><span>${r[0]}</span><b>${r[1]}/100</b></div>`).join('')}</div><p class="note" style="margin-top:9px">※各能力値は、このアプリに保存された練習記録から作る比較用指標です。医学的な疲労・能力判定や大会結果の予測ではありません。</p>`;
+ el.innerHTML=`<div class="v13Hero"><div class="v13Title">次回メニュー：${n.title} <span class="v13Tag">${x.adjustment}</span></div><div class="v13Sub">${n.date} ・ ${n.target}</div><div class="v13Next"><b>自動判断理由</b><br>${x.reason}<br><span class="v13Small">${n.workout}</span></div><div class="v13Btns"><button class="btn" onclick="rebuildFuturePlan(false)">🔄 未来の計画を再構築</button><button class="btn secondary" onclick="runV12Engine()">📊 状態を再計算</button></div></div><div class="v13Rows"><div class="v13Row"><span>直近の実績</span><b>${latest}</b></div>${rows.map(r=>`<div class="v13Row"><span>${r[0]}</span><b>${r[1]}/100</b></div>`).join('')}</div><p class="note" style="margin-top:9px">※各能力値は、このアプリに保存された練習記録から作る比較用指標です。医学的な疲労・能力判定や大会結果の予測ではありません。</p>`;
 }
 
 function v14Prescription(){
@@ -1166,7 +1176,7 @@ function renderV14(){
  const el=document.getElementById('v14Prescription'); if(!el)return;
  const x=v14Prescription(), cap=x.cap;
  const rows=[['スピード',cap.speed],['閾値・持続力',cap.threshold],['目標ペース慣れ',cap.mp],['距離耐性',cap.durability],['継続性',cap.consistency]];
- el.innerHTML=`<div class="v14Hero"><div class="v14Title">明日の推奨：${x.title}</div><div class="v14Sub">${x.tomorrow} ・ ${x.type}</div><div class="v14Plan"><b>🎯 ${x.target}</b><br>${x.workout}<br><span style="color:#9aa7b2">今回の重点：${x.focus}</span></div><div class="v14Grid">${rows.map(r=>`<div class="v14Card"><small>${r[0]}</small><b>${r[1]}/100</b></div>`).join('')}</div><div class="v14Steps"><div class="v14Step"><span class="v14Num">1</span><span>直近負荷 ${x.c.load}pt とポイント練習 ${x.c.quality7}回を確認</span></div><div class="v14Step"><span class="v14Num">2</span><span>不足している能力を1つだけ優先して刺激</span></div><div class="v14Step"><span class="v14Num">3</span><span>次の記録が入ったら、V14が再評価して次のメニューを更新</span></div></div><div class="v14Btns"><button class="btn" onclick="applyV14Prescription()">📅 このメニューを明日の計画へ追加</button><button class="btn secondary" onclick="renderV14();alert('最新記録からV14を再計算しました。')">🔄 再計算</button></div></div><p class="note" style="margin-top:9px">※これは記録データから作るトレーニング補助ロジックです。医療的な疲労判定や大会結果の予測ではありません。</p>`;
+ el.innerHTML=`<div class="v14Hero"><div class="v14Title">明日の推奨：${x.title}</div><div class="v14Sub">${x.tomorrow} ・ ${x.type}</div><div class="v14Plan"><b>🎯 ${x.target}</b><br>${x.workout}<br><span style="color:#9aa7b2">今回の重点：${x.focus}</span></div><div class="v14Grid">${rows.map(r=>`<div class="v14Card"><small>${r[0]}</small><b>${r[1]}/100</b></div>`).join('')}</div><div class="v14Steps"><div class="v14Step"><span class="v14Num">1</span><span>直近負荷 ${x.c.load}pt とポイント練習 ${x.c.quality7}回を確認</span></div><div class="v14Step"><span class="v14Num">2</span><span>不足している能力を1つだけ優先して刺激</span></div><div class="v14Step"><span class="v14Num">3</span><span>次の記録が入ったら、V14が再評価して次のメニューを更新</span></div></div><div class="v14Btns"><button class="btn" onclick="applyV14Prescription()">📅 このメニューを明日の計画へ追加</button><button class="btn secondary" onclick="runV12Engine()">🔄 再計算</button></div></div><p class="note" style="margin-top:9px">※これは記録データから作るトレーニング補助ロジックです。医療的な疲労判定や大会結果の予測ではありません。</p>`;
 }
 
 function populateHistoryFilters(){
@@ -1534,7 +1544,7 @@ function exportCSV(){
 }
 function exportData(){const b=new Blob([JSON.stringify({records,plans,trash},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='running-log-backup.json';a.click()}
 function importData(e){const f=e.target.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{try{const x=JSON.parse(rd.result);records=Array.isArray(x)?x:(x.records||[]);plans=Array.isArray(x)?plans:(x.plans||[]);trash=Array.isArray(x.trash)?x.trash:[];localStorage.setItem(KEY,JSON.stringify(records));localStorage.setItem(TRASHKEY,JSON.stringify(trash));localStorage.setItem(PLANKEY,JSON.stringify(plans));render();renderCalendar();alert('復元しました')}catch{alert('JSONを読み込めませんでした')}};rd.readAsText(f)}
-document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelectorAll('main>section').forEach(s=>s.classList.add('hidden'));document.getElementById(b.dataset.tab).classList.remove('hidden')});
+document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelectorAll('main>section').forEach(s=>s.classList.add('hidden'));const target=document.getElementById(b.dataset.tab);if(target)target.classList.remove('hidden');if(b.dataset.tab==='v12')runV12Engine();if(b.dataset.tab==='dash'){renderV15();renderV16();}});
 today.textContent=new Date().toLocaleDateString('ja-JP',{month:'numeric',day:'numeric'});
 render();
 renderCalendar();
