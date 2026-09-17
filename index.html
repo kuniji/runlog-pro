@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="apple-touch-icon" href="icon-192.svg">
 
-<title>My Running Log AI Coach V18.9</title>
+<title>My Running Log AI Coach V18.10</title>
 <style>
 :root{
   --bg:#07090c; --panel:#11151a; --panel2:#171c22; --line:#26303a;
@@ -164,7 +164,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:9px 6px;b
 <body>
 <div class="app">
 <header>
-  <div class="head"><div><div class="logo">🏃 <span>MY RUNNING LOG</span><span class="versionTag">V18.9</span></div><small>走った記録を、次の練習につなげる</small></div><div class="v11Status"><span id="onlineStatus">● オンライン</span><button id="installBtn" class="btn secondary installBtn" hidden>ホーム画面に追加</button></div><div id="today"></div></div>
+  <div class="head"><div><div class="logo">🏃 <span>MY RUNNING LOG</span><span class="versionTag">V18.10</span></div><small>走った記録を、次の練習につなげる</small></div><div class="v11Status"><span id="onlineStatus">● オンライン</span><button id="installBtn" class="btn secondary installBtn" hidden>ホーム画面に追加</button></div><div id="today"></div></div>
   <nav>
     <button class="tab active" data-tab="dash">ダッシュボード</button>
     <button class="tab" data-tab="records">記録</button>
@@ -1567,56 +1567,95 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.se
 
 function v15DateAdd(base,n){const d=new Date(base);d.setDate(d.getDate()+n);return localDateStr(d)}
 function v15Phase(date){const d=Math.ceil((new Date('2026-11-01T00:00:00')-dayStart(date))/86400000); if(d<=7)return 'テーパリング'; if(d<=35)return '富山マラソン特化'; if(d<=50)return '持久力強化'; return 'リレー・基礎調整'}
-function v15Seconds(p){return paceSeconds(p)||0}
+function v15PaceText(sec){if(!Number.isFinite(sec)||sec<=0)return '--';return secToPace(Math.round(sec))+'/km'}
+function v15SafePace(r){try{return paceSecondsFromRecord(r)}catch(e){return null}}
 function v15PlanEngine(){
- const now=dayStart(new Date()), c=coachAnalysis(), tr=performanceTrend(), prof=personalizedPaceProfile();
- const last14=records.filter(r=>{const d=dayStart(r.date), x=new Date(now);x.setDate(x.getDate()-13);return d>=x&&d<=now});
- const q=last14.filter(r=>['Interval','Threshold','Race'].includes(r.type)).length; const long=last14.filter(r=>r.type==='Long'||r.dist>=18).length;
- const load=last14.reduce((a,r)=>a+trainingLoad(r),0); const last=records.slice().sort((a,b)=>String(b.date).localeCompare(String(a.date)))[0];
- let recovery=load>=150||q>=2; let first=recovery?'Recovery':'Easy';
- const daysLeft=Math.max(0,Math.ceil((new Date('2026-11-01T00:00:00')-now)/86400000));
- const plans=[];
- for(let i=1;i<=14;i++){let date=v15DateAdd(now,i), phase=v15Phase(date), type='Easy', target='Easy 6–9km', why='有酸素ベースを維持しながら疲労を抑える';
-   const gap=daysLeft-i;
-   if(i===1&&recovery){type='Recovery';target='Recovery 5–7km';why='直近14日負荷が高め、まず回復を優先';}
-   else if(i===2&&q===0&&daysLeft>14){type='Threshold';target='15–20分 @ '+(prof.thrText||'5:05–5:15/km');why='閾値刺激が不足しているため、短時間の持続走を追加';}
-   else if(i===3){type='Recovery';target='Recovery 5–7km';why='ポイント練習後の吸収日';}
-   else if(i===5&&daysLeft>14){type='Long';target=long===0?'18–20km':'20–22km';why='距離耐性を積み上げ、後半の持久力を確認';}
-   else if(i===7&&daysLeft>21){type='Marathon Pace';target='10–12km（中盤4–6km @ 6:20–6:30/km）';why='サブ4:30目標ペースへの慣れを高める';}
-   else if(i===9&&daysLeft>21&&q===0){type='Threshold';target='20分 @ '+(prof.thrText||'5:05–5:15/km');why='持続力を維持するためのポイント練習';}
-   else if(i===12&&daysLeft>14){type='Long';target='18–22km';why='次のLongで距離耐性を確認';}
-   if(daysLeft<=7){type=i===1?'Easy':'Recovery';target=i===1?'6–8km Easy':'4–6km Recovery';why='レース前の疲労を抜き、フレッシュさを優先';}
-   plans.push({date,phase,type,target,why});
- }
- return {plans,load,q,long,tr,prof,daysLeft,last,focus:recovery?'回復優先 → その後に質':'持久力＋目標ペース耐性'};
+  const now=dayStart(new Date());
+  const todayStr=localDateStr(now);
+  const race=dayStart(new Date('2026-11-01T00:00:00'));
+  const daysLeft=Math.max(0,Math.ceil((race-now)/86400000));
+  const all=Array.isArray(records)?records:[];
+  const recent=all.filter(r=>{
+    if(!r||!r.date)return false;
+    const d=localDate(r.date); const from=new Date(now); from.setDate(from.getDate()-13);
+    return d>=from&&d<=now;
+  });
+  const safeType=r=>String(r&&r.type||'Easy');
+  const dist=r=>Number(r&&r.dist)||0;
+  const quality=r=>['Interval','Threshold','Race'].includes(safeType(r));
+  const q=recent.filter(quality).length;
+  const long=recent.filter(r=>safeType(r)==='Long'||dist(r)>=18).length;
+  const load=Math.round(recent.reduce((a,r)=>{try{return a+Number(trainingLoad(r))||a}catch(e){return a}},0));
+  const paceRuns=recent.map(v15SafePace).filter(Number.isFinite);
+  const thresholdPaces=recent.filter(r=>safeType(r)==='Threshold').map(v15SafePace).filter(Number.isFinite);
+  const thrSec=thresholdPaces.length?thresholdPaces.reduce((a,b)=>a+b,0)/thresholdPaces.length:305;
+  const thrMin=Math.max(270,Math.round(thrSec-4));
+  const thrMax=Math.min(330,Math.round(thrSec+7));
+  const last=all.filter(r=>r&&r.date).slice().sort((a,b)=>String(b.date).localeCompare(String(a.date)))[0]||null;
+  const focus=load>=120||q>=2?'回復優先 → その後に質':'持久力＋目標ペース耐性';
+  const plans=[];
+  for(let i=1;i<=14;i++){
+    const date=v15DateAdd(now,i);
+    const phase=v15Phase(date);
+    let type='Easy',target='Easy 6〜9km',why='有酸素ベースを維持しながら疲労を抑える';
+    if(daysLeft<=7){
+      type=i===1?'Easy':'Recovery';
+      target=i===1?'6〜8km Easy':'4〜6km Recovery';
+      why='レース前の疲労を抜き、フレッシュさを優先';
+    }else if(i===1&&(load>=120||q>=2)){
+      type='Recovery';target='Recovery 5〜7km';why='直近14日の負荷・ポイント練習が重なっているため回復を優先';
+    }else if(i===2&&q===0){
+      type='Threshold';target=`15〜20分 @${v15PaceText(thrMin)}〜${v15PaceText(thrMax)}`;why='直近14日にポイント練習がないため、短時間の閾値刺激を追加';
+    }else if(i===3){
+      type='Recovery';target='Recovery 5〜7km';why='ポイント練習後の吸収日';
+    }else if(i===5){
+      type='Long';target=long===0?'18〜20km':'20〜22km';why='距離耐性を積み上げ、後半の持久力を確認';
+    }else if(i===7&&daysLeft>21){
+      type='Marathon Pace';target='10〜12km（中盤4〜6km @6:20〜6:30/km）';why='サブ4:30目標ペースへの慣れを高める';
+    }else if(i===9&&q===0){
+      type='Threshold';target=`20分 @${v15PaceText(thrMin)}〜${v15PaceText(thrMax)}`;why='持続力を維持するためのポイント練習';
+    }else if(i===12){
+      type='Long';target='18〜22km';why='次のLongで距離耐性を確認';
+    }
+    plans.push({date,phase,type,target,why});
+  }
+  return {plans,load,q,long,daysLeft,last,focus,thrText:`${secToPace(thrMin)}〜${secToPace(thrMax)}/km`,sampleCount:recent.length,todayStr};
 }
-function v15Apply(){const e=v15PlanEngine(); let n=0; e.plans.slice(0,7).forEach(p=>{if(!plans.some(x=>x.date===p.date&&x.type===p.type)){plans.push({date:p.date,type:p.type,target:p.target,workout:p.target,memo:'V15自動生成 / '+p.why});n++;}});save();renderCalendar();alert(n+'件を練習計画へ追加しました。');}
+function v15Apply(){
+  try{
+    const e=v15PlanEngine();let n=0;
+    e.plans.slice(0,7).forEach(p=>{if(!plans.some(x=>x.date===p.date&&x.type===p.type)){plans.push({date:p.date,type:p.type,target:p.target,workout:p.target,memo:'V15自動生成 / '+p.why,source:'V15'});n++;}});
+    save();renderCalendar();renderV15();
+    const el=document.getElementById('v15PlanStatus');if(el)el.textContent=`V15：${n}件を練習計画へ追加しました。`;
+  }catch(err){console.error('V15 apply error',err);const el=document.getElementById('v15PlanStatus');if(el)el.textContent='V15：計画への追加でエラーが発生しました。';}
+}
 function runV15Engine(){
+  const host=document.getElementById('v15Plan');
+  if(!host)return;
   try{
     renderV15();
     const el=document.getElementById('v15PlanStatus');
-    if(el) el.textContent='V15を実行しました：最新の走行記録から今後14日間を再計算しました。';
+    if(el)el.textContent='V15を実行しました：最新の走行記録から今後14日間を再計算しました。';
   }catch(err){
     console.error('V15 engine error',err);
-    const host=document.getElementById('v15Plan');
-    if(host) host.innerHTML='<div class="v15Card"><b>V15更新エラー</b><div class="v15Small">記録データを確認して、もう一度「V15を実行・更新」を押してください。</div></div>';
+    host.innerHTML='<div class="v15Card"><b>V15更新エラー</b><div class="v15Small">V15の計算処理でエラーが発生しました。記録データは保持されています。</div><div class="v15Small" style="margin-top:6px">もう一度「V15を実行・更新」を押してください。</div></div>';
   }
 }
 function renderV15(){
- const el=document.getElementById('v15Plan');if(!el)return;
- const e=v15PlanEngine();
- const rows=e.plans.map((p,i)=>`<div class="v15Card"><div class="v15Meta">${p.date}　<span class="v15Tag">${p.phase}</span></div><h3>${p.type}　${p.target}</h3><div class="v15Why"><span class="v15Focus">理由：</span>${p.why}</div></div>`).join('');
- el.innerHTML=`<div class="v15Card">
-   <div class="v15Meta">残り ${e.daysLeft}日　/　直近14日負荷 ${e.load}　/　ポイント ${e.q}回　/　Long ${e.long}回</div>
-   <div class="v15Why"><span class="v15Focus">現在の重点：</span>${e.focus}</div>
-   <div class="v15Bar"><i style="width:${Math.min(100,Math.round(e.load/180*100))}%"></i></div>
-   <div class="v15Small">走力トレンド：${e.tr.label||'概ね安定'}　｜ 個別Threshold：${e.prof.thrText||'--'}</div>
-   <div class="engineActionRow">
-     <button class="engineActionBtn" onclick="event.stopPropagation();runV15Engine()">🧭 V15を実行・更新</button>
-     <button class="engineActionBtn" onclick="event.stopPropagation();v15Apply()">📅 この7日間を計画へ追加</button>
-   </div>
-   <div id="v15PlanStatus" class="engineStatus"></div>
- </div>${rows}`;
+  const el=document.getElementById('v15Plan');if(!el)return;
+  const e=v15PlanEngine();
+  const rows=e.plans.map(p=>`<div class="v15Card"><div class="v15Meta">${p.date}　<span class="v15Tag">${p.phase}</span></div><h3>${p.type}　${p.target}</h3><div class="v15Why"><span class="v15Focus">理由：</span>${p.why}</div></div>`).join('');
+  el.innerHTML=`<div class="v15Card">
+    <div class="v15Meta">残り ${e.daysLeft}日　/　直近14日負荷 ${e.load}pt　/　ポイント ${e.q}回　/　Long ${e.long}回</div>
+    <div class="v15Why"><span class="v15Focus">現在の重点：</span>${e.focus}</div>
+    <div class="v15Bar"><i style="width:${Math.min(100,Math.round(e.load/180*100))}%"></i></div>
+    <div class="v15Small">個別Threshold：${e.thrText}　｜ 直近14日：${e.sampleCount}件</div>
+    <div class="engineActionRow">
+      <button class="engineActionBtn" onclick="event.stopPropagation();runV15Engine()">🧭 V15を実行・更新</button>
+      <button class="engineActionBtn" onclick="event.stopPropagation();v15Apply()">📅 この7日間を計画へ追加</button>
+    </div>
+    <div id="v15PlanStatus" class="engineStatus"></div>
+  </div>${rows}`;
 }
 function v16RaceEngine(){
  const now=dayStart(new Date()),race=new Date('2026-11-01T00:00:00'),days=Math.max(0,Math.ceil((race-now)/86400000));
