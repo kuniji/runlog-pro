@@ -153,6 +153,12 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:9px 6px;b
 
 <style>
 .v15Hero{display:flex;justify-content:space-between;align-items:center;gap:12px}.v15Hero h2{margin:0}.v15Badge,.v15Tag{padding:5px 9px;border-radius:999px;background:rgba(255,255,255,.09);font-size:11px;font-weight:800}.v15Grid{display:grid;gap:10px;margin-top:12px}.v15Card{padding:14px;border:1px solid rgba(255,255,255,.08);border-radius:16px;background:rgba(255,255,255,.035)}.v15Card h3{margin:0 0 7px;font-size:16px}.v15Meta{font-size:12px;opacity:.75;margin-bottom:8px}.v15Why{font-size:13px;line-height:1.55}.v15Bar{height:7px;border-radius:99px;background:rgba(255,255,255,.08);overflow:hidden;margin:8px 0}.v15Bar i{display:block;height:100%;width:0;background:currentColor}.v15Actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.v15Actions button{border:0;border-radius:10px;padding:9px 11px;background:rgba(255,255,255,.1);color:inherit}.v15Focus{font-weight:800}.v15Small{font-size:11px;opacity:.7}
+
+.v15Hero,.v16Hero{cursor:pointer}
+.engineActionRow{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.engineActionBtn{border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:10px 13px;background:rgba(255,255,255,.08);color:inherit;font-weight:800;cursor:pointer}
+.engineActionBtn:active{transform:scale(.98)}
+.engineStatus{font-size:12px;opacity:.75;margin-top:8px;min-height:18px}
 </style>
 </head>
 <body>
@@ -163,7 +169,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:9px 6px;b
     <button class="tab active" data-tab="dash">ダッシュボード</button>
     <button class="tab" data-tab="records">記録</button>
     <button class="tab" data-tab="report">練習レポート</button>
-    <button data-tab="v12">🧠 V12 Engine</button><button class="tab" data-tab="coach">AIコーチ</button>
+    <button class="tab" data-tab="v12">🧠 V12 Engine</button><button class="tab" data-tab="coach">AIコーチ</button>
     <button class="tab" data-tab="calendar">カレンダー</button><button class="tab" data-tab="plan">練習計画</button>
     <button class="tab" data-tab="backup">バックアップ</button>
   </nav>
@@ -185,10 +191,10 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:9px 6px;b
     <div id="raceProgress" class="progressDashboard"></div>
   </div>
   <div class="section" id="v15PlanSection">
-    <div class="v15Hero"><div><h2>🧭 V15 レース最適化プラン</h2><p>現在の実績から、富山マラソンまでの次の14日間を自動再配置</p></div><span class="v15Badge">ADAPTIVE</span></div>
+    <div class="v15Hero" onclick="runV15Engine()"><div><h2>🧭 V15 レース最適化プラン</h2><p>現在の実績から、富山マラソンまでの次の14日間を自動再配置</p></div><span class="v15Badge">ADAPTIVE</span></div>
     <div id="v15Plan" class="v15Grid"></div>
   </div>
-  <div class="section v16Panel"><div class="v16Hero"><div><h2>🏁 V16 富山マラソン レースモード</h2><p>直近の実績から、レース当日のペース運用・区間別戦略・補給リズムを整理</p></div><span class="v16Badge">RACE MODE</span></div><div id="v16RacePlan" class="v16Grid"></div></div>
+  <div class="section v16Panel"><div class="v16Hero" onclick="runV16Engine()"><div><h2>🏁 V16 富山マラソン レースモード</h2><p>直近の実績から、レース当日のペース運用・区間別戦略・補給リズムを整理</p></div><span class="v16Badge">RACE MODE</span></div><div id="v16RacePlan" class="v16Grid"></div></div>
   <div class="section"><h2>最近の記録</h2><div id="recent"></div></div>
 <div class="section"><h2>今週の走行状況</h2>
   <div class="cards">
@@ -1570,7 +1576,27 @@ function v15PlanEngine(){
  return {plans,load,q,long,tr,prof,daysLeft,last,focus:recovery?'回復優先 → その後に質':'持久力＋目標ペース耐性'};
 }
 function v15Apply(){const e=v15PlanEngine(); let n=0; e.plans.slice(0,7).forEach(p=>{if(!plans.some(x=>x.date===p.date&&x.type===p.type)){plans.push({date:p.date,type:p.type,target:p.target,workout:p.target,memo:'V15自動生成 / '+p.why});n++;}});save();renderCalendar();alert(n+'件を練習計画へ追加しました。');}
-function renderV15(){const el=document.getElementById('v15Plan');if(!el)return;const e=v15PlanEngine();const rows=e.plans.slice(0,7).map((p,i)=>`<div class="v15Card"><div class="v15Meta">${p.date}　<span class="v15Tag">${p.phase}</span></div><h3>${p.type}　${p.target}</h3><div class="v15Why"><span class="v15Focus">理由：</span>${p.why}</div></div>`).join('');el.innerHTML=`<div class="v15Card"><div class="v15Meta">残り ${e.daysLeft}日　/　直近14日負荷 ${e.load}　/　ポイント ${e.q}回　/　Long ${e.long}回</div><div class="v15Why"><span class="v15Focus">現在の重点：</span>${e.focus}</div><div class="v15Bar"><i style="width:${Math.min(100,Math.round(e.load/180*100))}%"></i></div><div class="v15Small">走力トレンド：${e.tr.label||'概ね安定'}　｜ 個別Threshold：${e.prof.thrText||'--'}</div><div class="v15Actions"><button onclick="v15Apply()">この7日間を計画へ追加</button></div></div>${rows}`;}
+function runV15Engine(){
+  const el=document.getElementById('v15PlanStatus');
+  renderV15();
+  if(el) el.textContent='V15を実行しました：最新の走行記録から今後14日間を再計算しました。';
+}
+function renderV15(){
+ const el=document.getElementById('v15Plan');if(!el)return;
+ const e=v15PlanEngine();
+ const rows=e.plans.slice(0,7).map((p,i)=>`<div class="v15Card"><div class="v15Meta">${p.date}　<span class="v15Tag">${p.phase}</span></div><h3>${p.type}　${p.target}</h3><div class="v15Why"><span class="v15Focus">理由：</span>${p.why}</div></div>`).join('');
+ el.innerHTML=`<div class="v15Card">
+   <div class="v15Meta">残り ${e.daysLeft}日　/　直近14日負荷 ${e.load}　/　ポイント ${e.q}回　/　Long ${e.long}回</div>
+   <div class="v15Why"><span class="v15Focus">現在の重点：</span>${e.focus}</div>
+   <div class="v15Bar"><i style="width:${Math.min(100,Math.round(e.load/180*100))}%"></i></div>
+   <div class="v15Small">走力トレンド：${e.tr.label||'概ね安定'}　｜ 個別Threshold：${e.prof.thrText||'--'}</div>
+   <div class="engineActionRow">
+     <button class="engineActionBtn" onclick="event.stopPropagation();runV15Engine()">🧭 V15を実行・更新</button>
+     <button class="engineActionBtn" onclick="event.stopPropagation();v15Apply()">📅 この7日間を計画へ追加</button>
+   </div>
+   <div id="v15PlanStatus" class="engineStatus"></div>
+ </div>${rows}`;
+}
 function v16RaceEngine(){
  const now=dayStart(new Date()),race=new Date('2026-11-01T00:00:00'),days=Math.max(0,Math.ceil((race-now)/86400000));
  const rs=records.slice().sort((a,b)=>String(b.date).localeCompare(String(a.date)));const last56=rs.filter(r=>{const d=dayStart(r.date),x=new Date(now);x.setDate(x.getDate()-55);return d>=x&&d<=now});
@@ -1580,7 +1606,25 @@ function v16RaceEngine(){
  const startNote=mp.length?'目標ペース付近の実績があるため、序盤は目標よりわずかに抑えて入り、余裕を残す':'目標ペース付近の実績が少ないため、序盤は特に保守的に入り、体感と心拍を優先';const lateNote=longs.length?'30km以降はペースを無理に上げず、フォームと補給を優先':'30km以降の耐性データが少ないため、失速回避を最優先';
  const segments=[['0–5km',fmt(opening),'抑えて入る',startNote],['5–20km',fmt(core),'一定化','呼吸・心拍・フォームを安定させる'],['20–30km',fmt(core),'維持','補給を先行し、ペースを守る'],['30–35km',fmt(late),'余裕を確認',lateNote],['35–40km',fmt(late),'状況判断',lateNote],['40–42.2km','余力次第','最後に調整','ここまで余裕があれば段階的にペースアップ']];
  const fuel=[];for(let km=5;km<=40;km+=5)fuel.push(km+'km');return{days,mp,longs,recentLong,mpBest,confidence,segments,fuel};}
-function renderV16(){const el=document.getElementById('v16RacePlan');if(!el)return;const e=v16RaceEngine(),best=e.mpBest?(e.mpBest.pace||'--'):'--';const rows=e.segments.map(x=>`<div class="v16Seg"><div><b>${x[0]}</b><div class="v16Small">${x[2]}</div></div><div class="v16Strong">${x[1]}</div></div>`).join('');el.innerHTML=`<div class="v16Card"><div class="v16Metrics"><div class="v16Metric"><span class="v16Small">レースまで</span><b>${e.days}日</b></div><div class="v16Metric"><span class="v16Small">目標ペース</span><b>6:24/km</b></div><div class="v16Metric"><span class="v16Small">MP付近の実績</span><b>${e.mp.length}回</b></div><div class="v16Metric"><span class="v16Small">Long実績</span><b>${e.longs.length}回</b></div></div></div><div class="v16Card"><h3>📍 区間別ペース運用</h3><div class="v16Split">${rows}</div><div class="v16Reason" style="margin-top:10px"><b>根拠：</b>${e.mp.length?'直近56日の目標ペース帯の実績を基準に個別化しています。':'目標ペース帯の実績が不足しているため、標準目標6:24/kmを中心に保守的に設定しています。'}</div></div><div class="v16Card"><h3>🥤 補給リズム</h3><div class="v16Reason">5km前後から定期的に補給を確認するリズムを想定。実際の補給内容・量は普段の練習で試したものを優先してください。</div><div class="v16Small" style="margin-top:8px">確認ポイント：${e.fuel.join(' → ')}</div></div><div class="v16Card"><h3>🧩 現在の判断材料</h3><div class="v16Reason">直近Long：${e.recentLong?e.recentLong.dist.toFixed(1)+'km':'--'}<br>MP付近の最速実績：${best}<br>戦略データの充実度：${e.confidence}%</div><div class="v16Warn" style="margin-top:10px">これは現在の練習データから作る<strong>レース戦略のたたき台</strong>です。当日の気温・体調・コース状況で調整してください。</div></div>`;}
+function runV16Engine(){
+  const el=document.getElementById('v16RaceStatus');
+  renderV16();
+  if(el) el.textContent='V16を実行しました：最新の走行記録からレース戦略を再計算しました。';
+}
+function renderV16(){
+ const el=document.getElementById('v16RacePlan');if(!el)return;
+ const e=v16RaceEngine(),best=e.mpBest?(e.mpBest.pace||'--'):'--';
+ const rows=e.segments.map(x=>`<div class="v16Seg"><div><b>${x[0]}</b><div class="v16Small">${x[2]}</div></div><div class="v16Strong">${x[1]}</div></div>`).join('');
+ el.innerHTML=`<div class="v16Card">
+   <div class="v16Metrics"><div class="v16Metric"><span class="v16Small">レースまで</span><b>${e.days}日</b></div><div class="v16Metric"><span class="v16Small">目標ペース</span><b>6:24/km</b></div><div class="v16Metric"><span class="v16Small">MP付近の実績</span><b>${e.mp.length}回</b></div><div class="v16Metric"><span class="v16Small">Long実績</span><b>${e.longs.length}回</b></div></div>
+   <div class="engineActionRow"><button class="engineActionBtn" onclick="event.stopPropagation();runV16Engine()">🏁 V16を実行・更新</button></div>
+   <div id="v16RaceStatus" class="engineStatus"></div>
+ </div>
+ <div class="v16Card"><h3>📍 区間別ペース運用</h3><div class="v16Split">${rows}</div><div class="v16Reason" style="margin-top:10px"><b>根拠：</b>${e.mp.length?'直近56日の目標ペース帯の実績を基準に個別化しています。':'目標ペース帯の実績が不足しているため、標準目標6:24/kmを中心に保守的に設定しています。'}</div></div>
+ <div class="v16Card"><h3>🥤 補給リズム</h3><div class="v16Reason">5km前後から定期的に補給を確認するリズムを想定。実際の補給内容・量は普段の練習で試したものを優先してください。</div><div class="v16Small" style="margin-top:8px">確認ポイント：${e.fuel.join(' → ')}</div></div>
+ <div class="v16Card"><h3>🧩 現在の判断材料</h3><div class="v16Reason">直近Long：${e.recentLong?e.recentLong.dist.toFixed(1)+'km':'--'}<br>MP付近の最速実績：${best}<br>戦略データの充実度：${e.confidence}%</div><div class="v16Warn" style="margin-top:10px">これは現在の練習データから作る<strong>レース戦略のたたき台</strong>です。当日の気温・体調・コース状況で調整してください。</div></div>`;
+}
+
 </script>
 </body>
 </html>
