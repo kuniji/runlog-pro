@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="apple-touch-icon" href="icon-192.svg">
 
-<title>My Running Log AI Coach V18.30</title>
+<title>My Running Log AI Coach V18.31</title>
 <style>
 :root{
   --bg:#07090c; --panel:#11151a; --panel2:#171c22; --line:#26303a;
@@ -176,7 +176,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:9px 6px;b
 <body>
 <div class="app">
 <header>
-  <div class="head"><div><div class="logo">🏃 <span>MY RUNNING LOG</span><span class="versionTag">V18.30</span></div><small>走った記録を、次の練習につなげる</small></div><div class="v11Status"><span id="onlineStatus">● オンライン</span><button id="installBtn" class="btn secondary installBtn" hidden>ホーム画面に追加</button></div><div id="today"></div></div>
+  <div class="head"><div><div class="logo">🏃 <span>MY RUNNING LOG</span><span class="versionTag">V18.31</span></div><small>走った記録を、次の練習につなげる</small></div><div class="v11Status"><span id="onlineStatus">● オンライン</span><button id="installBtn" class="btn secondary installBtn" hidden>ホーム画面に追加</button></div><div id="today"></div></div>
   <nav>
     <button class="tab active" data-tab="dash">ダッシュボード</button>
     <button class="tab" data-tab="records">記録</button>
@@ -344,7 +344,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:9px 6px;b
     </div>
   </div>
 
-  <div class="section"><h2>実績連動</h2><div id="adaptiveStatus" class="adaptBox"></div><div class="actions"><button class="btn secondary" onclick="refreshPlanEvaluations()">既存記録を再評価</button></div></div>
+  <div class="section"><h2>実績連動</h2><div id="adaptiveStatus" class="adaptBox"></div><div class="actions"><button class="btn secondary" onclick="refreshPlanEvaluations()">既存記録を再評価</button><button class="btn" onclick="rebuildFuturePlan()">実績から今後の計画を再構築</button></div></div>
   <div class="section"><h2>📈 走力の変化</h2><div id="performanceTrend"></div><p class="note">同じ指標を継続して比較するための参考値です。</p></div>
   <div class="section"><h2>🔄 クローズドループ</h2><div id="closedLoopPanel"></div><p class="note">記録 → 予定との照合 → 状態更新 → V15再計算、という流れで使います。</p></div>
 </section>
@@ -364,22 +364,21 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:9px 6px;b
   </div>
 </section>
 <section id="plan" class="hidden">
-  <div class="section"><h2>今週の練習計画</h2><table><thead><tr><th>日付</th><th>内容</th><th>目安</th><th>状態</th></tr></thead><tbody>
-    <tr><td>9/15</td><td>インターバル</td><td>4周×4本 / R2:30</td><td>✅ 完了</td></tr>
-    <tr><td>9/16</td><td>ランオフ</td><td>回復</td><td>✅ 完了</td></tr>
-    <tr><td>9/17</td><td>イージー</td><td>約7km @6:30/km</td><td>予定</td></tr>
-    <tr><td>9/18</td><td>オフ or 軽め</td><td>疲労次第</td><td>予定</td></tr>
-    <tr><td>9/19</td><td>ロング</td><td>約20km</td><td>予定</td></tr>
-  </tbody></table></div>
+  <div class="section">
+    <div class="hero"><div><h1>🗓️ 練習計画</h1><p>実績を反映して、今週〜次週の予定を自動更新します。</p></div><div class="badge"><span>V15</span><b id="planSyncBadge">同期</b></div></div>
+    <div class="actions"><button class="btn" onclick="runV15Engine();renderPlanTab()">🧭 V15を再計算</button><button class="btn secondary" onclick="refreshPlanEvaluations();renderPlanTab()">🔄 実績を再評価</button></div>
+    <div id="planSyncStatus" class="note" style="margin-top:8px"></div>
+    <div style="overflow-x:auto;margin-top:10px"><table><thead><tr><th>日付</th><th>内容</th><th>目安 / 実績</th><th>状態</th></tr></thead><tbody id="planTableBody"></tbody></table></div>
+  </div>
   <div class="grid2">
-    <div class="section"><h2>富山マラソン</h2><p><b>サブ4:30</b></p><p class="note">目標ペース：約6:24/km。スピードよりもロング走・閾値走・回復のバランスを重視。</p></div>
-    <div class="section"><h2>金沢城リレーマラソン</h2><p><b>9分30秒切り</b></p><p class="note">1周約1.9km → 約5:00/km。余裕があれば2・3本目で上げる。</p></div>
-    <div class="section"><h2>🏁 大会を追加・管理</h2><p class="note">大会を登録すると、V15が大会日を避けずに週間計画へ反映します。</p><div class="form"><label>大会名<input id="raceName" placeholder="例：加賀温泉郷マラソン"></label><label>開催日<input id="raceDate" type="date"></label><label>種目・距離<input id="raceDistance" placeholder="例：フル / 42.2km"></label><label>目標<input id="raceGoal" placeholder="例：サブ4:30 / 10km 50分"></label></div><div class="actions"><button class="btn" onclick="addRaceEvent()">大会を保存</button></div><div id="raceList" class="raceList"></div></div>
+    <div class="section"><h2>富山マラソン</h2><p><b>サブ4:30</b></p><p class="note">2026/11/1。目標ペース：約6:24/km。スピードよりもロング走・閾値走・回復のバランスを重視。</p></div>
+    <div class="section"><h2>金沢城リレーマラソン</h2><p><b>9分30秒切り</b></p><p class="note">2026/9/27。1周約1.9km → 約5:00/km。余裕があれば2・3本目で上げる。</p></div>
+    <div class="section"><h2>🏁 大会を追加・管理</h2><p class="note">大会はブラウザに保存し、V15・カレンダー・今日のメニューから参照します。</p><div class="form"><label>大会名<input id="raceName" placeholder="例：那覇マラソン"></label><label>開催日<input id="raceDate" type="date"></label><label>種目・距離<input id="raceDistance" placeholder="例：フル / 42.2km"></label><label>目標<input id="raceGoal" placeholder="例：ファンラン / サブ5"></label></div><div class="actions"><button class="btn" onclick="addRaceEvent()">大会を保存</button></div><div id="raceSaveStatus" class="note"></div><div id="raceList" class="raceList"></div></div>
   </div>
 </section>
 
 <section id="backup" class="hidden">
-  <div class="section"><h2>バックアップ / 復元</h2><p class="note">記録はこのブラウザに保存されます。V18.30では重複記録を自動削除せず、削除はゴミ箱経由で復元できます。端末変更前などにJSONを書き出して保管してください。</p>
+  <div class="section"><h2>バックアップ / 復元</h2><p class="note">記録はこのブラウザに保存されます。V18.31では重複記録を自動削除せず、削除はゴミ箱経由で復元できます。端末変更前などにJSONを書き出して保管してください。</p>
   <div class="actions"><button class="btn" onclick="exportData()">JSONを書き出す</button><button class="btn secondary" onclick="exportCSV()">CSVを書き出す</button><label class="btn secondary" style="display:inline-block">JSONを復元<input id="importFile" type="file" accept=".json" style="display:none" onchange="importData(event)"></label></div></div>
 </section>
 </main>
@@ -394,12 +393,23 @@ let currentReportId=null;
 let trash=JSON.parse(localStorage.getItem(TRASHKEY)||'[]');
 const PLANKEY='my_running_plan_v1';
 let plans=JSON.parse(localStorage.getItem(PLANKEY)||'[]');
-const RACEKEY='my_running_races_v1';
-let races=JSON.parse(localStorage.getItem(RACEKEY)||'[]');
+const RACEKEY='my_running_races_v2';
+const RACEKEY_OLD='my_running_races_v1';
+function loadRacesSafe(){
+  try{
+    const v2=JSON.parse(localStorage.getItem(RACEKEY)||'null');
+    if(Array.isArray(v2))return v2;
+    const v1=JSON.parse(localStorage.getItem(RACEKEY_OLD)||'[]');
+    return Array.isArray(v1)?v1:[];
+  }catch(e){return []}
+}
+let races=loadRacesSafe();
 if(!Array.isArray(races))races=[];
-if(!races.some(r=>r&&r.date==='2026-09-27'))races.push({id:'builtin-kanazawa',name:'金沢城リレーマラソン',date:'2026-09-27',distance:'1.9km',goal:'1周9:30切り'});
-if(!races.some(r=>r&&r.date==='2026-11-01'))races.push({id:'builtin-toyama',name:'富山マラソン',date:'2026-11-01',distance:'42.2km',goal:'サブ4:30'});
-localStorage.setItem(RACEKEY,JSON.stringify(races));
+function ensureBuiltinRace(r){if(!races.some(x=>x&&x.id===r.id))races.push(r);}
+ensureBuiltinRace({id:'builtin-kanazawa',name:'金沢城リレーマラソン',date:'2026-09-27',distance:'1.9km',goal:'1周9:30切り'});
+ensureBuiltinRace({id:'builtin-toyama',name:'富山マラソン',date:'2026-11-01',distance:'42.2km',goal:'サブ4:30'});
+ensureBuiltinRace({id:'builtin-naha',name:'那覇マラソン',date:'2026-12-06',distance:'42.2km（フル）',goal:'ファンラン / サブ5'});
+try{localStorage.setItem(RACEKEY,JSON.stringify(races));localStorage.setItem(RACEKEY_OLD,JSON.stringify(races));}catch(e){console.warn('race storage unavailable',e)}
 let calMonth=new Date(2026,8,1);
 function save(){localStorage.setItem(KEY,JSON.stringify(records));localStorage.setItem(TRASHKEY,JSON.stringify(trash));render();}
 function paceToSec(p){if(!p)return null; const m=p.match(/(\\d+):(\\d{1,2})/); return m?+m[1]*60+ +m[2]:null}
@@ -554,7 +564,7 @@ function loadInterval(){
 }
 
 function dayStart(d){const x=new Date(d);x.setHours(0,0,0,0);return x}
-// V18.30: pace helper restored. Records store time in minutes; FIT records may also have pace text.
+// V18.31: pace helper restored. Records store time in minutes; FIT records may also have pace text.
 function paceSecondsFromRecord(r){
   if(!r)return null;
   const p=r.pace?paceToSec(String(r.pace)):null;
@@ -599,15 +609,32 @@ function loadText(load,km){
   if(load>=90)return '🟡 しっかり走れています。Easy日は本当にEasyにして疲労を抜きましょう。';
   return '🟢 現時点では負荷に余裕があります。ロング走・閾値走を計画的に積み上げられます。';
 }
-function saveRaces(){localStorage.setItem(RACEKEY,JSON.stringify(races));renderRaceList();}
+function saveRaces(){
+  try{
+    localStorage.setItem(RACEKEY,JSON.stringify(races));
+    localStorage.setItem(RACEKEY_OLD,JSON.stringify(races));
+    renderRaceList();
+    return true;
+  }catch(e){
+    console.error('race save error',e);
+    const st=document.getElementById('raceSaveStatus');
+    if(st)st.textContent='⚠️ 大会を保存できませんでした。ブラウザの保存領域を確認してください。';
+    return false;
+  }
+}
 function addRaceEvent(){
   const name=(document.getElementById('raceName')?.value||'').trim(), date=document.getElementById('raceDate')?.value||'', distance=(document.getElementById('raceDistance')?.value||'').trim(), goal=(document.getElementById('raceGoal')?.value||'').trim();
   if(!name||!date){alert('大会名と開催日を入力してください');return;}
-  races.push({id:'race-'+Date.now(),name,date,distance,goal}); saveRaces();
+  const existing=races.find(r=>r&&r.date===date&&r.name===name);
+  if(existing){existing.distance=distance;existing.goal=goal;}
+  else races.push({id:'race-'+Date.now(),name,date,distance,goal});
+  if(!saveRaces())return;
   ['raceName','raceDate','raceDistance','raceGoal'].forEach(id=>{const e=document.getElementById(id);if(e)e.value=''});
-  renderV15(); alert('大会を登録しました。V15にも反映されます。');
+  renderV15(); renderPlanTab(); renderTodayMenu();
+  const st=document.getElementById('raceSaveStatus');if(st)st.textContent=`✅ ${name}（${date}）を保存しました。再読み込み後も残ります。`;
+  alert('大会を登録しました。V15・カレンダー・コーチで参照できます。');
 }
-function deleteRaceEvent(id){if(String(id).startsWith('builtin-')){alert('標準登録の大会は削除できません。');return;} races=races.filter(r=>String(r.id)!==String(id));saveRaces();renderV15();}
+function deleteRaceEvent(id){if(String(id).startsWith('builtin-')){alert('標準登録の大会は削除できません。');return;} races=races.filter(r=>String(r.id)!==String(id));saveRaces();renderV15();renderPlanTab();renderTodayMenu();}
 function renderRaceList(){const el=document.getElementById('raceList');if(!el)return; const jp=['日','月','火','水','木','金','土']; const rows=races.filter(Boolean).slice().sort((a,b)=>String(a.date).localeCompare(String(b.date))).map(r=>{const d=new Date(r.date+'T00:00:00');const wd=isNaN(d)?'':`（${jp[d.getDay()]}）`;return `<div class="raceItem"><div><b>${r.name}<span class="raceBadge">${r.distance||'種目未設定'}</span></b><small>${r.date}${wd}${r.goal?' ・ '+r.goal:''}</small></div>${String(r.id).startsWith('builtin-')?'':'<button class="raceDelete" onclick="deleteRaceEvent(\''+String(r.id).replace(/'/g,'')+'\')">削除</button>'}</div>`}).join(''); el.innerHTML=rows||'<div class="note">登録された大会はありません。</div>'; }
 function raceForDate(date){return races.filter(r=>r&&r.date===date).sort((a,b)=>String(a.id).localeCompare(String(b.id)))[0]||null;}
 function daysToRace(date,race){return Math.round((dayStart(race.date)-dayStart(date))/86400000);}
@@ -972,6 +999,36 @@ function renderClosedLoop(){
     <div class="paceProfile"><b>🎯 個人化ペース設定</b><div class="paceGrid"><div><small>Easy</small><strong>${fmtPaceRange(x.paces.easy)}</strong></div><div><small>Threshold</small><strong>${fmtPaceRange(x.paces.thr)}</strong></div><div><small>Marathon Pace</small><strong>${fmtPaceRange(x.paces.mp)}</strong></div></div><span class="note">実績${x.paces.confidence}%の信頼度（Easy ${x.paces.samples.easy} / 閾値 ${x.paces.samples.thr} / Long ${x.paces.samples.long} / Race ${x.paces.samples.race}件）。データが増えるほど設定を更新します。</span></div><div class="autoUpdate"><strong>現在の状態：${readinessSnapshot(x.c).status}</strong>${readinessSnapshot(x.c).note}</div>
   </div>`;
 }
+function fmtPace(seconds){ return secToPace(seconds); }
+function renderPlanTab(){
+  const body=document.getElementById('planTableBody'); if(!body)return;
+  const today=localDate(todayLocalStr());
+  const monday=new Date(today); const dow=monday.getDay(); monday.setDate(monday.getDate()+(dow===0?-6:1-dow));
+  const v15=typeof v15PlanEngine==='function'?v15PlanEngine():{plans:[]};
+  const v15Map=new Map((v15.plans||[]).map(x=>[x.date,x]));
+  const rows=[];
+  for(let i=0;i<14;i++){
+    const d=new Date(monday); d.setDate(monday.getDate()+i); const ds=localDateStr(d);
+    const rec=records.filter(r=>r&&r.date===ds).sort((a,b)=>(+b.id||0)-(+a.id||0))[0];
+    const saved=plans.filter(p=>p&&p.date===ds).slice(-1)[0];
+    const ai=v15Map.get(ds);
+    let title,target,status;
+    if(rec){
+      title=rec.type||'実績'; target=`${(+rec.dist||0).toFixed(2)}km / ${rec.pace||calcPace(+rec.dist||0,+rec.time||0)}`;
+      status='✅ 実績あり';
+    }else if(ds<today){
+      title=saved?.type||'未実施'; target=saved?.target||'予定なし'; status='— 未実施';
+    }else{
+      const x=saved||ai;
+      title=x?.type||'休養'; target=x?.target||'状態に合わせて調整'; status=x?.type==='Rest'?'💤 休養':'📅 予定';
+    }
+    const wd=['日','月','火','水','木','金','土'][d.getDay()];
+    rows.push(`<tr><td>${ds.slice(5)}（${wd}）</td><td>${title}</td><td>${target}</td><td>${status}</td></tr>`);
+  }
+  body.innerHTML=rows.join('');
+  const st=document.getElementById('planSyncStatus');
+  if(st)st.textContent=`V15実績連動：${records.length}件の保存記録を参照。大会 ${races.length}件を計画へ反映。最終更新 ${new Date().toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'})}`;
+}
 function performanceTrend(){
   const today=localDate(todayLocalStr());
   const d28=new Date(today); d28.setDate(d28.getDate()-28);
@@ -1021,7 +1078,7 @@ function renderTodayMenu(){
   }catch(e){console.error('today menu render error',e);el.innerHTML='<div class="todayMenuType">🏃 今日のメニュー</div><div class="todayMenuReason">V15の計画を確認してください。</div>';}
 }
 function renderCoach(){
-  // V18.30: 提案の重複を避け、V15を週間計画の本体にする。
+  // V18.31: 提案の重複を避け、V15を週間計画の本体にする。
   try{
     const e=typeof v15PlanEngine==='function'?v15PlanEngine():null;
     const first=e&&e.plans&&e.plans[0];
@@ -1299,12 +1356,12 @@ function render(){
   if(elKm28) elKm28.textContent=ws.km28.toFixed(1);
   if(elLoadMessage) elLoadMessage.textContent=loadText(ws.load,ws.km);
 
-  renderCoach(); renderCalendar(); renderV15(); renderTodayMenu();
+  renderCoach(); renderCalendar(); renderV15(); renderTodayMenu(); renderPlanTab();
   renderMarathonProgress(); renderV13(); renderV14(); renderV15(); renderV16();
 
   populateHistoryFilters();
   renderHistory();
-  // V18.30: 記録とレポート一覧を常に同期
+  // V18.31: 記録とレポート一覧を常に同期
   if(typeof renderReportHub==='function') renderReportHub(currentReportId);
 }
 
@@ -1362,7 +1419,7 @@ function fitParse(buf){
   while(pos<dataEnd){
     const recordHeaderPos=pos,hb=view.getUint8(pos++),compressed=!!(hb&0x80),local=compressed?((hb>>5)&0x03):(hb&0x0f);
     // FITの圧縮タイムスタンプレコードは「タイムスタンプだけのレコード」ではなく、
-    // 直前に定義された同じlocal messageのデータ本体を持つ。V18.30ではここをcontinueして
+    // 直前に定義された同じlocal messageのデータ本体を持つ。V18.31ではここをcontinueして
     // しまい、圧縮Record/Lap等を丸ごと捨てていたため、Lap=0になりやすかった。
     let compressedTimestamp=null;
     if(compressed){
@@ -1668,7 +1725,7 @@ async function importFIT(e){
   try{
     const buf=await file.arrayBuffer(),view=new DataView(buf),headerSize=view.getUint8(0),sig=String.fromCharCode(...new Uint8Array(buf,8,4));
     const parsed=fitParse(buf),msgs=parsed.messages,a=fitAggregate(parsed),counts={};msgs.forEach(m=>counts[m.global]=(counts[m.global]||0)+1);
-    const diagnostics=`<div class="report" style="margin-top:10px"><div class="reportTitle" style="font-size:18px">🔎 Garmin FIT診断</div><div class="metrics" style="margin-top:8px"><div class="metric"><span>アプリ版</span><b>V18.30</b></div><div class="metric"><span>FIT署名</span><b>${sig==='.FIT'?'OK':'NG'}</b></div><div class="metric"><span>ヘッダー</span><b>${headerSize} bytes</b></div><div class="metric"><span>定義メッセージ</span><b>${a.meta.definitionCount}件</b></div><div class="metric"><span>圧縮タイムスタンプ</span><b>${a.meta.compressedCount}件</b></div><div class="metric"><span>解析メッセージ</span><b>${msgs.length}件</b></div><div class="metric"><span>Session</span><b>${a.sess?'あり':'なし'}${counts[18]?` (${counts[18]}件)`:''}</b></div><div class="metric"><span>Lap</span><b>${a.laps.length}件</b></div><div class="metric"><span>Record</span><b>${a.rec.length}件</b></div><div class="metric"><span>取得距離</span><b>${a.dist?a.dist.toFixed(2)+' km':'未取得'}</b></div></div></div>`;
+    const diagnostics=`<div class="report" style="margin-top:10px"><div class="reportTitle" style="font-size:18px">🔎 Garmin FIT診断</div><div class="metrics" style="margin-top:8px"><div class="metric"><span>アプリ版</span><b>V18.31</b></div><div class="metric"><span>FIT署名</span><b>${sig==='.FIT'?'OK':'NG'}</b></div><div class="metric"><span>ヘッダー</span><b>${headerSize} bytes</b></div><div class="metric"><span>定義メッセージ</span><b>${a.meta.definitionCount}件</b></div><div class="metric"><span>圧縮タイムスタンプ</span><b>${a.meta.compressedCount}件</b></div><div class="metric"><span>解析メッセージ</span><b>${msgs.length}件</b></div><div class="metric"><span>Session</span><b>${a.sess?'あり':'なし'}${counts[18]?` (${counts[18]}件)`:''}</b></div><div class="metric"><span>Lap</span><b>${a.laps.length}件</b></div><div class="metric"><span>Record</span><b>${a.rec.length}件</b></div><div class="metric"><span>取得距離</span><b>${a.dist?a.dist.toFixed(2)+' km':'未取得'}</b></div></div></div>`;
     fitPreview.innerHTML=diagnostics;
     if(!a.dist&&!a.laps.length){fitStatus.textContent='FITは読み込めましたが、ランニングデータを取得できませんでした。診断結果を確認してください。';return}
     const type=fitClassify(a),laps=fitLapSummary(a),date=a.date?new Date(a.date):new Date(file.lastModified),dateStr=localDateStr(date),timeMin=a.timeMs/60000,pace=a.avgSpeed?secToPace(1000/a.avgSpeed):calcPace(a.dist,timeMin);
@@ -1687,7 +1744,7 @@ async function importFIT(e){
 </div>${laps.length?`<h3 style="margin:12px 0 6px">ラップ解析</h3><div class="laps">${laps.map(x=>`<div class="lap"><small>L${x.i}</small><b>${x.duration||'--'}</b><span class="note">${x.d?x.d.toFixed(2)+'km':''}${x.pace&&x.pace!=='--'?` / ${x.pace}/km`:''}${x.hr?` / ${x.hr}bpm`:''}${x.phase&&x.phase!=='判定外'?`<br>${x.phase}`:''}</span></div>`).join('')}</div>`:''}<div class="actions"><button class="btn" onclick='saveFITCandidateWithType(${JSON.stringify(candidate).replace(/</g,"\u003c")},"fitTypeSelect_${candidate.id}")'>選んだタイプで記録に保存</button><button class="btn secondary" onclick='previewFITReport(${JSON.stringify(candidate).replace(/</g,"\u003c")})'>レポートを見る</button></div></div>`;
     renderFitQualitySetup(candidate.id,type);
     fitStatus.textContent='解析完了。診断と解析結果を確認して保存できます。';
-  }catch(err){fitStatus.textContent='解析できませんでした：'+err.message;fitPreview.innerHTML='<div class="report"><div class="reportTitle">🔎 Garmin FIT診断</div><div class="note">V18.30 / 読み込み中にエラーが発生しました。</div><div class="metric"><span>エラー</span><b>'+String(err.message).replace(/</g,'&lt;')+'</b></div></div>'}
+  }catch(err){fitStatus.textContent='解析できませんでした：'+err.message;fitPreview.innerHTML='<div class="report"><div class="reportTitle">🔎 Garmin FIT診断</div><div class="note">V18.31 / 読み込み中にエラーが発生しました。</div><div class="metric"><span>エラー</span><b>'+String(err.message).replace(/</g,'&lt;')+'</b></div></div>'}
 }
 function saveFITCandidateWithType(candidate, selectId){
   if(!candidate || !candidate.date || !(+candidate.dist)){
@@ -1835,9 +1892,9 @@ function exportCSV(){
   const blob=new Blob(['\ufeff'+headers.join(',')+'\n'+rows.join('\n')],{type:'text/csv;charset=utf-8'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='running_log.csv';a.click();URL.revokeObjectURL(a.href);
 }
-function exportData(){const b=new Blob([JSON.stringify({records,plans,trash},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='running-log-backup.json';a.click()}
-function importData(e){const f=e.target.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{try{const x=JSON.parse(rd.result);records=Array.isArray(x)?x:(x.records||[]);plans=Array.isArray(x)?plans:(x.plans||[]);trash=Array.isArray(x.trash)?x.trash:[];localStorage.setItem(KEY,JSON.stringify(records));localStorage.setItem(TRASHKEY,JSON.stringify(trash));localStorage.setItem(PLANKEY,JSON.stringify(plans));render();renderCalendar();alert('復元しました')}catch{alert('JSONを読み込めませんでした')}};rd.readAsText(f)}
-document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelectorAll('main>section').forEach(s=>s.classList.add('hidden'));const target=document.getElementById(b.dataset.tab);if(target)target.classList.remove('hidden');if(b.dataset.tab==='v12')runV12Engine();if(b.dataset.tab==='report')renderReportHub(currentReportId);if(b.dataset.tab==='coach')renderCoach();if(b.dataset.tab==='dash'){renderV15();renderV16();}});
+function exportData(){const b=new Blob([JSON.stringify({records,plans,trash,races},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='running-log-backup.json';a.click()}
+function importData(e){const f=e.target.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{try{const x=JSON.parse(rd.result);records=Array.isArray(x)?x:(x.records||[]);plans=Array.isArray(x)?plans:(x.plans||[]);trash=Array.isArray(x.trash)?x.trash:[];if(Array.isArray(x.races)){races=x.races;saveRaces();}localStorage.setItem(KEY,JSON.stringify(records));localStorage.setItem(TRASHKEY,JSON.stringify(trash));localStorage.setItem(PLANKEY,JSON.stringify(plans));render();renderCalendar();alert('復元しました')}catch{alert('JSONを読み込めませんでした')}};rd.readAsText(f)}
+document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelectorAll('main>section').forEach(s=>s.classList.add('hidden'));const target=document.getElementById(b.dataset.tab);if(target)target.classList.remove('hidden');if(b.dataset.tab==='v12')runV12Engine();if(b.dataset.tab==='report')renderReportHub(currentReportId);if(b.dataset.tab==='coach')renderCoach();if(b.dataset.tab==='plan'){renderPlanTab();renderRaceList();}if(b.dataset.tab==='dash'){renderV15();renderV16();}});
 today.textContent=new Date().toLocaleDateString('ja-JP',{month:'numeric',day:'numeric'});
 render();
 renderCalendar();
