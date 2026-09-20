@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="apple-touch-icon" href="icon-192.svg">
 
-<title>My Running Log AI Coach V18.31</title>
+<title>My Running Log AI Coach V18.32</title>
 <style>
 :root{
   --bg:#07090c; --panel:#11151a; --panel2:#171c22; --line:#26303a;
@@ -176,7 +176,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:9px 6px;b
 <body>
 <div class="app">
 <header>
-  <div class="head"><div><div class="logo">🏃 <span>MY RUNNING LOG</span><span class="versionTag">V18.31</span></div><small>走った記録を、次の練習につなげる</small></div><div class="v11Status"><span id="onlineStatus">● オンライン</span><button id="installBtn" class="btn secondary installBtn" hidden>ホーム画面に追加</button></div><div id="today"></div></div>
+  <div class="head"><div><div class="logo">🏃 <span>MY RUNNING LOG</span><span class="versionTag">V18.32</span></div><small>走った記録を、次の練習につなげる</small></div><div class="v11Status"><span id="onlineStatus">● オンライン</span><button id="installBtn" class="btn secondary installBtn" hidden>ホーム画面に追加</button></div><div id="today"></div></div>
   <nav>
     <button class="tab active" data-tab="dash">ダッシュボード</button>
     <button class="tab" data-tab="records">記録</button>
@@ -368,6 +368,17 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:9px 6px;b
     <div class="hero"><div><h1>🗓️ 練習計画</h1><p>実績を反映して、今週〜次週の予定を自動更新します。</p></div><div class="badge"><span>V15</span><b id="planSyncBadge">同期</b></div></div>
     <div class="actions"><button class="btn" onclick="runV15Engine();renderPlanTab()">🧭 V15を再計算</button><button class="btn secondary" onclick="refreshPlanEvaluations();renderPlanTab()">🔄 実績を再評価</button></div>
     <div id="planSyncStatus" class="note" style="margin-top:8px"></div>
+    <div class="section" style="margin-top:12px;border:1px solid #2a3943;background:#0b1217">
+      <h2>📅 走れない日を先に登録</h2>
+      <p class="note">仕事・用事・旅行など「この日は走れない」を先に入れると、V15がその日をランオフとして扱い、ポイント練習やLongを別日に組み直します。</p>
+      <div class="form">
+        <label>走れない日<input id="offDate" type="date"></label>
+        <label>理由（任意）<input id="offReason" placeholder="例：仕事・飲み会・旅行"></label>
+      </div>
+      <div class="actions"><button class="btn" onclick="addUnavailableDay()">🚫 ランオフ予定を追加</button></div>
+      <div id="offDayStatus" class="note"></div>
+      <div id="offDayList" style="margin-top:8px"></div>
+    </div>
     <div style="overflow-x:auto;margin-top:10px"><table><thead><tr><th>日付</th><th>内容</th><th>目安 / 実績</th><th>状態</th></tr></thead><tbody id="planTableBody"></tbody></table></div>
   </div>
   <div class="grid2">
@@ -378,7 +389,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:9px 6px;b
 </section>
 
 <section id="backup" class="hidden">
-  <div class="section"><h2>バックアップ / 復元</h2><p class="note">記録はこのブラウザに保存されます。V18.31では重複記録を自動削除せず、削除はゴミ箱経由で復元できます。端末変更前などにJSONを書き出して保管してください。</p>
+  <div class="section"><h2>バックアップ / 復元</h2><p class="note">記録はこのブラウザに保存されます。V18.32では重複記録を自動削除せず、削除はゴミ箱経由で復元できます。端末変更前などにJSONを書き出して保管してください。</p>
   <div class="actions"><button class="btn" onclick="exportData()">JSONを書き出す</button><button class="btn secondary" onclick="exportCSV()">CSVを書き出す</button><label class="btn secondary" style="display:inline-block">JSONを復元<input id="importFile" type="file" accept=".json" style="display:none" onchange="importData(event)"></label></div></div>
 </section>
 </main>
@@ -393,6 +404,9 @@ let currentReportId=null;
 let trash=JSON.parse(localStorage.getItem(TRASHKEY)||'[]');
 const PLANKEY='my_running_plan_v1';
 let plans=JSON.parse(localStorage.getItem(PLANKEY)||'[]');
+const OFFDAYKEY='my_running_offdays_v1';
+let unavailableDays=JSON.parse(localStorage.getItem(OFFDAYKEY)||'[]');
+if(!Array.isArray(unavailableDays))unavailableDays=[];
 const RACEKEY='my_running_races_v2';
 const RACEKEY_OLD='my_running_races_v1';
 function loadRacesSafe(){
@@ -564,7 +578,7 @@ function loadInterval(){
 }
 
 function dayStart(d){const x=new Date(d);x.setHours(0,0,0,0);return x}
-// V18.31: pace helper restored. Records store time in minutes; FIT records may also have pace text.
+// V18.32: pace helper restored. Records store time in minutes; FIT records may also have pace text.
 function paceSecondsFromRecord(r){
   if(!r)return null;
   const p=r.pace?paceToSec(String(r.pace)):null;
@@ -638,6 +652,28 @@ function deleteRaceEvent(id){if(String(id).startsWith('builtin-')){alert('標準
 function renderRaceList(){const el=document.getElementById('raceList');if(!el)return; const jp=['日','月','火','水','木','金','土']; const rows=races.filter(Boolean).slice().sort((a,b)=>String(a.date).localeCompare(String(b.date))).map(r=>{const d=new Date(r.date+'T00:00:00');const wd=isNaN(d)?'':`（${jp[d.getDay()]}）`;return `<div class="raceItem"><div><b>${r.name}<span class="raceBadge">${r.distance||'種目未設定'}</span></b><small>${r.date}${wd}${r.goal?' ・ '+r.goal:''}</small></div>${String(r.id).startsWith('builtin-')?'':'<button class="raceDelete" onclick="deleteRaceEvent(\''+String(r.id).replace(/'/g,'')+'\')">削除</button>'}</div>`}).join(''); el.innerHTML=rows||'<div class="note">登録された大会はありません。</div>'; }
 function raceForDate(date){return races.filter(r=>r&&r.date===date).sort((a,b)=>String(a.id).localeCompare(String(b.id)))[0]||null;}
 function daysToRace(date,race){return Math.round((dayStart(race.date)-dayStart(date))/86400000);}
+function saveUnavailableDays(){
+  try{localStorage.setItem(OFFDAYKEY,JSON.stringify(unavailableDays));return true;}catch(e){console.error('offday save error',e);return false;}
+}
+function isUnavailableDay(date){return unavailableDays.some(x=>x&&x.date===date);}
+function unavailableReason(date){const x=unavailableDays.find(x=>x&&x.date===date);return x?.reason||'予定あり';}
+function addUnavailableDay(){
+  const date=document.getElementById('offDate')?.value||'', reason=(document.getElementById('offReason')?.value||'').trim();
+  if(!date){alert('走れない日を選択してください');return;}
+  const existing=unavailableDays.find(x=>x&&x.date===date);
+  if(existing){existing.reason=reason;}else unavailableDays.push({id:'off-'+Date.now(),date,reason});
+  unavailableDays.sort((a,b)=>String(a.date).localeCompare(String(b.date)));
+  if(!saveUnavailableDays()){alert('ランオフ予定を保存できませんでした');return;}
+  renderOffDayList(); renderPlanTab(); renderV15(); renderTodayMenu();
+  const st=document.getElementById('offDayStatus');if(st)st.textContent=`✅ ${date}をランオフ予定として登録しました。V15を再計算すると計画に反映されます。`;
+}
+function deleteUnavailableDay(id){unavailableDays=unavailableDays.filter(x=>String(x.id)!==String(id));saveUnavailableDays();renderOffDayList();renderPlanTab();renderV15();renderTodayMenu();}
+function renderOffDayList(){
+  const el=document.getElementById('offDayList');if(!el)return;
+  const jp=['日','月','火','水','木','金','土'];
+  const rows=unavailableDays.filter(Boolean).slice().sort((a,b)=>String(a.date).localeCompare(String(b.date))).map(x=>{const d=new Date(x.date+'T00:00:00');const wd=isNaN(d)?'':`（${jp[d.getDay()]}）`;return `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:9px 10px;border:1px solid #273640;border-radius:10px;margin-top:6px;background:#10181e"><div><b>${x.date}${wd}</b><span class="note" style="margin-left:8px">🚫 ランオフ${x.reason?' ・ '+x.reason:''}</span></div><button class="btn secondary" style="padding:7px 10px" onclick="deleteUnavailableDay('${String(x.id).replace(/'/g,'')}')">削除</button></div>`}).join('');
+  el.innerHTML=rows||'<div class="note">まだ登録されていません。</div>';
+}
 function savePlans(){localStorage.setItem(PLANKEY,JSON.stringify(plans));renderCalendar()}
 function addPlan(){const r={id:Date.now(),date:pDate.value,type:pType.value,target:pTarget.value,workout:pWorkout.value};if(!r.date){alert('日付を入力してください');return}plans.push(r);savePlans();alert('練習予定を保存しました')}
 function changeMonth(n){calMonth=new Date(calMonth.getFullYear(),calMonth.getMonth()+n,1);renderCalendar()}
@@ -1019,8 +1055,10 @@ function renderPlanTab(){
     }else if(ds<today){
       title=saved?.type||'未実施'; target=saved?.target||'予定なし'; status='— 未実施';
     }else{
-      const x=saved||ai;
-      title=x?.type||'休養'; target=x?.target||'状態に合わせて調整'; status=x?.type==='Rest'?'💤 休養':'📅 予定';
+      const x=isUnavailableDay(ds)?null:(saved?.source==='V15'?ai:(saved||ai));
+      title=isUnavailableDay(ds)?'Rest':(x?.type||'休養');
+      target=isUnavailableDay(ds)?`ランオフ${unavailableReason(ds)?' ・ '+unavailableReason(ds):''}`:(x?.target||'状態に合わせて調整');
+      status=isUnavailableDay(ds)?'🚫 予定あり・休養':(x?.type==='Rest'?'💤 休養':'📅 予定');
     }
     const wd=['日','月','火','水','木','金','土'][d.getDay()];
     rows.push(`<tr><td>${ds.slice(5)}（${wd}）</td><td>${title}</td><td>${target}</td><td>${status}</td></tr>`);
@@ -1078,7 +1116,7 @@ function renderTodayMenu(){
   }catch(e){console.error('today menu render error',e);el.innerHTML='<div class="todayMenuType">🏃 今日のメニュー</div><div class="todayMenuReason">V15の計画を確認してください。</div>';}
 }
 function renderCoach(){
-  // V18.31: 提案の重複を避け、V15を週間計画の本体にする。
+  // V18.32: 提案の重複を避け、V15を週間計画の本体にする。
   try{
     const e=typeof v15PlanEngine==='function'?v15PlanEngine():null;
     const first=e&&e.plans&&e.plans[0];
@@ -1361,7 +1399,7 @@ function render(){
 
   populateHistoryFilters();
   renderHistory();
-  // V18.31: 記録とレポート一覧を常に同期
+  // V18.32: 記録とレポート一覧を常に同期
   if(typeof renderReportHub==='function') renderReportHub(currentReportId);
 }
 
@@ -1419,7 +1457,7 @@ function fitParse(buf){
   while(pos<dataEnd){
     const recordHeaderPos=pos,hb=view.getUint8(pos++),compressed=!!(hb&0x80),local=compressed?((hb>>5)&0x03):(hb&0x0f);
     // FITの圧縮タイムスタンプレコードは「タイムスタンプだけのレコード」ではなく、
-    // 直前に定義された同じlocal messageのデータ本体を持つ。V18.31ではここをcontinueして
+    // 直前に定義された同じlocal messageのデータ本体を持つ。V18.32ではここをcontinueして
     // しまい、圧縮Record/Lap等を丸ごと捨てていたため、Lap=0になりやすかった。
     let compressedTimestamp=null;
     if(compressed){
@@ -1725,7 +1763,7 @@ async function importFIT(e){
   try{
     const buf=await file.arrayBuffer(),view=new DataView(buf),headerSize=view.getUint8(0),sig=String.fromCharCode(...new Uint8Array(buf,8,4));
     const parsed=fitParse(buf),msgs=parsed.messages,a=fitAggregate(parsed),counts={};msgs.forEach(m=>counts[m.global]=(counts[m.global]||0)+1);
-    const diagnostics=`<div class="report" style="margin-top:10px"><div class="reportTitle" style="font-size:18px">🔎 Garmin FIT診断</div><div class="metrics" style="margin-top:8px"><div class="metric"><span>アプリ版</span><b>V18.31</b></div><div class="metric"><span>FIT署名</span><b>${sig==='.FIT'?'OK':'NG'}</b></div><div class="metric"><span>ヘッダー</span><b>${headerSize} bytes</b></div><div class="metric"><span>定義メッセージ</span><b>${a.meta.definitionCount}件</b></div><div class="metric"><span>圧縮タイムスタンプ</span><b>${a.meta.compressedCount}件</b></div><div class="metric"><span>解析メッセージ</span><b>${msgs.length}件</b></div><div class="metric"><span>Session</span><b>${a.sess?'あり':'なし'}${counts[18]?` (${counts[18]}件)`:''}</b></div><div class="metric"><span>Lap</span><b>${a.laps.length}件</b></div><div class="metric"><span>Record</span><b>${a.rec.length}件</b></div><div class="metric"><span>取得距離</span><b>${a.dist?a.dist.toFixed(2)+' km':'未取得'}</b></div></div></div>`;
+    const diagnostics=`<div class="report" style="margin-top:10px"><div class="reportTitle" style="font-size:18px">🔎 Garmin FIT診断</div><div class="metrics" style="margin-top:8px"><div class="metric"><span>アプリ版</span><b>V18.32</b></div><div class="metric"><span>FIT署名</span><b>${sig==='.FIT'?'OK':'NG'}</b></div><div class="metric"><span>ヘッダー</span><b>${headerSize} bytes</b></div><div class="metric"><span>定義メッセージ</span><b>${a.meta.definitionCount}件</b></div><div class="metric"><span>圧縮タイムスタンプ</span><b>${a.meta.compressedCount}件</b></div><div class="metric"><span>解析メッセージ</span><b>${msgs.length}件</b></div><div class="metric"><span>Session</span><b>${a.sess?'あり':'なし'}${counts[18]?` (${counts[18]}件)`:''}</b></div><div class="metric"><span>Lap</span><b>${a.laps.length}件</b></div><div class="metric"><span>Record</span><b>${a.rec.length}件</b></div><div class="metric"><span>取得距離</span><b>${a.dist?a.dist.toFixed(2)+' km':'未取得'}</b></div></div></div>`;
     fitPreview.innerHTML=diagnostics;
     if(!a.dist&&!a.laps.length){fitStatus.textContent='FITは読み込めましたが、ランニングデータを取得できませんでした。診断結果を確認してください。';return}
     const type=fitClassify(a),laps=fitLapSummary(a),date=a.date?new Date(a.date):new Date(file.lastModified),dateStr=localDateStr(date),timeMin=a.timeMs/60000,pace=a.avgSpeed?secToPace(1000/a.avgSpeed):calcPace(a.dist,timeMin);
@@ -1744,7 +1782,7 @@ async function importFIT(e){
 </div>${laps.length?`<h3 style="margin:12px 0 6px">ラップ解析</h3><div class="laps">${laps.map(x=>`<div class="lap"><small>L${x.i}</small><b>${x.duration||'--'}</b><span class="note">${x.d?x.d.toFixed(2)+'km':''}${x.pace&&x.pace!=='--'?` / ${x.pace}/km`:''}${x.hr?` / ${x.hr}bpm`:''}${x.phase&&x.phase!=='判定外'?`<br>${x.phase}`:''}</span></div>`).join('')}</div>`:''}<div class="actions"><button class="btn" onclick='saveFITCandidateWithType(${JSON.stringify(candidate).replace(/</g,"\u003c")},"fitTypeSelect_${candidate.id}")'>選んだタイプで記録に保存</button><button class="btn secondary" onclick='previewFITReport(${JSON.stringify(candidate).replace(/</g,"\u003c")})'>レポートを見る</button></div></div>`;
     renderFitQualitySetup(candidate.id,type);
     fitStatus.textContent='解析完了。診断と解析結果を確認して保存できます。';
-  }catch(err){fitStatus.textContent='解析できませんでした：'+err.message;fitPreview.innerHTML='<div class="report"><div class="reportTitle">🔎 Garmin FIT診断</div><div class="note">V18.31 / 読み込み中にエラーが発生しました。</div><div class="metric"><span>エラー</span><b>'+String(err.message).replace(/</g,'&lt;')+'</b></div></div>'}
+  }catch(err){fitStatus.textContent='解析できませんでした：'+err.message;fitPreview.innerHTML='<div class="report"><div class="reportTitle">🔎 Garmin FIT診断</div><div class="note">V18.32 / 読み込み中にエラーが発生しました。</div><div class="metric"><span>エラー</span><b>'+String(err.message).replace(/</g,'&lt;')+'</b></div></div>'}
 }
 function saveFITCandidateWithType(candidate, selectId){
   if(!candidate || !candidate.date || !(+candidate.dist)){
@@ -1892,13 +1930,14 @@ function exportCSV(){
   const blob=new Blob(['\ufeff'+headers.join(',')+'\n'+rows.join('\n')],{type:'text/csv;charset=utf-8'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='running_log.csv';a.click();URL.revokeObjectURL(a.href);
 }
-function exportData(){const b=new Blob([JSON.stringify({records,plans,trash,races},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='running-log-backup.json';a.click()}
-function importData(e){const f=e.target.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{try{const x=JSON.parse(rd.result);records=Array.isArray(x)?x:(x.records||[]);plans=Array.isArray(x)?plans:(x.plans||[]);trash=Array.isArray(x.trash)?x.trash:[];if(Array.isArray(x.races)){races=x.races;saveRaces();}localStorage.setItem(KEY,JSON.stringify(records));localStorage.setItem(TRASHKEY,JSON.stringify(trash));localStorage.setItem(PLANKEY,JSON.stringify(plans));render();renderCalendar();alert('復元しました')}catch{alert('JSONを読み込めませんでした')}};rd.readAsText(f)}
-document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelectorAll('main>section').forEach(s=>s.classList.add('hidden'));const target=document.getElementById(b.dataset.tab);if(target)target.classList.remove('hidden');if(b.dataset.tab==='v12')runV12Engine();if(b.dataset.tab==='report')renderReportHub(currentReportId);if(b.dataset.tab==='coach')renderCoach();if(b.dataset.tab==='plan'){renderPlanTab();renderRaceList();}if(b.dataset.tab==='dash'){renderV15();renderV16();}});
+function exportData(){const b=new Blob([JSON.stringify({records,plans,trash,races,unavailableDays},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='running-log-backup.json';a.click()}
+function importData(e){const f=e.target.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{try{const x=JSON.parse(rd.result);records=Array.isArray(x)?x:(x.records||[]);plans=Array.isArray(x)?plans:(x.plans||[]);trash=Array.isArray(x.trash)?x.trash:[];if(Array.isArray(x.races)){races=x.races;saveRaces();}if(Array.isArray(x.unavailableDays)){unavailableDays=x.unavailableDays;saveUnavailableDays();}localStorage.setItem(KEY,JSON.stringify(records));localStorage.setItem(TRASHKEY,JSON.stringify(trash));localStorage.setItem(PLANKEY,JSON.stringify(plans));render();renderCalendar();alert('復元しました')}catch{alert('JSONを読み込めませんでした')}};rd.readAsText(f)}
+document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelectorAll('main>section').forEach(s=>s.classList.add('hidden'));const target=document.getElementById(b.dataset.tab);if(target)target.classList.remove('hidden');if(b.dataset.tab==='v12')runV12Engine();if(b.dataset.tab==='report')renderReportHub(currentReportId);if(b.dataset.tab==='coach')renderCoach();if(b.dataset.tab==='plan'){renderPlanTab();renderRaceList();renderOffDayList();}if(b.dataset.tab==='dash'){renderV15();renderV16();}});
 today.textContent=new Date().toLocaleDateString('ja-JP',{month:'numeric',day:'numeric'});
 render();
 renderCalendar();
 renderRaceList();
+renderOffDayList();
 if(records.length){ currentReportId=records[0].id; renderReportHub(currentReportId); document.querySelector('[data-tab="dash"]').click(); }
 
 // V11 PWA: offline cache + install prompt
@@ -1932,7 +1971,6 @@ function v15PlanEngine(){
   const q=recent.filter(quality).length;
   const long=recent.filter(r=>safeType(r)==='Long'||dist(r)>=18).length;
   const load=Math.round(recent.reduce((a,r)=>{try{return a+Number(trainingLoad(r))||a}catch(e){return a}},0));
-  const paceRuns=recent.map(v15SafePace).filter(Number.isFinite);
   const thresholdPaces=recent.filter(r=>safeType(r)==='Threshold').map(v15SafePace).filter(Number.isFinite);
   const thrSec=thresholdPaces.length?thresholdPaces.reduce((a,b)=>a+b,0)/thresholdPaces.length:305;
   const thrMin=Math.max(270,Math.round(thrSec-4));
@@ -1946,58 +1984,58 @@ function v15PlanEngine(){
   const last=all.filter(r=>r&&r.date).slice().sort((a,b)=>String(b.date).localeCompare(String(a.date)))[0]||null;
   const focus=load>=120||q>=2?'月曜＋平日1日のランオフを確保し、週中は負荷を見てポイント、週末は距離を確保':'月曜＋平日1日のランオフを確保、水〜木にポイント、週末に距離';
   const jpWeek=['日','月','火','水','木','金','土'];
-  const plans=[];
-  let weekKey='';
-  for(let i=1;i<=14;i++){
-    const date=v15DateAdd(now,i);
-    const d=new Date(date+'T00:00:00');
-    const dow=d.getDay();
-    const weekday=`${date}（${jpWeek[dow]}）`;
-    const phase=v15Phase(date);
-    const raceEvent=raceForDate(date);
-    const raceDay=!!raceEvent;
-    const weekId=`${d.getFullYear()}-${d.getMonth()+1}-${Math.floor((d.getDate()-1)/7)}`;
-    if(weekId!==weekKey)weekKey=weekId;
-    let type='Easy',target=`Easy 6〜9km @${easyText}`,why='有酸素ベースを維持しながら疲労を抑える';
-
-    // V15基本週間コンセプト：月曜OFF／平日もう1日OFF／週中ポイント／週末は距離。
-    if(raceDay){
-      type='Race';target=`${raceEvent.name}${raceEvent.distance?' '+raceEvent.distance:''}${raceEvent.goal?' / '+raceEvent.goal:''}`;why='登録した大会日。週中のポイント練習に代わる実戦刺激として扱い、前後は回復を優先';
-    }else if(dow===1){
-      type='Rest';target='ランオフ';why='月曜固定のランオフ。週末の距離走から回復して次の1週間へつなげる';
-    }else if(dow===3){
-      // 水曜を週中のポイント枠に固定。ただし直近負荷が高い週は回復へ自動調整。
-      if(daysLeft<=7){
-        type='Easy';target=`5〜7km Easy @${easyText}`;why='レース直前のためポイントを抑え、フレッシュさを優先';
-      }else if(load>=140 || q>=4){
-        type='Recovery';target=`Recovery 5〜7km @${recoveryText}`;why='直近14日の負荷・ポイント回数が多いため、週中ポイントを回復走へ自動調整';
-      }else{
-        type='Threshold';target=`15〜20分 @${thresholdText}`;why='週なかばのポイント練習。短時間の閾値刺激で質を確保';
-      }
-    }else if(dow===4){
-      type='Rest';target='ランオフ';why='平日の2回目のランオフ。週中ポイントの吸収と週末の距離走に備える';
-    }else if(dow===2){
-      type='Easy';target=`Easy 6〜8km @${easyText}`;why='月曜OFF後のつなぎ。水曜ポイントに疲労を残さない';
-    }else if(dow===5){
-      type='Easy';target=`Easy 6〜8km @${easyText}`;why='週末の距離走に向けて脚を整える。疲労時は短縮';
-    }else if(dow===6){
-      if(daysLeft<=7){
-        type='Easy';target=`5〜7km Easy @${easyText} / 流しなし`;why='レース前日のため距離を追わず、脚を軽く保つ';
-      }else{
-        type='Long';target=`${long===0?'18〜20km':'20〜22km'} @${longText}`;why='週末のメイン距離走。距離耐性を積み上げ、後半の持久力を確認';
-      }
-    }else if(dow===0){
-      if(raceDay){
-        type='Race';target='金沢城リレー 1.9km × 1〜2周 / 9:30切り目安';why='実戦ポイント。ウォームアップとレース後の回復を重視';
-      }else if(daysLeft<=7){
-        type='Recovery';target=`Recovery 4〜6km @${recoveryText} / OFF可`;why='レース前週末は疲労を残さない';
-      }else{
-        type='Easy';target=`Easy 10〜14km @${easyText}`;why='土曜Longの翌日は強度を落として週末の総距離を確保';
-      }
+  const dates=[];
+  for(let i=1;i<=14;i++){const date=v15DateAdd(now,i);dates.push(date);}
+  const raceDates=new Set(races.filter(r=>r&&r.date).map(r=>r.date));
+  const unavailable=new Set(unavailableDays.filter(x=>x&&x.date).map(x=>x.date));
+  const planned={};
+  // まず「絶対に走れない日」を休養として確保。
+  dates.forEach(date=>{if(unavailable.has(date))planned[date]={type:'Rest',target:'ランオフ',why:`予定あり：${unavailableReason(date)}。走らない前提で計画を組みます`};});
+  // 大会日はランオフ指定より優先して大会を表示。
+  races.filter(r=>r&&r.date).forEach(r=>{if(dates.includes(r.date))planned[r.date]={type:'Race',target:`${r.name}${r.distance?' '+r.distance:''}${r.goal?' / '+r.goal:''}`,why:'登録した大会日。週中のポイント練習に代わる実戦刺激として扱い、前後は回復を優先'};});
+  // 各週のLong候補：土曜→日曜の順で、走れない日・大会日を避ける。日曜が大会ならその日はRace。
+  const weekStarts=[];
+  for(let i=0;i<dates.length;i++){const d=new Date(dates[i]+'T00:00:00');if(d.getDay()===1)weekStarts.push(dates[i]);}
+  if(!weekStarts.length){const d=new Date(dates[0]+'T00:00:00');d.setDate(d.getDate()-(d.getDay()===0?6:d.getDay()-1));weekStarts.push(localDateStr(d));}
+  const isRace=date=>raceDates.has(date);
+  const canRun=date=>dates.includes(date)&&!unavailable.has(date)&&!isRace(date);
+  weekStarts.forEach(ws=>{
+    const base=new Date(ws+'T00:00:00');
+    const cand=[5,6,4,3].map(offset=>{const d=new Date(base);d.setDate(d.getDate()+offset);return localDateStr(d)});
+    const longDate=cand.find(canRun);
+    if(longDate && !planned[longDate]){
+      planned[longDate]={type:'Long',target:`${long===0?'18〜20km':'20〜22km'} @${longText}`,why:`週末のメイン距離走。${unavailable.has(localDateStr(new Date(new Date(longDate+'T00:00:00').getTime()-86400000)))?'前日の予定を避けて':'距離耐性を積み上げ、'}後半の持久力を確認`};
     }
-    plans.push({date,weekday,phase,type,target,why});
+  });
+  // 各週のポイント候補：水→火→金→木。走れない日とLong・大会を避ける。
+  weekStarts.forEach(ws=>{
+    const base=new Date(ws+'T00:00:00');
+    const cand=[2,1,4,3].map(offset=>{const d=new Date(base);d.setDate(d.getDate()+offset);return localDateStr(d)});
+    const pointDate=cand.find(date=>canRun(date)&&!planned[date]);
+    if(pointDate){
+      const pdate=new Date(pointDate+'T00:00:00'),dow=pdate.getDay();
+      if(daysLeft<=7){planned[pointDate]={type:'Easy',target:`5〜7km Easy @${easyText}`,why:'レース直前のためポイントを抑え、フレッシュさを優先'};}
+      else if(load>=140 || q>=4){planned[pointDate]={type:'Recovery',target:`Recovery 5〜7km @${recoveryText}`,why:'直近14日の負荷・ポイント回数が多いため、ポイント日を回復走へ自動調整'};}
+      else{planned[pointDate]={type:'Threshold',target:`15〜20分 @${thresholdText}`,why:`週なかばのポイント練習。${dow===2?'水曜が走れないため火曜へ':'予定日の制約に合わせてポイント日を移動'}して質を確保`};}
+    }
+  });
+  // 残りは曜日の基本形。走れない日は上書きしない。
+  for(const date of dates){
+    if(planned[date])continue;
+    const d=new Date(date+'T00:00:00'),dow=d.getDay(),raceEvent=raceForDate(date);
+    const phase=v15Phase(date);
+    let x={type:'Easy',target:`Easy 6〜9km @${easyText}`,why:'有酸素ベースを維持しながら疲労を抑える'};
+    if(raceEvent)x={type:'Race',target:`${raceEvent.name}${raceEvent.distance?' '+raceEvent.distance:''}${raceEvent.goal?' / '+raceEvent.goal:''}`,why:'登録した大会日。前後は回復を優先'};
+    else if(dow===1)x={type:'Rest',target:'ランオフ',why:'月曜固定のランオフ'};
+    else if(dow===4)x={type:'Rest',target:'ランオフ',why:'平日の2回目のランオフ。週中ポイントの吸収と週末の距離走に備える'};
+    else if(dow===2)x={type:'Easy',target:`Easy 6〜8km @${easyText}`,why:'月曜OFF後のつなぎ'};
+    else if(dow===5)x={type:'Easy',target:`Easy 6〜8km @${easyText}`,why:'週末の距離走に向けて脚を整える'};
+    else if(dow===0)x={type:'Recovery',target:`Recovery 4〜6km @${recoveryText} / OFF可`,why:'週末の距離走後は強度を落として回復'};
+    else if(dow===6)x={type:'Easy',target:`Easy 6〜8km @${easyText}`,why:'Longを別日に移した週のつなぎ'};
+    planned[date]=x;
   }
-  return {plans,load,q,long,daysLeft,last,focus,thrText:`${secToPace(thrMin)}〜${secToPace(thrMax)}/km`,sampleCount:recent.length,todayStr};
+  const plansOut=dates.map(date=>{const d=new Date(date+'T00:00:00');const x=planned[date];return {date,weekday:`${date}（${jpWeek[d.getDay()]}）`,phase:v15Phase(date),...x};});
+  return {plans:plansOut,load,q,long,daysLeft,last,focus,thrText:`${secToPace(thrMin)}〜${secToPace(thrMax)}/km`,sampleCount:recent.length,todayStr};
 }
 function v15Apply(){
   const el=document.getElementById('v15PlanStatus');
