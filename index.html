@@ -2073,43 +2073,42 @@ function v15PlanEngine(){
   const canRun=date=>dates.includes(date)&&!unavailable.has(date)&&prefByDate.get(date)!=='off'&&!isRace(date);
   const canLong=date=>canRun(date)&&!shortDays.has(date);
   const canPoint=date=>canRun(date)&&!fullDays.has(date);
+  const weekStartOf=date=>{const d=new Date(date+'T00:00:00');const dow=d.getDay();d.setDate(d.getDate()-(dow===0?6:dow-1));return localDateStr(d)};
+  const weekLongDone=new Set();
+  // 既に実施したLongも含めて「その週にLongがあるか」を確認する。
+  // これにより、平日にLongを前倒しした週に週末Longを二重に入れない。
+  all.filter(r=>r&&r.date&&(safeType(r)==='Long'||dist(r)>=18)).forEach(r=>{weekLongDone.add(weekStartOf(r.date));});
   weekStarts.forEach(ws=>{
     const base=new Date(ws+'T00:00:00');
     const weekday=offset=>{const d=new Date(base);d.setDate(d.getDate()+offset);return localDateStr(d)};
     const sat=weekday(5), sun=weekday(6);
     // 「時間あり」はLongを置きたい日なので、明示された日を最優先。複数なら土日を優先。
     const explicitFull=[sat,sun,weekday(2),weekday(3),weekday(4),weekday(5)].filter((d,i,a)=>a.indexOf(d)===i).filter(d=>fullDays.has(d)&&canLong(d));
-    // 「時間あり」の指定がなければLongは土日だけ。平日へ自動移動しない。
-    const longDate=explicitFull[0]||[sat,sun].find(canLong);
+    // その週に既にLongを実施済みなら、追加のLongは作らない。
+    const alreadyLong=weekLongDone.has(ws);
+    const longDate=alreadyLong?null:(explicitFull[0]||[sat,sun].find(canLong));
     if(longDate && !planned[longDate]){
       const reason=fullDays.has(longDate)?'指定した「時間あり」の日をLongに設定':'週末のどちらかをLongに設定';
       planned[longDate]={type:'Long',target:`${long===0?'18〜20km':'20〜22km'} @${longText}`,why:`${reason}。平日はEasy・ポイント練習を基本にし、距離耐性を積み上げます`};
     }
   });
-  // 週2日のRestを先に確保してから、残った平日にポイントを配置する。
-  // 基本形：月曜Rest＋平日もう1日Rest／平日はEasy＋ポイント／Longは土日。
-  // 「時間あり」はLong専用なので、Longにした日をRestにはしない。
+  // ポイントは平日の通常日を優先。Longを平日に前倒しした週は、直後のポイントをEasyへ落として回復を優先。
   weekStarts.forEach(ws=>{
     const base=new Date(ws+'T00:00:00');
-    const wd=offset=>{const d=new Date(base);d.setDate(d.getDate()+offset);return localDateStr(d)};
-    const mon=wd(0), tue=wd(1), wed=wd(2), thu=wd(3), fri=wd(4), sat=wd(5), sun=wd(6);
-    const weekdayDates=[tue,wed,thu,fri];
-    const isRestPlanned=d=>planned[d]&&planned[d].type==='Rest';
-    let weekdayRestCount=weekdayDates.filter(d=>isRestPlanned(d)).length;
-    if(weekdayRestCount<1){
-      const restCandidates=[thu,fri,tue,wed].filter(d=>dates.includes(d)&&canRun(d)&&!planned[d]&&!fullDays.has(d));
-      const restDate=restCandidates[0];
-      if(restDate){planned[restDate]={type:'Rest',target:'ランオフ',why:'週2日のランオフを確保。ポイントとLongの疲労を吸収し、継続して走れる状態を優先'};weekdayRestCount++;}
-    }
-    const cand=[tue,wed,thu,fri];
+    const cand=[2,3,4,5].map(offset=>{const d=new Date(base);d.setDate(d.getDate()+offset);return localDateStr(d)});
     const normalPoint=cand.find(date=>canPoint(date)&&!planned[date]&&!shortDays.has(date));
     const shortPoint=cand.find(date=>canPoint(date)&&!planned[date]&&shortDays.has(date));
     const pointDate=normalPoint||shortPoint;
     if(pointDate){
       const pdate=new Date(pointDate+'T00:00:00'),dow=pdate.getDay();
-      if(daysLeft<=7){planned[pointDate]={type:'Easy',target:`5〜7km Easy @${easyText}`,why:'レース直前のためポイントを抑え、フレッシュさを優先'};}
+      const wsStart=new Date(ws+'T00:00:00');
+      const completedLongThisWeek=all.some(r=>r&&r.date&&weekStartOf(r.date)===ws&&safeType(r)==='Long'&&dist(r)>=18);
+      const daysFromWeekLong=completedLongThisWeek?all.filter(r=>r&&r.date&&weekStartOf(r.date)===ws&&safeType(r)==='Long'&&dist(r)>=18).map(r=>dateDiffDays(pointDate,r.date)).filter(x=>x>=0).sort((a,b)=>a-b)[0]:null;
+      const raceSoon=dateDiffDays(pointDate,'2026-09-27')>=0&&dateDiffDays(pointDate,'2026-09-27')<=4;
+      if(raceSoon){planned[pointDate]={type:'Easy',target:`5〜7km Easy @${easyText}`,why:'大会直前のためポイントを抑え、フレッシュさを優先'};}
+      else if(completedLongThisWeek && daysFromWeekLong!==null && daysFromWeekLong<=3){planned[pointDate]={type:'Easy',target:`Easy 5〜7km @${easyText}`,why:'今週はすでにLongを実施済み。距離負荷を重ねず、Easyでつなぎます'};}
       else if(load>=140 || q>=4){planned[pointDate]={type:'Recovery',target:`Recovery 5〜7km @${recoveryText}`,why:'直近14日の負荷・ポイント回数が多いため、ポイント日を回復走へ自動調整'};}
-      else{planned[pointDate]={type:'Threshold',target:`15〜20分 @${thresholdText}`,why:'週1回の平日ポイント練習。平日の空いている日に配置して質を確保'};}
+      else{planned[pointDate]={type:'Threshold',target:`15〜20分 @${thresholdText}`,why:`週なかばのポイント練習。${dow===2?'水曜が走れないため火曜へ':'予定日の制約に合わせてポイント日を移動'}して質を確保`};}
     }
   });
   // 残りは曜日の基本形。走れない日は上書きしない。
